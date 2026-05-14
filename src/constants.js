@@ -69,7 +69,8 @@ export const mkSec = (o = {}) => ({
   sectionType: '', title: '', mainCopy: '', subCopy: '',
   points: [], description: '', designStyle: '미니멀',
   template: 'material', photoDir: '{}', imagePrompt: '', cta: '',
-  secImg: null, // 섹션 전용 이미지 (base64 dataURL)
+  secImg: null,   // 이미지 슬롯 1
+  secImg2: null,  // 이미지 슬롯 2
   ...o,
 })
 

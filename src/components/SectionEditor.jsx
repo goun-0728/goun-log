@@ -151,18 +151,20 @@ export default function SectionEditor({ sec, idx, onUpdate }) {
       )}
 
       {/* ── 카드 미리보기 — 860px 고정, 화면에 맞게 축소 ── */}
-      <div ref={wrapRef} style={{ overflow: 'hidden', background: '#e8e6e0' }}>
-        <div style={{
-          width: 860,
-          transformOrigin: 'top left',
-          transform: `scale(${scale})`,
-          height: 1500 * scale,  // 축소 비율에 맞게 컨테이너 높이 조정
-        }}>
+      <div ref={wrapRef} style={{ position: 'relative', background: '#e8e6e0', overflow: 'hidden' }}>
+        <div style={{ width: 860, transformOrigin: 'top left', transform: `scale(${scale})` }}>
           <div ref={ref} style={{ fontFamily: "'Noto Sans KR','Apple SD Gothic Neo',sans-serif", width: 860 }}>
             <Tpl s={dr} img={img} t={t} editing={editing} onChange={handleChange} />
             <div style={{ padding: '8px 24px', textAlign: 'right', fontSize: 11, color: t.fg, opacity: 0.12, borderTop: `1px solid ${t.bd}`, background: t.bg }}>ContentOS</div>
           </div>
         </div>
+        {/* scale 후 빈 공간 메우기 */}
+        <div style={{ height: 0, visibility: 'hidden' }} ref={el => {
+          if (el && ref.current) {
+            const h = ref.current.offsetHeight * scale
+            if (el.parentElement) el.parentElement.style.height = h + 'px'
+          }
+        }} />
       </div>
 
       {/* 편집 중 안내 */}
