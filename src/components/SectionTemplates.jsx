@@ -11,13 +11,7 @@ const CARD_W = 860
 
 export function CardWrapper({ children, bg = '#fff' }) {
   return (
-    <div style={{
-      width: CARD_W,
-      minHeight: 1200,
-      background: bg,
-      overflow: 'hidden',
-      position: 'relative',
-    }}>
+    <div style={{ width: CARD_W, background: bg, overflow: 'hidden', position: 'relative' }}>
       {children}
     </div>
   )
@@ -49,29 +43,29 @@ export function ImgBox({ url, t, label, editing = false, onImgChange, minH = 400
     fr.readAsDataURL(f); e.target.value = ''
   }
 
-  // 이미지 없고 편집 모드도 아니면 → 공간 차지 안 함
-  if (!url && !editing) return null
+  // null → 완전히 숨김
+  if (!url) return null
 
-  // 이미지 없고 편집 모드 → 업로드 유도 박스
-  if (!url && editing) {
+  // 'slot' → 업로드 대기 박스 (이미지 없음)
+  if (url === 'slot') {
     return (
       <div onClick={() => ref.current?.click()}
-        style={{ minHeight: minH, background: t.sub, border: `2px dashed ${t.bd}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, cursor: 'pointer', borderRadius: 8, margin: '0 0 16px' }}>
+        style={{ minHeight: minH, background: t.sub, border: `2px dashed ${t.bd}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, cursor: 'pointer' }}>
         <input ref={ref} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
-        <span style={{ fontSize: 36, opacity: 0.25 }}>📷</span>
-        <span style={{ fontSize: 15, color: t.fg, opacity: 0.5, fontWeight: 500 }}>클릭하여 사진 업로드</span>
-        <span style={{ fontSize: 12, color: t.fg, opacity: 0.35 }}>{label}</span>
+        <span style={{ fontSize: 36, opacity: 0.2 }}>📷</span>
+        <span style={{ fontSize: 15, color: t.fg, opacity: 0.45, fontWeight: 500 }}>클릭하여 사진 업로드</span>
+        <span style={{ fontSize: 12, color: t.fg, opacity: 0.3 }}>{label}</span>
       </div>
     )
   }
 
-  // 이미지 있음 → 높이 auto (비율 유지)
+  // 실제 이미지 → 비율 유지, 높이 auto
   return (
-    <div style={{ position: 'relative', marginBottom: 0 }} onClick={() => editing && ref.current?.click()}>
+    <div style={{ position: 'relative' }} onClick={() => editing && ref.current?.click()}>
       <input ref={ref} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
       <img src={url} alt="" style={{ width: '100%', height: 'auto', display: 'block' }} />
       {editing && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0)', transition: 'background .2s', cursor: 'pointer' }}
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background .2s', cursor: 'pointer' }}
           onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.3)'}
           onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0)'}>
           <span style={{ color: '#fff', fontSize: 14, fontWeight: 600, background: 'rgba(0,0,0,0.55)', padding: '8px 18px', borderRadius: 8, pointerEvents: 'none' }}>📷 사진 교체</span>

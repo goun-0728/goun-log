@@ -72,7 +72,8 @@ export default function SectionEditor({ sec, idx, onUpdate }) {
   }
 
   const Tpl = TPL[dr.template] || TPL.material
-  const img = dr.secImg || null
+  // 이미지1: 수정 모드에서 없으면 'slot'으로 업로드 박스 표시
+  const img = dr.secImg || (editing ? 'slot' : null)
 
   return (
     <div style={{ marginBottom: 20, borderRadius: 12, overflow: 'hidden', border: `2px solid ${editing ? '#3b82f6' : C.bd}`, transition: 'border-color .2s' }}>
@@ -94,6 +95,22 @@ export default function SectionEditor({ sec, idx, onUpdate }) {
 
         {/* 오른쪽: 액션 버튼 */}
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          {editing && (
+            /* 이미지 2 슬롯 토글 버튼 */
+            <button
+              onClick={() => {
+                if (dr.secImg2) {
+                  // 이미 있으면 제거
+                  setDr(d => ({ ...d, secImg2: null }))
+                } else {
+                  // 없으면 슬롯 활성화 (null → 'empty'로 구분)
+                  setDr(d => ({ ...d, secImg2: 'slot' }))
+                }
+              }}
+              style={{ padding: '5px 10px', fontSize: 11, borderRadius: 7, border: `1px solid ${dr.secImg2 ? '#3b82f6' : C.bd}`, background: dr.secImg2 ? '#EFF6FF' : C.sur, color: dr.secImg2 ? '#1d4ed8' : C.mu, cursor: 'pointer', fontWeight: dr.secImg2 ? 700 : 400 }}>
+              {dr.secImg2 ? '📷2 제거' : '+ 사진2 추가'}
+            </button>
+          )}
           {editing ? (
             <>
               <button onClick={save} style={{ padding: '5px 14px', fontSize: 11, borderRadius: 7, border: 'none', background: '#3b82f6', color: '#fff', cursor: 'pointer', fontWeight: 700 }}>✓ 저장</button>
