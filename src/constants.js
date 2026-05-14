@@ -16,18 +16,33 @@ export const TASKS = [
 export const BLOG_TONES = ['생활형', '후기형', '공감형', '정보형', '전문가형']
 
 export const DS = {
-  미니멀:  { bg: '#FFF',    fg: '#18170F', ac: '#1D6B45', sub: '#F5F4F0', bd: '#E4E2DC' },
-  프리미엄: { bg: '#18170F', fg: '#F5F4F0', ac: '#C8A96E', sub: '#272420', bd: '#3A3828' },
-  감성형:  { bg: '#FFFAF6', fg: '#2D1A0E', ac: '#C0714A', sub: '#FFF3EB', bd: '#EDD5C0' },
-  정보형:  { bg: '#F4F7FF', fg: '#1A2F70', ac: '#2755CC', sub: '#E4ECFF', bd: '#C3D3F5' },
-  생활형:  { bg: '#FDFCF5', fg: '#2C2500', ac: '#8A7100', sub: '#F7F3DC', bd: '#E5DCAA' },
+  // ── 다크/프리미엄 계열
+  '블랙':      { bg: '#0F0F0F', fg: '#F0EEE8', ac: '#D4A853', sub: '#1C1C1C', bd: '#2E2E2E' },
+  '프리미엄':  { bg: '#18170F', fg: '#F5F4F0', ac: '#C8A96E', sub: '#272420', bd: '#3A3828' },
+  '네이비':    { bg: '#0D1B2A', fg: '#E8F0F8', ac: '#4A9EE8', sub: '#162436', bd: '#243548' },
+  '다크그린':  { bg: '#0A1F1A', fg: '#E8F5F0', ac: '#3DBE82', sub: '#122A23', bd: '#1E3D33' },
+  '버건디':    { bg: '#1A0808', fg: '#F5EEE8', ac: '#C8614A', sub: '#2A1212', bd: '#3D1E1E' },
+
+  // ── 뉴트럴/미니멀 계열
+  '화이트':    { bg: '#FFFFFF', fg: '#18170F', ac: '#18170F', sub: '#F5F4F0', bd: '#E4E2DC' },
+  '크림':      { bg: '#FAF8F3', fg: '#2A2620', ac: '#8B6914', sub: '#F0EDE4', bd: '#DDD8CC' },
+  '미니멀':    { bg: '#FFFFFF', fg: '#18170F', ac: '#1D6B45', sub: '#F5F4F0', bd: '#E4E2DC' },
+  '라이트그레이': { bg: '#F2F2F0', fg: '#1A1A1A', ac: '#333333', sub: '#E8E8E6', bd: '#D0D0CC' },
+  '웜화이트':  { bg: '#FDFAF5', fg: '#2A2418', ac: '#A0784A', sub: '#F5F0E8', bd: '#E0D8CC' },
+
+  // ── 컬러 계열
+  '포레스트':  { bg: '#F5F9F5', fg: '#1A3020', ac: '#1D6B45', sub: '#E8F2EC', bd: '#C8DED0' },
+  '오션':      { bg: '#F3F7FB', fg: '#0D2B45', ac: '#1A6FA3', sub: '#E4EFF8', bd: '#BDD4E8' },
+  '테라코타': { bg: '#FAF5F0', fg: '#2D1810', ac: '#B85C38', sub: '#F2E8E0', bd: '#DEC8B8' },
+  '차콜':      { bg: '#2D2D2D', fg: '#F0F0F0', ac: '#E8C84A', sub: '#3A3A3A', bd: '#484848' },
+  '인디고':    { bg: '#F4F2FF', fg: '#1A1560', ac: '#4A3FCC', sub: '#EAE8FF', bd: '#C8C3F0' },
 }
 export const DS_KEYS = Object.keys(DS)
 
 export const AUTO_DS = {
-  HERO: '프리미엄', '문제 공감': '감성형', '해결 제안': '미니멀',
-  '특징 강조': '정보형', '사용 상황': '생활형', '비교': '미니멀',
-  '추천 대상': '감성형', CTA: '프리미엄',
+  HERO: '프리미엄', '문제 공감': '크림', '해결 제안': '화이트',
+  '특징 강조': '오션', '사용 상황': '포레스트', '비교': '라이트그레이',
+  '추천 대상': '웜화이트', CTA: '블랙',
 }
 
 export const AUTO_TPL = {

@@ -27,6 +27,7 @@ export default function SectionEditor({ sec, idx, onUpdate }) {
   }
 
   // 편집 완료 → 부모에 저장
+  // 수정 버튼 누르면 패널 자동 오픈
   const save = () => {
     onUpdate(idx, dr)
     setEditing(false)
@@ -37,6 +38,11 @@ export default function SectionEditor({ sec, idx, onUpdate }) {
     setDr(prev => ({ ...sec, secImg: prev.secImg }))
     setEditing(false)
     setShowTpl(false)
+  }
+
+  const startEdit = () => {
+    setEditing(true)
+    setShowTpl(true)  // 수정 시작하면 패널 자동 오픈
   }
 
   const dlPNG = async () => {
@@ -76,7 +82,7 @@ export default function SectionEditor({ sec, idx, onUpdate }) {
               <button onClick={cancel} style={{ padding: '5px 10px', fontSize: 11, borderRadius: 7, border: `1px solid ${C.bd}`, background: C.sur, color: C.mu, cursor: 'pointer' }}>취소</button>
             </>
           ) : (
-            <button onClick={() => { setEditing(true); setShowTpl(false) }} style={{ padding: '5px 12px', fontSize: 11, borderRadius: 7, border: `1px solid ${C.bd}`, background: C.sur, color: C.mu, cursor: 'pointer', fontWeight: 600 }}>✎ 수정</button>
+            <button onClick={startEdit} style={{ padding: '5px 12px', fontSize: 11, borderRadius: 7, border: `1px solid ${C.bd}`, background: C.sur, color: C.mu, cursor: 'pointer', fontWeight: 600 }}>✎ 수정</button>
           )}
           <button onClick={dlPNG} disabled={dl} style={{ padding: '5px 10px', fontSize: 11, borderRadius: 7, border: `1px solid ${C.bd}`, background: C.sur, color: dl ? C.fa : C.mu, cursor: dl ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
             {dl ? <><Spin />변환</> : '↓ PNG'}
@@ -84,28 +90,44 @@ export default function SectionEditor({ sec, idx, onUpdate }) {
         </div>
       </div>
 
-      {/* ── 레이아웃/디자인 선택 패널 (토글) ── */}
-      {showTpl && (
-        <div style={{ padding: '12px 16px', background: '#F8FAFF', borderBottom: `1px solid ${C.bd}`, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <div>
-            <p style={{ fontSize: 10, fontWeight: 700, color: C.fa, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 6 }}>레이아웃</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-              {TPL_LABELS.map(({ k, l }) => {
-                const on = dr.template === k
-                return <button key={k} onClick={() => { setDr(d => ({ ...d, template: k })); onUpdate(idx, { ...dr, template: k }) }}
-                  style={{ padding: '3px 9px', fontSize: 10, borderRadius: 16, border: `1px solid ${on ? t.ac : C.bd}`, background: on ? t.sub : C.sur, color: on ? t.ac : C.mu, cursor: 'pointer', fontWeight: on ? 700 : 400 }}>{l}</button>
-              })}
-            </div>
+      {/* ── 레이아웃/디자인 선택 패널 — 수정 모드에서 항상 표시 ── */}
+      {(editing || showTpl) && (
+        <div style={{ padding: '16px 18px', background: '#F8FAFF', borderBottom: `1px solid ${C.bd}` }}>
+
+          {/* 레이아웃 선택 */}
+          <p style={{ fontSize: 10, fontWeight: 700, color: C.fa, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 8 }}>레이아웃</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5, marginBottom: 16 }}>
+            {TPL_LABELS.map(({ k, l }) => {
+              const on = dr.template === k
+              return (
+                <button key={k} onClick={() => { const next = { ...dr, template: k }; setDr(next); onUpdate(idx, next) }}
+                  style={{ padding: '7px 6px', fontSize: 11, borderRadius: 8, border: `1.5px solid ${on ? '#3b82f6' : C.bd}`, background: on ? '#EFF6FF' : C.sur, color: on ? '#1d4ed8' : C.mu, cursor: 'pointer', fontWeight: on ? 700 : 400, textAlign: 'center' }}>
+                  {l}
+                </button>
+              )
+            })}
           </div>
-          <div>
-            <p style={{ fontSize: 10, fontWeight: 700, color: C.fa, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 6 }}>디자인</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-              {DS_KEYS.map(s => {
-                const on = dr.designStyle === s; const d = DS[s]
-                return <button key={s} onClick={() => { setDr(x => ({ ...x, designStyle: s })); onUpdate(idx, { ...dr, designStyle: s }) }}
-                  style={{ padding: '3px 9px', fontSize: 10, borderRadius: 16, border: `1px solid ${on ? d.ac : C.bd}`, background: on ? d.sub : C.sur, color: on ? d.ac : C.mu, cursor: 'pointer', fontWeight: on ? 700 : 400 }}>{s}</button>
-              })}
-            </div>
+
+          {/* 디자인(색상) 선택 — 스와치 */}
+          <p style={{ fontSize: 10, fontWeight: 700, color: C.fa, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 8 }}>디자인 / 색상</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 6 }}>
+            {DS_KEYS.map(s => {
+              const on = dr.designStyle === s
+              const d = DS[s]
+              return (
+                <button key={s} onClick={() => { const next = { ...dr, designStyle: s }; setDr(next); onUpdate(idx, next) }}
+                  style={{ borderRadius: 8, border: `2px solid ${on ? '#3b82f6' : 'transparent'}`, cursor: 'pointer', padding: 0, overflow: 'hidden', background: 'none', outline: 'none' }}>
+                  {/* 색상 미리보기 */}
+                  <div style={{ height: 36, background: d.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: d.ac }} />
+                    <div style={{ width: 16, height: 3, borderRadius: 2, background: d.fg, opacity: 0.4 }} />
+                  </div>
+                  <div style={{ padding: '4px 2px', background: on ? '#EFF6FF' : C.alt, fontSize: 9.5, color: on ? '#1d4ed8' : C.mu, fontWeight: on ? 700 : 400, textAlign: 'center', lineHeight: 1.2 }}>
+                    {s}
+                  </div>
+                </button>
+              )
+            })}
           </div>
         </div>
       )}
