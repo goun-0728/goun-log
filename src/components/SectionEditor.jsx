@@ -12,8 +12,23 @@ export default function SectionEditor({ sec, idx, onUpdate }) {
   const [editing, setEditing] = useState(false)
   const [dr, setDr] = useState(sec)
   const [dl, setDl] = useState(false)
-  const [showTpl, setShowTpl] = useState(false)  // 레이아웃/디자인 선택 패널
-  const ref = useRef(null)
+  const [showTpl, setShowTpl] = useState(false)
+  const [scale, setScale] = useState(1)
+  const ref = useRef(null)          // PNG 캡처용 (860px 원본)
+  const wrapRef = useRef(null)      // 화면 컨테이너 (폭 측정용)
+
+  // 컨테이너 폭에 맞게 860px 카드 축소 비율 계산
+  useEffect(() => {
+    const calc = () => {
+      if (wrapRef.current) {
+        const w = wrapRef.current.offsetWidth
+        setScale(Math.min(1, w / 860))
+      }
+    }
+    calc()
+    window.addEventListener('resize', calc)
+    return () => window.removeEventListener('resize', calc)
+  }, [])
 
   useEffect(() => {
     setDr(prev => ({ ...sec, secImg: prev.secImg ?? sec.secImg }))
@@ -48,7 +63,10 @@ export default function SectionEditor({ sec, idx, onUpdate }) {
   const dlPNG = async () => {
     if (!ref.current) return
     setDl(true)
-    try { await capturePNG(ref.current, `section_${idx + 1}_${sec.sectionType}.png`) }
+    try {
+      // ref는 860px 원본 div → 2x 해상도로 캡처 = 1720×3000px 출력
+      await capturePNG(ref.current, `section_${idx + 1}_${sec.sectionType}.png`)
+    }
     catch (e) { alert('저장 오류: ' + e.message) }
     finally { setDl(false) }
   }
@@ -132,10 +150,19 @@ export default function SectionEditor({ sec, idx, onUpdate }) {
         </div>
       )}
 
-      {/* ── 카드 미리보기 (편집 모드에서는 인라인 수정 활성화) ── */}
-      <div ref={ref} style={{ fontFamily: "'Noto Sans KR','Apple SD Gothic Neo',sans-serif" }}>
-        <Tpl s={dr} img={img} t={t} editing={editing} onChange={handleChange} />
-        <div style={{ padding: '6px 18px', textAlign: 'right', fontSize: 9, color: t.fg, opacity: 0.12, borderTop: `1px solid ${t.bd}`, background: t.bg }}>ContentOS</div>
+      {/* ── 카드 미리보기 — 860px 고정, 화면에 맞게 축소 ── */}
+      <div ref={wrapRef} style={{ overflow: 'hidden', background: '#e8e6e0' }}>
+        <div style={{
+          width: 860,
+          transformOrigin: 'top left',
+          transform: `scale(${scale})`,
+          height: 1500 * scale,  // 축소 비율에 맞게 컨테이너 높이 조정
+        }}>
+          <div ref={ref} style={{ fontFamily: "'Noto Sans KR','Apple SD Gothic Neo',sans-serif", width: 860 }}>
+            <Tpl s={dr} img={img} t={t} editing={editing} onChange={handleChange} />
+            <div style={{ padding: '8px 24px', textAlign: 'right', fontSize: 11, color: t.fg, opacity: 0.12, borderTop: `1px solid ${t.bd}`, background: t.bg }}>ContentOS</div>
+          </div>
+        </div>
       </div>
 
       {/* 편집 중 안내 */}
