@@ -96,20 +96,28 @@ export default function SectionEditor({ sec, idx, onUpdate }) {
         {/* 오른쪽: 액션 버튼 */}
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           {editing && (
-            /* 이미지 2 슬롯 토글 버튼 */
-            <button
-              onClick={() => {
-                if (dr.secImg2) {
-                  // 이미 있으면 제거
-                  setDr(d => ({ ...d, secImg2: null }))
-                } else {
-                  // 없으면 슬롯 활성화 (null → 'empty'로 구분)
-                  setDr(d => ({ ...d, secImg2: 'slot' }))
-                }
-              }}
-              style={{ padding: '5px 10px', fontSize: 11, borderRadius: 7, border: `1px solid ${dr.secImg2 ? '#3b82f6' : C.bd}`, background: dr.secImg2 ? '#EFF6FF' : C.sur, color: dr.secImg2 ? '#1d4ed8' : C.mu, cursor: 'pointer', fontWeight: dr.secImg2 ? 700 : 400 }}>
-              {dr.secImg2 ? '📷2 제거' : '+ 사진2 추가'}
-            </button>
+            /* 이미지 슬롯 추가/제거 */
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+              {/* 이미지 2 */}
+              <button onClick={() => setDr(d => ({ ...d, secImg2: d.secImg2 ? null : 'slot' }))}
+                style={{ padding: '4px 9px', fontSize: 10, borderRadius: 6, border: `1px solid ${dr.secImg2 ? '#3b82f6' : C.bd}`, background: dr.secImg2 ? '#EFF6FF' : C.sur, color: dr.secImg2 ? '#1d4ed8' : C.mu, cursor: 'pointer', fontWeight: dr.secImg2 ? 700 : 400 }}>
+                {dr.secImg2 ? '📷2 제거' : '+ 사진2'}
+              </button>
+              {/* 이미지 3 — 디테일형만 */}
+              {dr.template === 'detail2col' && (
+                <button onClick={() => setDr(d => ({ ...d, secImg3: d.secImg3 ? null : 'slot' }))}
+                  style={{ padding: '4px 9px', fontSize: 10, borderRadius: 6, border: `1px solid ${dr.secImg3 ? '#3b82f6' : C.bd}`, background: dr.secImg3 ? '#EFF6FF' : C.sur, color: dr.secImg3 ? '#1d4ed8' : C.mu, cursor: 'pointer', fontWeight: dr.secImg3 ? 700 : 400 }}>
+                  {dr.secImg3 ? '📷3 제거' : '+ 사진3'}
+                </button>
+              )}
+              {/* 이미지 4 — 디테일형만, 3이 있을 때만 */}
+              {dr.template === 'detail2col' && dr.secImg3 && (
+                <button onClick={() => setDr(d => ({ ...d, secImg4: d.secImg4 ? null : 'slot' }))}
+                  style={{ padding: '4px 9px', fontSize: 10, borderRadius: 6, border: `1px solid ${dr.secImg4 ? '#3b82f6' : C.bd}`, background: dr.secImg4 ? '#EFF6FF' : C.sur, color: dr.secImg4 ? '#1d4ed8' : C.mu, cursor: 'pointer', fontWeight: dr.secImg4 ? 700 : 400 }}>
+                  {dr.secImg4 ? '📷4 제거' : '+ 사진4'}
+                </button>
+              )}
+            </div>
           )}
           {editing ? (
             <>
