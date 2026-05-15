@@ -157,8 +157,11 @@ function PointInput({ value, onChange, placeholder }) {
 
 /* ── PointList: 공통 포인트 리스트 ─────────────── */
 function PointList({ pts, t, editing, onChange, s, numbered = false }) {
-  if (!pts.length && !editing) return null
-  const items = pts.length ? pts : (editing ? [''] : [])
+  // 내용 있는 항목만 표시 (editing 모드에서는 빈 항목도 표시)
+  const items = editing
+    ? (pts.length ? pts : [''])
+    : pts.filter(p => p && p.trim())
+  if (!items.length) return null
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 28 }}>
       {items.map((p, i) => (
