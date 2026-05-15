@@ -1,7 +1,7 @@
 // src/App.jsx
-import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { C, TASKS, BLOG_TONES, DS, getSys } from './constants'
-import { parseBlocks, parseSections, readFileAsDataURL, capturePNG, downloadURL } from './utils'
+import React, { useState, useRef, useEffect } from 'react'
+import { C, TASKS, BLOG_TONES, getSys } from './constants'
+import { parseBlocks, parseSections, capturePNG, downloadURL } from './utils'
 import { generateContent } from './api/generate'
 import SectionEditor from './components/SectionEditor'
 
@@ -135,8 +135,7 @@ function DetailView({ result }) {
 export default function App() {
   const [task, setTask] = useState(TASKS[0])
   const [input, setInput] = useState('')
-  const [tone, setTone] = useState('생활형')
-  const [uploads, setUploads] = useState([]) // {url: dataUrl}
+  const [tone, setTone] = useState('생활형') // {url: dataUrl}
   const [result, setResult] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -147,7 +146,6 @@ export default function App() {
 
   const taRef = useRef(null)
   const resRef = useRef(null)
-  const fileRef = useRef(null)
 
   // textarea 자동 높이
   useEffect(() => {
@@ -161,26 +159,17 @@ export default function App() {
     try { localStorage.setItem('cos_history', JSON.stringify(history.slice(0, 20))) } catch {}
   }, [history])
 
-  const addFiles = useCallback(async (raw) => {
-    const files = Array.from(raw).slice(0, 4 - uploads.length)
-    const results = await Promise.all(files.map(f => readFileAsDataURL(f)))
-    setUploads(p => [...p, ...results.map(url => ({ url }))].slice(0, 4))
-  }, [uploads])
-
-  const onDrop = useCallback(e => { e.preventDefault(); addFiles(e.dataTransfer.files) }, [addFiles])
-
   const sw = t => { setTask(t); setResult(''); setError('') }
 
   const run = async () => {
     if (!input.trim() || loading) return
     setLoading(true); setResult(''); setError('')
     try {
-      const images = uploads.map(u => u.url)
       const text = await generateContent({
         systemPrompt: getSys(task.id, tone),
         userPrompt: input.trim(),
-        images,
-        model: task.id === 'detail' ? 'gpt-4o' : 'gpt-4o',
+        images: [],
+        model: 'gpt-4o',
         maxTokens: task.id === 'detail' ? 4000 : 2000,
       })
       setResult(text)
@@ -267,7 +256,7 @@ export default function App() {
         )}
 
         {/* 입력창 */}
-        <div style={{ background: C.sur, borderRadius: 16, border: `1.5px solid ${C.bd}`, boxShadow: '0 2px 24px rgba(0,0,0,0.05)', overflow: 'hidden', marginBottom: 12 }} onDragOver={e => e.preventDefault()} onDrop={onDrop}>
+        <div style={{ background: C.sur, borderRadius: 16, border: `1.5px solid ${C.bd}`, boxShadow: '0 2px 24px rgba(0,0,0,0.05)', overflow: 'hidden', marginBottom: 12 }}>
           <div style={{ padding: '8px 16px', background: task.li, borderBottom: `1px solid ${task.col}22`, display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ color: task.col }}>{task.icon}</span>
             <span style={{ fontSize: 12, fontWeight: 700, color: task.col }}>{task.label} — {task.sub}</span>
@@ -276,32 +265,11 @@ export default function App() {
             placeholder={'마케팅을 시작하세요. 제품 특징이나 원하는 내용을 자유롭게 입력해보세요.\n\n예) 듀라론 냉감패드 상세페이지 만들어줘'}
             style={{ width: '100%', minHeight: 150, padding: '18px 20px', border: 'none', outline: 'none', resize: 'none', fontSize: 14.5, lineHeight: 1.85, color: C.tx, background: 'transparent', fontFamily: 'inherit' }}
           />
-
-          {/* 업로드 이미지 미리보기 */}
-          {uploads.length > 0 && (
-            <div style={{ display: 'flex', gap: 7, padding: '0 16px 12px', flexWrap: 'wrap', alignItems: 'center' }}>
-              {uploads.map((u, i) => (
-                <div key={i} style={{ position: 'relative' }}>
-                  <img src={u.url} alt="" style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8, border: `1px solid ${C.bd}` }} />
-                  <button onClick={() => setUploads(p => p.filter((_, j) => j !== i))} style={{ position: 'absolute', top: -5, right: -5, width: 18, height: 18, borderRadius: '50%', background: '#ef4444', border: '2px solid #fff', color: '#fff', fontSize: 9, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>✕</button>
-                </div>
-              ))}
-              {uploads.length < 4 && <button onClick={() => fileRef.current?.click()} style={{ width: 64, height: 64, borderRadius: 8, border: `1.5px dashed ${C.bdm}`, background: C.alt, cursor: 'pointer', color: C.fa, fontSize: 22, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>}
-            </div>
-          )}
-
-          <div style={{ padding: '10px 14px', borderTop: `1px solid ${C.bd}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 7 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-              <button onClick={() => fileRef.current?.click()} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 11px', borderRadius: 7, border: `1px solid ${C.bd}`, background: C.sur, color: C.mu, fontSize: 12, cursor: 'pointer' }}>📷 사진 추가{uploads.length > 0 && ` (${uploads.length}/4)`}</button>
-              <input ref={fileRef} type="file" accept="image/*" multiple onChange={e => { addFiles(e.target.files); e.target.value = '' }} />
-              <span style={{ fontSize: 11, color: C.fa }}>최대 4장</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-              <span style={{ fontSize: 11, color: C.fa }}>⌘ Enter</span>
-              <button onClick={run} disabled={loading || !input.trim()} style={{ padding: '9px 22px', borderRadius: 9, border: 'none', background: (!input.trim() || loading) ? '#ECEAE5' : C.tx, color: (!input.trim() || loading) ? C.fa : '#fff', fontSize: 13, fontWeight: 700, cursor: (!input.trim() || loading) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
-                {loading ? <><Spin />생성 중…</> : '✦ 생성하기'}
-              </button>
-            </div>
+          <div style={{ padding: '10px 14px', borderTop: `1px solid ${C.bd}`, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 9 }}>
+            <span style={{ fontSize: 11, color: C.fa }}>⌘ Enter</span>
+            <button onClick={run} disabled={loading || !input.trim()} style={{ padding: '9px 22px', borderRadius: 9, border: 'none', background: (!input.trim() || loading) ? '#ECEAE5' : C.tx, color: (!input.trim() || loading) ? C.fa : '#fff', fontSize: 13, fontWeight: 700, cursor: (!input.trim() || loading) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
+              {loading ? <><Spin />생성 중…</> : '✦ 생성하기'}
+            </button>
           </div>
         </div>
 
