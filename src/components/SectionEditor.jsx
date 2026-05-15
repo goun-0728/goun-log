@@ -1,7 +1,7 @@
 // src/components/SectionEditor.jsx
 import React, { useState, useRef, useEffect } from 'react'
 import { C, DS, DS_KEYS, TPL_LABELS } from '../constants'
-import { TPL } from './SectionTemplates'
+import { TPL, ImageAdjust } from './SectionTemplates'
 import { capturePNG, readFileAsDataURL } from '../utils'
 
 function Spin() {
@@ -78,9 +78,15 @@ function FreeBlock({ block, t, editing, onUpdate, onRemove, onMoveUp, onMoveDn, 
         <input ref={fileRef} type="file" accept="image/*" onChange={handleImg} style={{ display:'none' }} />
         {block.content
           ? <>
-              <img src={block.content} alt="" style={{ width:'100%',height:'auto',display:'block' }} />
+              <ImageAdjust
+                url={block.content}
+                editing={editing}
+                imgMeta={block.imgMeta}
+                onMetaChange={m => onUpdate({ ...block, imgMeta: m })}
+                t={t}
+              />
               {editing && (
-                <div style={{ position:'absolute', top:8, right:8, display:'flex', gap:4 }}>
+                <div style={{ position:'absolute', top:8, left:8, display:'flex', gap:4, zIndex:20 }}>
                   <button onClick={()=>fileRef.current?.click()}
                     style={{ padding:'4px 10px',fontSize:11,fontWeight:600,background:'rgba(0,0,0,0.6)',color:'#fff',border:'none',borderRadius:6,cursor:'pointer' }}>📷 교체</button>
                   {!isFirst && <button onClick={onMoveUp} style={{ width:28,height:28,borderRadius:4,border:'none',background:'rgba(0,0,0,0.5)',color:'#fff',fontSize:12,cursor:'pointer' }}>↑</button>}
@@ -90,7 +96,7 @@ function FreeBlock({ block, t, editing, onUpdate, onRemove, onMoveUp, onMoveDn, 
               )}
             </>
           : <div onClick={()=>editing&&fileRef.current?.click()}
-              style={{ minHeight:280,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:10,cursor:editing?'pointer':'default',border:`2px dashed ${t.bd}` }}>
+              style={{ minHeight:280,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:10,cursor:editing?'pointer':'default',border:`2px dashed ${t.bd}`, position:'relative' }}>
               {editing && (
                 <div style={{ position:'absolute',top:8,right:8,display:'flex',gap:4 }}>
                   {!isFirst && <button onClick={onMoveUp} style={{ width:24,height:24,borderRadius:4,border:`1px solid ${C.bd}`,background:C.sur,fontSize:10,cursor:'pointer' }}>↑</button>}
@@ -113,17 +119,22 @@ function AddBlockBtn({ onAddText, onAddImg, editing }) {
   const [open, setOpen] = useState(false)
   if (!editing) return null
   return (
-    <div style={{ position:'relative', display:'flex', justifyContent:'center', padding:'6px 0' }}>
-      <button onClick={()=>setOpen(o=>!o)}
-        style={{ padding:'4px 16px',fontSize:11,fontWeight:700,borderRadius:20,border:`1.5px dashed ${C.bdm}`,background:open?'#EFF6FF':C.sur,color:open?'#1d4ed8':C.mu,cursor:'pointer' }}>
-        + 블록 추가
-      </button>
+    <div style={{ position:'relative', padding:'0' }}>
+      {/* 구분선+버튼 스타일 */}
+      <div style={{ display:'flex', alignItems:'center', gap:0 }}>
+        <div style={{ flex:1, height:2, background: open ? '#3b82f6' : '#D1D5DB' }} />
+        <button onClick={()=>setOpen(o=>!o)}
+          style={{ padding:'10px 20px', fontSize:13, fontWeight:700, border:`2px solid ${open?'#3b82f6':'#D1D5DB'}`, borderRadius:24, background: open?'#EFF6FF':'#F9FAFB', color: open?'#1d4ed8':'#6B7280', cursor:'pointer', whiteSpace:'nowrap', transition:'all .15s' }}>
+          + 블록 삽입
+        </button>
+        <div style={{ flex:1, height:2, background: open ? '#3b82f6' : '#D1D5DB' }} />
+      </div>
       {open && (
-        <div style={{ position:'absolute',top:'100%',zIndex:20,display:'flex',gap:6,background:C.sur,border:`1px solid ${C.bd}`,borderRadius:10,padding:'8px 10px',boxShadow:'0 4px 16px rgba(0,0,0,0.1)' }}>
+        <div style={{ position:'absolute', top:'calc(100% + 4px)', left:'50%', transform:'translateX(-50%)', zIndex:30, display:'flex', gap:8, background:C.sur, border:`1px solid ${C.bd}`, borderRadius:12, padding:'10px 14px', boxShadow:'0 6px 20px rgba(0,0,0,0.13)' }}>
           <button onClick={()=>{onAddText();setOpen(false)}}
-            style={{ padding:'6px 14px',fontSize:12,fontWeight:600,borderRadius:7,border:`1px solid ${C.bd}`,background:C.sur,cursor:'pointer',color:C.tx }}>✎ 텍스트</button>
+            style={{ padding:'8px 18px', fontSize:13, fontWeight:600, borderRadius:8, border:`1px solid ${C.bd}`, background:C.sur, cursor:'pointer', color:C.tx }}>✎ 텍스트</button>
           <button onClick={()=>{onAddImg();setOpen(false)}}
-            style={{ padding:'6px 14px',fontSize:12,fontWeight:600,borderRadius:7,border:`1px solid ${C.bd}`,background:C.sur,cursor:'pointer',color:C.tx }}>📷 이미지</button>
+            style={{ padding:'8px 18px', fontSize:13, fontWeight:600, borderRadius:8, border:`1px solid ${C.bd}`, background:C.sur, cursor:'pointer', color:C.tx }}>📷 이미지</button>
         </div>
       )}
     </div>

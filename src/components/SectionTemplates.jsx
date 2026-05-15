@@ -46,7 +46,7 @@ export function EditText({ value, onChange, editing, style }) {
    드래그로 이동, 스크롤/버튼으로 확대/축소
    editing 모드에서만 조정 가능, 저장 시 transform 값 보존
 ─────────────────────────────────────────────────── */
-function ImageAdjust({ url, editing, onImgChange, imgMeta, onMetaChange, t }) {
+export function ImageAdjust({ url, editing, onImgChange, imgMeta, onMetaChange, t }) {
   const [dragging, setDragging] = useState(false)
   const [start, setStart] = useState({ x: 0, y: 0 })
   const meta = imgMeta || { scale: 1, x: 0, y: 0 }
@@ -157,36 +157,51 @@ function PointInput({ value, onChange, placeholder }) {
 
 /* ── PointList: 공통 포인트 리스트 ─────────────── */
 function PointList({ pts, t, editing, onChange, s, numbered = false, plain = false }) {
-  // 내용 있는 항목만 표시 (editing 모드에서는 빈 항목도 표시)
   const items = editing
     ? (pts.length ? pts : [''])
     : pts.filter(p => p && p.trim())
-  if (!items.length) return null
+  if (!items.length && !editing) return null
+
+  const addPoint = () => onChange('points', [...(s.points || []), ''])
+  const delPoint = i => onChange('points', (s.points || []).filter((_, j) => j !== i))
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: plain ? 0 : 12, marginTop: 28 }}>
       {items.map((p, i) => (
-        <div key={i} style={{
-          display: 'flex', gap: 16, alignItems: 'flex-start',
-          ...(plain ? {
-            padding: '14px 0',
-            borderBottom: i < items.length - 1 ? `1px solid ${t.bd}` : 'none',
-          } : {
-            padding: '16px 20px',
-            background: t.sub,
-            borderRadius: 10,
-            border: `1px solid ${t.bd}`,
-          }),
-        }}>
-          {numbered
-            ? <span style={{ width: 28, height: 28, borderRadius: '50%', background: t.ac, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.bg, fontSize: 14, fontWeight: 800, flexShrink: 0, marginTop: 4 }}>{i + 1}</span>
-            : <span style={{ color: t.ac, fontSize: 20, flexShrink: 0, marginTop: 2, fontWeight: 700, fontFamily: sectionFont(i) }}>{ROMAN[i % ROMAN.length]}</span>
-          }
-          {editing
-            ? <PointInput value={p} onChange={v => { const n = [...(s.points || [])]; n[i] = v; onChange('points', n) }} />
-            : <span style={{ fontSize: 18, color: t.fg, lineHeight: 1.65, opacity: 0.9, whiteSpace: 'pre-wrap' }}>{p}</span>
-          }
+        <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+          <div style={{
+            flex: 1, display: 'flex', gap: 16, alignItems: 'flex-start',
+            ...(plain ? {
+              padding: '14px 0',
+              borderBottom: i < items.length - 1 ? `1px solid ${t.bd}` : 'none',
+            } : {
+              padding: '16px 20px',
+              background: t.sub,
+              borderRadius: 10,
+              border: `1px solid ${t.bd}`,
+            }),
+          }}>
+            {numbered
+              ? <span style={{ width: 28, height: 28, borderRadius: '50%', background: t.ac, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.bg, fontSize: 14, fontWeight: 800, flexShrink: 0, marginTop: 4 }}>{i + 1}</span>
+              : <span style={{ color: t.ac, fontSize: 20, flexShrink: 0, marginTop: 2, fontWeight: 700, fontFamily: sectionFont(i) }}>{ROMAN[i % ROMAN.length]}</span>
+            }
+            {editing
+              ? <PointInput value={p} onChange={v => { const n = [...(s.points || [])]; n[i] = v; onChange('points', n) }} />
+              : <span style={{ fontSize: 18, color: t.fg, lineHeight: 1.65, opacity: 0.9, whiteSpace: 'pre-wrap' }}>{p}</span>
+            }
+          </div>
+          {editing && (
+            <button onClick={() => delPoint(i)}
+              style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid #fca5a5', background: '#fef2f2', color: '#ef4444', fontSize: 14, cursor: 'pointer', flexShrink: 0, marginTop: plain ? 14 : 16, fontWeight: 700, lineHeight: 1 }}>×</button>
+          )}
         </div>
       ))}
+      {editing && (
+        <button onClick={addPoint}
+          style={{ marginTop: 8, padding: '8px 0', width: '100%', fontSize: 13, fontWeight: 600, border: `1.5px dashed ${t.bd}`, borderRadius: 8, background: 'transparent', color: t.ac, cursor: 'pointer' }}>
+          + 항목 추가
+        </button>
+      )}
     </div>
   )
 }
@@ -197,7 +212,11 @@ function PointList({ pts, t, editing, onChange, s, numbered = false, plain = fal
 
 /* ── 1. Hero ──────────────────────────────────── */
 export function TplHero({ s, img, t, editing, onChange, secMeta, onSecMeta }) {
-  const pts = (s.points || []).slice(0, 3)
+  const pts = s.points || []
+  const displayPts = editing ? (pts.length ? pts : ['']) : pts.filter(p => p && p.trim())
+  const cols = Math.max(1, displayPts.length)
+  const addHeroPt = () => onChange('points', [...pts, ''])
+  const delHeroPt = i => onChange('points', pts.filter((_, j) => j !== i))
   return (
     <CardWrapper bg="#e1dee3">
       <div style={{ fontFamily: "'Noto Serif KR','Noto Sans KR',serif" }}>
@@ -219,26 +238,40 @@ export function TplHero({ s, img, t, editing, onChange, secMeta, onSecMeta }) {
         )}
         <div style={{ position: 'relative', marginTop: 40 }}>
           <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '130%', height: '100%', background: '#fff', borderRadius: '50% 50% 0 0 / 12% 12% 0 0' }} />
-          <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-around', padding: '72px 48px 72px' }}>
-            {[0, 1, 2].map(i => {
-              const raw = pts[i] || ''; const lines = raw.split('\n')
-              const ptTitle = lines[0]?.trim() || `포인트 ${i + 1}`
-              const ptDesc = lines.slice(1).join('\n').trim()
-              return (
-                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', width: '28%', gap: 14 }}>
-                  <div style={{ width: 100, height: 100, borderRadius: '50%', background: '#f8b62d', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 20px rgba(248,182,45,0.4)', flexShrink: 0 }}>
-                    <span style={{ fontSize: 36, fontWeight: 700, color: '#231815', fontFamily: sectionFont(i), lineHeight: 1 }}>{sectionRoman(i)}</span>
+          <div style={{ position: 'relative', padding: '72px 48px 72px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: 24 }}>
+              {displayPts.map((raw, i) => {
+                const lines = raw.split('\n')
+                const ptTitle = lines[0]?.trim() || `포인트 ${i + 1}`
+                const ptDesc = lines.slice(1).join('\n').trim()
+                return (
+                  <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', width: cols <= 3 ? '28%' : '22%', gap: 14, position: 'relative' }}>
+                    {editing && (
+                      <button onClick={() => delHeroPt(i)}
+                        style={{ position: 'absolute', top: -8, right: -8, width: 22, height: 22, borderRadius: '50%', border: '1px solid #fca5a5', background: '#fef2f2', color: '#ef4444', fontSize: 12, cursor: 'pointer', fontWeight: 700, lineHeight: 1, zIndex: 2 }}>×</button>
+                    )}
+                    <div style={{ width: 100, height: 100, borderRadius: '50%', background: '#f8b62d', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 20px rgba(248,182,45,0.4)', flexShrink: 0 }}>
+                      <span style={{ fontSize: 36, fontWeight: 700, color: '#231815', fontFamily: sectionFont(i), lineHeight: 1 }}>{sectionRoman(i)}</span>
+                    </div>
+                    {editing
+                      ? <PointInput value={raw} onChange={v => { const n = [...pts]; n[i] = v; onChange('points', n) }} placeholder={'제목\n설명(엔터로 구분)'} />
+                      : <>
+                          <p style={{ fontSize: 19, fontWeight: 700, color: '#231815', margin: 0, lineHeight: 1.3, wordBreak: 'keep-all' }}>{ptTitle}</p>
+                          {ptDesc && <p style={{ fontSize: 15, fontWeight: 400, color: '#231815', opacity: 0.6, margin: 0, lineHeight: 1.4, wordBreak: 'keep-all', whiteSpace: 'pre-wrap' }}>{ptDesc}</p>}
+                        </>
+                    }
                   </div>
-                  {editing
-                    ? <PointInput value={raw} onChange={v => { const n = [...(s.points || [])]; n[i] = v; onChange('points', n) }} placeholder={'제목\n설명(엔터로 구분)'} />
-                    : <>
-                        <p style={{ fontSize: 19, fontWeight: 700, color: '#231815', margin: 0, lineHeight: 1.3, wordBreak: 'keep-all' }}>{ptTitle}</p>
-                        {ptDesc && <p style={{ fontSize: 15, fontWeight: 400, color: '#231815', opacity: 0.6, margin: 0, lineHeight: 1.4, wordBreak: 'keep-all', whiteSpace: 'pre-wrap' }}>{ptDesc}</p>}
-                      </>
-                  }
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
+            {editing && (
+              <div style={{ textAlign: 'center', marginTop: 24 }}>
+                <button onClick={addHeroPt}
+                  style={{ padding: '8px 24px', fontSize: 13, fontWeight: 600, border: '1.5px dashed #ccc', borderRadius: 8, background: 'transparent', color: '#888', cursor: 'pointer' }}>
+                  + 포인트 추가
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -263,7 +296,7 @@ export function TplMaterial({ s, img, t, editing, onChange, secMeta, onSecMeta }
           style={{ fontSize: 40, fontWeight: 800, color: t.fg, lineHeight: 1.35, letterSpacing: '-0.02em', marginBottom: 14, wordBreak: 'keep-all' }} />
         <EditText editing={editing} value={s.subCopy} onChange={v => onChange('subCopy', v)}
           style={{ fontSize: 22, color: t.fg, opacity: 0.68, lineHeight: 1.7 }} />
-        <PointList pts={(s.points||[]).slice(0,4)} t={t} editing={editing} onChange={onChange} s={s} numbered />
+        <PointList pts={(s.points||[])} t={t} editing={editing} onChange={onChange} s={s} numbered />
       </div>
     </CardWrapper>
   )
@@ -293,7 +326,7 @@ export function TplDetail2col({ s, img, t, editing, onChange, secMeta, onSecMeta
         style={{ fontSize: 36, fontWeight: 800, color: t.fg, lineHeight: 1.35, letterSpacing: '-0.02em', marginBottom: 14, wordBreak: 'keep-all' }} />
       <EditText editing={editing} value={s.subCopy} onChange={v => onChange('subCopy', v)}
         style={{ fontSize: 19, color: t.fg, opacity: 0.68, lineHeight: 1.65 }} />
-      <PointList pts={(s.points||[]).slice(0,4)} t={t} editing={editing} onChange={onChange} s={s} />
+      <PointList pts={(s.points||[])} t={t} editing={editing} onChange={onChange} s={s} />
     </div>
   )
 
@@ -362,7 +395,7 @@ export function TplScene({ s, img, t, editing, onChange, secMeta, onSecMeta }) {
         )}
         <EditText editing={editing} value={s.subCopy} onChange={v => onChange('subCopy', v)}
           style={{ fontSize: 22, color: t.fg, opacity: 0.72, lineHeight: 1.75 }} />
-        <PointList pts={(s.points||[]).slice(0,4)} t={t} editing={editing} onChange={onChange} s={s} plain={true} />
+        <PointList pts={(s.points||[])} t={t} editing={editing} onChange={onChange} s={s} plain={true} />
       </div>
     </CardWrapper>
   )
@@ -370,7 +403,10 @@ export function TplScene({ s, img, t, editing, onChange, secMeta, onSecMeta }) {
 
 /* ── 5. Compare ───────────────────────────────── */
 export function TplCompare({ s, img, t, editing, onChange, secMeta, onSecMeta }) {
-  const pts = (s.points || []).slice(0, 5)
+  const pts = s.points || []
+  const displayPts = pts.length ? pts : (editing ? ['', '', ''] : [])
+  const addComparePt = () => onChange('points', [...pts, ''])
+  const delComparePt = i => onChange('points', pts.filter((_, j) => j !== i))
   return (
     <CardWrapper bg={t.bg}>
       <div style={{ padding: '72px 64px 48px' }}>
@@ -380,17 +416,23 @@ export function TplCompare({ s, img, t, editing, onChange, secMeta, onSecMeta })
           style={{ fontSize: 22, color: t.fg, opacity: 0.65, marginBottom: 40, lineHeight: 1.65 }} />
         <div style={{ border: `1.5px solid ${t.bd}`, borderRadius: 14, overflow: 'hidden' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', background: t.sub }}>
-            <div style={{ padding: '18px 24px', fontSize: 17, fontWeight: 700, color: '#888', textAlign: 'center', borderRight: `1px solid ${t.bd}`, borderBottom: `1px solid ${t.bd}` }}>일반 제품</div>
-            <div style={{ padding: '18px 24px', fontSize: 17, fontWeight: 700, color: t.ac, textAlign: 'center', borderBottom: `1px solid ${t.bd}` }}>이 제품</div>
+            <div style={{ padding: '18px 24px', borderRight: `1px solid ${t.bd}`, borderBottom: `1px solid ${t.bd}` }}>
+              <EditText editing={editing} value={s.compareLeft || '일반 제품'} onChange={v => onChange('compareLeft', v)}
+                style={{ fontSize: 17, fontWeight: 700, color: '#888', textAlign: 'center' }} />
+            </div>
+            <div style={{ padding: '18px 24px', borderBottom: `1px solid ${t.bd}` }}>
+              <EditText editing={editing} value={s.compareRight || '이 제품'} onChange={v => onChange('compareRight', v)}
+                style={{ fontSize: 17, fontWeight: 700, color: t.ac, textAlign: 'center' }} />
+            </div>
           </div>
-          {(pts.length ? pts : (editing ? ['', '', ''] : [])).map((p, i) => {
+          {displayPts.map((p, i) => {
             const [a, ...r] = p.split('/'); const b = r.join('/').trim()
             return editing ? (
-              <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: i < (pts.length || 3) - 1 ? `1px solid ${t.bd}` : 'none' }}>
+              <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', borderBottom: i < displayPts.length - 1 ? `1px solid ${t.bd}` : 'none' }}>
                 <div style={{ padding: '10px 12px', borderRight: `1px solid ${t.bd}` }}>
                   <input
                     value={a.replace(/일반제품:/i, '').trim()}
-                    onChange={e => { const n = [...(s.points || [])]; const bPart = r.join('/').trim(); n[i] = e.target.value + ' / ' + bPart; onChange('points', n) }}
+                    onChange={e => { const n = [...pts]; const bPart = r.join('/').trim(); n[i] = e.target.value + ' / ' + bPart; onChange('points', n) }}
                     placeholder="일반 제품"
                     style={{ width: '100%', fontSize: 15, border: '1px solid #3b82f6', borderRadius: 6, padding: '7px 10px', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
                   />
@@ -398,10 +440,14 @@ export function TplCompare({ s, img, t, editing, onChange, secMeta, onSecMeta })
                 <div style={{ padding: '10px 12px' }}>
                   <input
                     value={b}
-                    onChange={e => { const n = [...(s.points || [])]; const aPart = a.replace(/일반제품:/i, '').trim(); n[i] = aPart + ' / ' + e.target.value; onChange('points', n) }}
+                    onChange={e => { const n = [...pts]; const aPart = a.replace(/일반제품:/i, '').trim(); n[i] = aPart + ' / ' + e.target.value; onChange('points', n) }}
                     placeholder="이 제품"
                     style={{ width: '100%', fontSize: 15, border: '1px solid #3b82f6', borderRadius: 6, padding: '7px 10px', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
                   />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', padding: '0 8px' }}>
+                  <button onClick={() => delComparePt(i)}
+                    style={{ width: 24, height: 24, borderRadius: 6, border: '1px solid #fca5a5', background: '#fef2f2', color: '#ef4444', fontSize: 13, cursor: 'pointer', fontWeight: 700, lineHeight: 1 }}>×</button>
                 </div>
               </div>
             ) : (
@@ -411,6 +457,12 @@ export function TplCompare({ s, img, t, editing, onChange, secMeta, onSecMeta })
               </div>
             )
           })}
+          {editing && (
+            <button onClick={addComparePt}
+              style={{ width: '100%', padding: '12px 0', fontSize: 13, fontWeight: 600, border: 'none', borderTop: `1px dashed ${t.bd}`, background: t.sub, color: t.ac, cursor: 'pointer' }}>
+              + 행 추가
+            </button>
+          )}
         </div>
       </div>
       <ImgBox url={img} t={t} label="비교 이미지 1" editing={editing} onImgChange={v => onChange('secImg', v)}
@@ -427,9 +479,12 @@ export function TplCompare({ s, img, t, editing, onChange, secMeta, onSecMeta })
 
 /* ── 6. Points3 ───────────────────────────────── */
 export function TplPoints3({ s, img, t, editing, onChange, secMeta, onSecMeta }) {
-  const pts = (s.points || []).slice(0, 3)
+  const pts = s.points || []
+  const displayPts = pts.length ? pts : (editing ? ['', '', ''] : [])
   const hasImg  = img && img !== 'slot'
   const hasImg2 = s.secImg2 && s.secImg2 !== 'slot'
+  const addPt3 = () => onChange('points', [...pts, ''])
+  const delPt3 = i => onChange('points', pts.filter((_, j) => j !== i))
   return (
     <CardWrapper bg={t.bg}>
       <div style={{ padding: '72px 64px' }}>
@@ -440,20 +495,23 @@ export function TplPoints3({ s, img, t, editing, onChange, secMeta, onSecMeta })
             style={{ fontSize: 22, color: t.fg, opacity: 0.65, lineHeight: 1.7 }} />
         </div>
 
-        {/* 3단 카드 */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20, marginBottom: (hasImg || hasImg2 || editing) ? 48 : 0 }}>
-          {(pts.length ? pts : (editing ? ['','',''] : [])).map((p, i) => {
+        {/* 포인트 카드 (개수에 따라 열 수 자동) */}
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(displayPts.length || 1, 4)},1fr)`, gap: 20, marginBottom: (hasImg || hasImg2 || editing) ? 48 : 0 }}>
+          {displayPts.map((p, i) => {
             const lines = p.split('\n')
             const title = lines[0]?.trim() || `포인트 ${i+1}`
             const desc  = lines.slice(1).join('\n').trim()
             return (
-              <div key={i} style={{ background: t.sub, borderRadius: 14, padding: '36px 24px', textAlign: 'center', border: `1px solid ${t.bd}` }}>
-                {/* 로마자 숫자 원형 */}
+              <div key={i} style={{ position: 'relative', background: t.sub, borderRadius: 14, padding: '36px 24px', textAlign: 'center', border: `1px solid ${t.bd}` }}>
+                {editing && (
+                  <button onClick={() => delPt3(i)}
+                    style={{ position: 'absolute', top: 8, right: 8, width: 22, height: 22, borderRadius: '50%', border: '1px solid #fca5a5', background: '#fef2f2', color: '#ef4444', fontSize: 12, cursor: 'pointer', fontWeight: 700, lineHeight: 1 }}>×</button>
+                )}
                 <div style={{ width: 56, height: 56, borderRadius: '50%', background: t.ac, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px', color: t.bg }}>
                   <span style={{ fontSize: 22, fontWeight: 700, fontFamily: sectionFont(i), lineHeight: 1 }}>{sectionRoman(i)}</span>
                 </div>
                 {editing
-                  ? <PointInput value={p} onChange={v => { const n = [...(s.points || [])]; n[i] = v; onChange('points', n) }} placeholder={'제목\n설명(엔터로 줄바꿈)'} />
+                  ? <PointInput value={p} onChange={v => { const n = [...pts]; n[i] = v; onChange('points', n) }} placeholder={'제목\n설명(엔터로 줄바꿈)'} />
                   : <>
                       <p style={{ fontSize: 18, fontWeight: 700, color: t.fg, lineHeight: 1.4, margin: '0 0 6px', opacity: 0.95, wordBreak: 'keep-all' }}>{title}</p>
                       {desc && <p style={{ fontSize: 15, color: t.fg, lineHeight: 1.6, margin: 0, opacity: 0.65, wordBreak: 'keep-all', whiteSpace: 'pre-wrap' }}>{desc}</p>}
@@ -463,6 +521,14 @@ export function TplPoints3({ s, img, t, editing, onChange, secMeta, onSecMeta })
             )
           })}
         </div>
+        {editing && (
+          <div style={{ textAlign: 'center', marginBottom: 32 }}>
+            <button onClick={addPt3}
+              style={{ padding: '8px 24px', fontSize: 13, fontWeight: 600, border: `1.5px dashed ${t.bd}`, borderRadius: 8, background: 'transparent', color: t.ac, cursor: 'pointer' }}>
+              + 포인트 추가
+            </button>
+          </div>
+        )}
 
         {/* 이미지 */}
         <ImgBox url={img} t={t} label="이미지 1" editing={editing} onImgChange={v => onChange('secImg', v)}
@@ -480,7 +546,10 @@ export function TplPoints3({ s, img, t, editing, onChange, secMeta, onSecMeta })
 
 /* ── 7. Target ────────────────────────────────── */
 export function TplTarget({ s, img, t, editing, onChange, secMeta, onSecMeta }) {
-  const pts = (s.points || []).slice(0, 5)
+  const pts = s.points || []
+  const displayPts = pts.length ? pts : (editing ? ['', '', ''] : [])
+  const addTargetPt = () => onChange('points', [...pts, ''])
+  const delTargetPt = i => onChange('points', pts.filter((_, j) => j !== i))
   return (
     <CardWrapper bg={t.bg}>
       <ImgBox url={img} t={t} label="이미지 1" editing={editing} onImgChange={v => onChange('secImg', v)}
@@ -497,16 +566,26 @@ export function TplTarget({ s, img, t, editing, onChange, secMeta, onSecMeta }) 
         <EditText editing={editing} value={s.subCopy} onChange={v => onChange('subCopy', v)}
           style={{ fontSize: 22, color: t.fg, opacity: 0.65, marginBottom: 36, lineHeight: 1.65 }} />
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          {(pts.length ? pts : (editing ? ['','',''] : [])).map((p, i, a) => (
+          {displayPts.map((p, i, a) => (
             <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 18, padding: '16px 4px', borderBottom: i < a.length - 1 ? `1px solid ${t.bd}` : 'none' }}>
               <span style={{ width: 32, height: 32, borderRadius: '50%', background: t.ac, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.bg, fontSize: 15, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>✓</span>
               {editing
-                ? <PointInput value={p} onChange={v => { const n = [...(s.points || [])]; n[i] = v; onChange('points', n) }} />
+                ? <PointInput value={p} onChange={v => { const n = [...pts]; n[i] = v; onChange('points', n) }} />
                 : <span style={{ fontSize: 20, color: t.fg, lineHeight: 1.65, opacity: 0.9, whiteSpace: 'pre-wrap' }}>{p.replace(/이런 분께 추천\d*:/i, '').trim()}</span>
               }
+              {editing && (
+                <button onClick={() => delTargetPt(i)}
+                  style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid #fca5a5', background: '#fef2f2', color: '#ef4444', fontSize: 14, cursor: 'pointer', flexShrink: 0, marginTop: 2, fontWeight: 700, lineHeight: 1 }}>×</button>
+              )}
             </div>
           ))}
         </div>
+        {editing && (
+          <button onClick={addTargetPt}
+            style={{ marginTop: 12, padding: '10px 0', width: '100%', fontSize: 13, fontWeight: 600, border: `1.5px dashed ${t.bd}`, borderRadius: 8, background: 'transparent', color: t.ac, cursor: 'pointer' }}>
+            + 항목 추가
+          </button>
+        )}
       </div>
     </CardWrapper>
   )
