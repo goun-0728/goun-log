@@ -14,8 +14,9 @@ export default function SectionEditor({ sec, idx, onUpdate }) {
   const [dl, setDl] = useState(false)
   const [showTpl, setShowTpl] = useState(false)
   const [scale, setScale] = useState(1)
-  const ref = useRef(null)          // PNG 캡처용 (860px 원본)
-  const wrapRef = useRef(null)      // 화면 컨테이너 (폭 측정용)
+  const [secMeta, setSecMeta] = useState({}) // 이미지 조정값 {img1:{scale,x,y}, img2:...}
+  const ref = useRef(null)
+  const wrapRef = useRef(null)
 
   // 컨테이너 폭에 맞게 860px 카드 축소 비율 계산
   useEffect(() => {
@@ -179,7 +180,10 @@ export default function SectionEditor({ sec, idx, onUpdate }) {
       <div ref={wrapRef} style={{ position: 'relative', background: '#e8e6e0', overflow: 'hidden' }}>
         <div style={{ width: 860, transformOrigin: 'top left', transform: `scale(${scale})` }}>
           <div ref={ref} style={{ fontFamily: "'Noto Sans KR','Apple SD Gothic Neo',sans-serif", width: 860 }}>
-            <Tpl s={dr} img={img} t={t} editing={editing} onChange={handleChange} />
+            <Tpl s={dr} img={img} t={t} editing={editing} onChange={handleChange}
+              secMeta={secMeta}
+              onSecMeta={(key, val) => setSecMeta(prev => ({ ...prev, [key]: val }))}
+            />
             <div style={{ padding: '8px 24px', textAlign: 'right', fontSize: 11, color: t.fg, opacity: 0.12, borderTop: `1px solid ${t.bd}`, background: t.bg }}>ContentOS</div>
           </div>
         </div>

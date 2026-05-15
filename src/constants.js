@@ -62,7 +62,7 @@ export const TPL_LABELS = [
   { k: 'cta',        l: 'CTA형' },
 ]
 
-export const AUTO_ICONS = ['✦', '◆', '▲', '●', '★', '◉', '▶', '✿', '◈', '♦']
+export const AUTO_ICONS = ['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ','Ⅶ','Ⅷ','Ⅸ','Ⅹ'] // 하위호환용, 실제는 SectionTemplates의 ROMAN 사용
 
 // 섹션 데이터 기본 스키마
 export const mkSec = (o = {}) => ({
