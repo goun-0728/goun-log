@@ -25,24 +25,24 @@ export const DS = {
 
   // ── 뉴트럴/미니멀 계열
   '화이트':    { bg: '#FFFFFF', fg: '#18170F', ac: '#18170F', sub: '#F5F4F0', bd: '#E4E2DC' },
-  '크림':      { bg: '#FAF8F3', fg: '#2A2620', ac: '#8B6914', sub: '#F0EDE4', bd: '#DDD8CC' },
   '미니멀':    { bg: '#FFFFFF', fg: '#18170F', ac: '#1D6B45', sub: '#F5F4F0', bd: '#E4E2DC' },
-  '라이트그레이': { bg: '#F2F2F0', fg: '#1A1A1A', ac: '#333333', sub: '#E8E8E6', bd: '#D0D0CC' },
-  '웜화이트':  { bg: '#FDFAF5', fg: '#2A2418', ac: '#A0784A', sub: '#F5F0E8', bd: '#E0D8CC' },
-
-  // ── 컬러 계열
-  '포레스트':  { bg: '#F5F9F5', fg: '#1A3020', ac: '#1D6B45', sub: '#E8F2EC', bd: '#C8DED0' },
-  '오션':      { bg: '#F3F7FB', fg: '#0D2B45', ac: '#1A6FA3', sub: '#E4EFF8', bd: '#BDD4E8' },
-  '테라코타': { bg: '#FAF5F0', fg: '#2D1810', ac: '#B85C38', sub: '#F2E8E0', bd: '#DEC8B8' },
   '차콜':      { bg: '#2D2D2D', fg: '#F0F0F0', ac: '#E8C84A', sub: '#3A3A3A', bd: '#484848' },
-  '인디고':    { bg: '#F4F2FF', fg: '#1A1560', ac: '#4A3FCC', sub: '#EAE8FF', bd: '#C8C3F0' },
+
+  // ── 비비드 컬러 계열
+  '에메랄드':  { bg: '#064E3B', fg: '#ECFDF5', ac: '#34D399', sub: '#065F46', bd: '#059669' },
+  '코발트':    { bg: '#1E3A8A', fg: '#EFF6FF', ac: '#60A5FA', sub: '#1E40AF', bd: '#3B82F6' },
+  '오렌지':    { bg: '#C2410C', fg: '#FFF7ED', ac: '#FCD34D', sub: '#9A3412', bd: '#EA580C' },
+  '바이올렛':  { bg: '#5B21B6', fg: '#F5F3FF', ac: '#FCD34D', sub: '#4C1D95', bd: '#7C3AED' },
+  '마젠타':    { bg: '#9D174D', fg: '#FFF0F6', ac: '#FCD34D', sub: '#831843', bd: '#DB2777' },
+  '라임':      { bg: '#15803D', fg: '#F0FDF4', ac: '#86EFAC', sub: '#166534', bd: '#22C55E' },
+  '레드':      { bg: '#991B1B', fg: '#FFF1F2', ac: '#FCD34D', sub: '#7F1D1D', bd: '#DC2626' },
 }
 export const DS_KEYS = Object.keys(DS)
 
 export const AUTO_DS = {
-  HERO: '프리미엄', '문제 공감': '크림', '해결 제안': '화이트',
-  '특징 강조': '오션', '사용 상황': '포레스트', '비교': '라이트그레이',
-  '추천 대상': '웜화이트', CTA: '블랙',
+  HERO: '프리미엄', '문제 공감': '화이트', '해결 제안': '화이트',
+  '특징 강조': '코발트', '사용 상황': '에메랄드', '비교': '차콜',
+  '추천 대상': '미니멀', CTA: '블랙',
 }
 
 export const AUTO_TPL = {
