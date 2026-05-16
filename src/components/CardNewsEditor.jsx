@@ -344,7 +344,7 @@ function CardEditor({ card, idx, onUpdate }) {
   const [dr,         setDr]         = useState({ ...card })
   const [saved,      setSaved]      = useState(true)
   const [dl,         setDl]         = useState(false)
-  const [showPanel,  setShowPanel]  = useState(false)
+  const [showPanel,  setShowPanel]  = useState(true)   // 기본으로 패널 열림
   const [scale,      setScale]      = useState(0.5)
   const [isDragging, setIsDragging] = useState(false)
 
@@ -372,7 +372,7 @@ function CardEditor({ card, idx, onUpdate }) {
   const change = useCallback((key, val) => changeMulti({ [key]: val }), [changeMulti])
 
   const save   = () => { onUpdate(idx, { ...dr }); setEditing(false); setSaved(true) }
-  const cancel = () => { setDr({ ...card }); setEditing(false); setShowPanel(false); setSaved(true) }
+  const cancel = () => { setDr({ ...card }); setEditing(false); setSaved(true) }
 
   const dlPNG = async () => {
     if (!ref.current || !saved) return
@@ -453,7 +453,7 @@ function CardEditor({ card, idx, onUpdate }) {
           {!saved && <span style={{ fontSize: 10, color: '#d97706', background: '#fffbeb', padding: '2px 7px', borderRadius: 10, border: '1px solid #fcd34d' }}>● 미저장</span>}
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
-          {editing
+          {(!saved || editing)
             ? <>
                 <button onClick={save}   style={{ padding: '5px 14px', fontSize: 11, borderRadius: 7, border: 'none', background: '#3b82f6', color: '#fff', cursor: 'pointer', fontWeight: 700 }}>✓ 저장</button>
                 <button onClick={cancel} style={{ padding: '5px 10px', fontSize: 11, borderRadius: 7, border: `1px solid ${C.bd}`, background: C.sur, color: C.mu, cursor: 'pointer' }}>취소</button>
