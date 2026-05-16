@@ -243,6 +243,23 @@ export default function App() {
 
   const taRef = useRef(null)
   const resRef = useRef(null)
+  const [titleHover, setTitleHover] = useState(false)
+
+  // 전체 리셋 (히스토리는 유지)
+  const resetAll = () => {
+    setTabInputs({ detail: '', blog: '', card: '' })
+    const empty = {}
+    for (const t of TASKS) {
+      empty[t.id] = ''
+      try { localStorage.removeItem(`cos_result_${t.id}`) } catch {}
+    }
+    setTabResults(empty)
+    setCardData(null);   try { localStorage.removeItem('cos_card_data')   } catch {}
+    setDetailData(null); try { localStorage.removeItem('cos_detail_data') } catch {}
+    setTask(TASKS[0])
+    setError('')
+    setKeywordContext('')
+  }
 
   // textarea 자동 높이
   useEffect(() => {
@@ -314,66 +331,76 @@ export default function App() {
   })()
 
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, color: C.tx }}>
-      {/* NAV */}
-      <header style={{ position: 'sticky', top: 0, zIndex: 60, background: 'rgba(245,244,240,0.95)', backdropFilter: 'blur(18px)', borderBottom: `1px solid ${C.bd}`, height: 52, display: 'flex', alignItems: 'center', padding: '0 20px', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 7, background: C.tx, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 14 }}>C</div>
-          <span style={{ fontWeight: 800, fontSize: 15, letterSpacing: '-0.04em' }}>ContentOS</span>
-          <span style={{ fontSize: 10, color: C.fa, background: '#ECEAE5', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>BETA</span>
-        </div>
-        <button onClick={() => setHistOpen(o => !o)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 13px', borderRadius: 7, border: `1px solid ${C.bd}`, background: C.sur, color: C.mu, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-          ≡ 히스토리 {history.length > 0 && <span style={{ background: C.tx, color: '#fff', borderRadius: 20, padding: '1px 6px', fontSize: 10, marginLeft: 2 }}>{history.length}</span>}
+    <>
+      {/* ── 고정 네비게이션 ── */}
+      <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 60, background: 'rgba(245,244,240,0.97)', backdropFilter: 'blur(18px)', borderBottom: `1px solid ${C.bd}`, height: 52, display: 'flex', alignItems: 'center', padding: '0 16px', gap: 8 }}>
+        <button
+          onClick={() => setHistOpen(o => !o)}
+          style={{ width: 32, height: 32, borderRadius: 7, border: 'none', background: histOpen ? C.alt : 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.mu, fontSize: 18, flexShrink: 0 }}>
+          {histOpen ? '‹' : '≡'}
         </button>
+        <div style={{ width: 26, height: 26, borderRadius: 7, background: C.tx, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 13 }}>C</div>
+        <span style={{ fontWeight: 800, fontSize: 15, letterSpacing: '-0.04em' }}>ContentOS</span>
+        <span style={{ fontSize: 12, color: C.mu, fontWeight: 500 }}>— {task.label}</span>
+        <span style={{ fontSize: 10, color: C.fa, background: '#ECEAE5', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>BETA</span>
       </header>
 
-      {/* 히스토리 드로어 */}
-      {histOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex' }} onClick={() => setHistOpen(false)}>
-          <div style={{ flex: 1 }} />
-          <div style={{ width: 300, background: C.sur, height: '100vh', overflow: 'auto', borderLeft: `1px solid ${C.bd}`, padding: 18 }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <span style={{ fontWeight: 700, fontSize: 14 }}>히스토리</span>
-              <button onClick={() => setHistOpen(false)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, color: C.fa }}>✕</button>
-            </div>
+      {/* ── 왼쪽 사이드바 (히스토리) ── */}
+      <aside style={{ position: 'fixed', top: 52, left: 0, bottom: 0, zIndex: 50, width: histOpen ? 260 : 0, transition: 'width .22s ease', background: C.sur, borderRight: histOpen ? `1px solid ${C.bd}` : 'none', overflow: 'hidden' }}>
+        <div style={{ width: 260, height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '12px 14px 10px', borderBottom: `1px solid ${C.bd}`, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontWeight: 700, fontSize: 13, color: C.tx }}>히스토리</span>
+            {history.length > 0 && (
+              <span style={{ fontSize: 10, background: C.alt, color: C.mu, borderRadius: 20, padding: '1px 7px', fontWeight: 600 }}>{history.length}</span>
+            )}
+          </div>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '8px 10px 20px' }}>
             {history.length === 0
-              ? <p style={{ fontSize: 13, color: C.fa, textAlign: 'center', marginTop: 40 }}>아직 기록 없음</p>
+              ? <p style={{ fontSize: 12, color: C.fa, textAlign: 'center', marginTop: 32 }}>아직 기록 없음</p>
               : history.map(h => {
-                const tk = TASKS.find(t => t.id === h.taskId) || TASKS[0]
-                return (
-                  <button key={h.id} onClick={() => {
-                    const tk2 = TASKS.find(t => t.id === h.taskId) || TASKS[0]
-                    setTask(tk2)
-                    saveResult(h.taskId, h.result)
-                    if (h.taskId === 'card') {
-                      setCardData(null); try { localStorage.removeItem('cos_card_data') } catch {}
-                      setCardGenKey(k => k + 1)
-                    }
-                    if (h.taskId === 'detail') {
-                      setDetailData(null); try { localStorage.removeItem('cos_detail_data') } catch {}
-                      setDetailGenKey(k => k + 1)
-                    }
-                    setHistOpen(false)
-                    setTimeout(() => resRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
-                  }} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: 9, border: `1px solid ${C.bd}`, background: C.sur, cursor: 'pointer', marginBottom: 6 }}>
-                    <div style={{ display: 'flex', gap: 6, marginBottom: 2 }}>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: tk.col }}>{tk.label}</span>
-                      <span style={{ fontSize: 10, color: C.fa }}>{new Date(h.ts).toLocaleString('ko', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                    </div>
-                    <div style={{ fontSize: 12, color: C.tx, lineHeight: 1.4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{h.preview}</div>
-                  </button>
-                )
-              })}
+                  const tk = TASKS.find(t => t.id === h.taskId) || TASKS[0]
+                  return (
+                    <button key={h.id} onClick={() => {
+                      const tk2 = TASKS.find(t => t.id === h.taskId) || TASKS[0]
+                      setTask(tk2)
+                      saveResult(h.taskId, h.result)
+                      if (h.taskId === 'card') {
+                        setCardData(null); try { localStorage.removeItem('cos_card_data') } catch {}
+                        setCardGenKey(k => k + 1)
+                      }
+                      if (h.taskId === 'detail') {
+                        setDetailData(null); try { localStorage.removeItem('cos_detail_data') } catch {}
+                        setDetailGenKey(k => k + 1)
+                      }
+                      setTimeout(() => resRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
+                    }} style={{ width: '100%', textAlign: 'left', padding: '9px 10px', borderRadius: 8, border: `1px solid ${C.bd}`, background: C.sur, cursor: 'pointer', marginBottom: 5, display: 'block' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
+                        <span style={{ fontSize: 14 }}>{tk.icon}</span>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: tk.col }}>{tk.label}</span>
+                        <span style={{ fontSize: 10, color: C.fa, marginLeft: 'auto' }}>{new Date(h.ts).toLocaleString('ko', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                      <div style={{ fontSize: 11, color: C.mu, lineHeight: 1.4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{h.preview}</div>
+                    </button>
+                  )
+                })}
           </div>
         </div>
-      )}
+      </aside>
 
-      {/* 메인 */}
-      <main style={{ maxWidth: 860, margin: '0 auto', padding: '36px 18px 100px' }}>
-        <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <h1 style={{ fontSize: 'clamp(24px,4vw,34px)', fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 1.2, margin: '0 0 10px' }}>제품 정보 하나로<br />마케팅 콘텐츠 완성</h1>
-          <p style={{ fontSize: 14, color: C.mu, lineHeight: 1.75, margin: 0 }}>기획부터 수정 가능한 섹션 카드까지 자동 생성</p>
-        </div>
+      {/* ── 메인 콘텐츠 (사이드바 열리면 오른쪽으로 밀림) ── */}
+      <div style={{ marginLeft: histOpen ? 260 : 0, transition: 'margin-left .22s ease', paddingTop: 52, minHeight: '100vh', background: C.bg, color: C.tx }}>
+        <main style={{ maxWidth: 860, margin: '0 auto', padding: '36px 18px 100px' }}>
+
+          {/* 클릭 시 전체 리셋 */}
+          <div
+            onClick={resetAll}
+            onMouseEnter={() => setTitleHover(true)}
+            onMouseLeave={() => setTitleHover(false)}
+            style={{ textAlign: 'center', marginBottom: 40, cursor: 'pointer', opacity: titleHover ? 0.6 : 1, transition: 'opacity .15s' }}
+          >
+            <h1 style={{ fontSize: 'clamp(24px,4vw,34px)', fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 1.2, margin: '0 0 10px' }}>제품 정보 하나로<br />마케팅 콘텐츠 완성</h1>
+            <p style={{ fontSize: 14, color: C.mu, lineHeight: 1.75, margin: 0 }}>기획부터 수정 가능한 섹션 카드까지 자동 생성</p>
+          </div>
 
         {/* 작업 탭 */}
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${TASKS.length},1fr)`, gap: 8, marginBottom: 16 }}>
@@ -468,7 +495,8 @@ export default function App() {
             </div>
           </div>
         )}
-      </main>
-    </div>
+        </main>
+      </div>
+    </>
   )
 }
