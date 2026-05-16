@@ -345,7 +345,7 @@ export default function App() {
         </div>
 
         {/* 작업 탭 */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginBottom: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${TASKS.length},1fr)`, gap: 8, marginBottom: 16 }}>
           {TASKS.map(t => {
             const on = task.id === t.id
             const hasResult = !!(tabResults[t.id])
