@@ -16,32 +16,25 @@ function fmt(raw) {
   return n.toLocaleString()
 }
 
+// 선택된 키워드 이름만 쉼표 구분으로 반환 (App에서 프롬프트 조립)
 function buildContext(list, sel) {
   const items = list.filter(k => sel.has(k.relKeyword))
   if (!items.length) return ''
-  const lines = items.map(k => {
-    const pc  = toNum(k.monthlyPcQcCnt)
-    const mob = toNum(k.monthlyMobileQcCnt)
-    const tot = pc + mob
-    return `- ${k.relKeyword}: 월 ${tot >= 10 ? tot.toLocaleString() : '10 미만'}회 (PC ${pc >= 10 ? pc.toLocaleString() : '10 미만'} / 모바일 ${mob >= 10 ? mob.toLocaleString() : '10 미만'})`
-  })
-  return (
-    '\n\n[SEO 키워드 분석 데이터]\n' + lines.join('\n') +
-    '\n위 키워드들을 블로그 글 제목·소제목·본문에 자연스럽게 녹여주세요. AI 티 없이 실제 블로거처럼 작성해주세요.'
-  )
+  return items.map(k => k.relKeyword).join(', ')
 }
 
 export default function BlogKeywords({ onKeywordsChange }) {
-  const [mainKw,   setMainKw]   = useState('')
-  const [results,  setResults]  = useState(null)
-  const [loading,  setLoading]  = useState(false)
-  const [error,    setError]    = useState('')
-  const [selected, setSelected] = useState(new Set())
+  const [mainKw,    setMainKw]    = useState('')
+  const [results,   setResults]   = useState(null)
+  const [loading,   setLoading]   = useState(false)
+  const [error,     setError]     = useState('')
+  const [selected,  setSelected]  = useState(new Set())
+  const [maxAlert,  setMaxAlert]  = useState(false)
 
   const fetchKeywords = async () => {
     const main = mainKw.trim()
     if (!main) return
-    setLoading(true); setError('')
+    setLoading(true); setError(''); setMaxAlert(false)
     try {
       const res  = await fetch(`/api/naver-keywords?keywords=${encodeURIComponent(main)}`)
       const data = await res.json()
@@ -52,9 +45,8 @@ export default function BlogKeywords({ onKeywordsChange }) {
         (toNum(a.monthlyPcQcCnt) + toNum(a.monthlyMobileQcCnt))
       )
       setResults(sorted)
-      const top = new Set(sorted.slice(0, MAX_SEL).map(k => k.relKeyword))
-      setSelected(top)
-      onKeywordsChange?.(buildContext(sorted, top))
+      setSelected(new Set())           // 아무것도 선택 안 된 상태로 시작
+      onKeywordsChange?.('')
     } catch (e) {
       setError(e.message)
     } finally {
@@ -67,11 +59,17 @@ export default function BlogKeywords({ onKeywordsChange }) {
       const next = new Set(prev)
       if (next.has(kw)) {
         next.delete(kw)
+        setMaxAlert(false)
       } else {
-        if (next.size >= MAX_SEL) return prev
+        if (next.size >= MAX_SEL) {
+          setMaxAlert(true)
+          setTimeout(() => setMaxAlert(false), 2500)
+          return prev
+        }
         next.add(kw)
+        setMaxAlert(false)
       }
-      if (results) onKeywordsChange?.(buildContext(results, next))
+      onKeywordsChange?.(buildContext(results || [], next))
       return next
     })
   }
@@ -104,9 +102,21 @@ export default function BlogKeywords({ onKeywordsChange }) {
       {/* 결과 테이블 */}
       {results && (
         <div style={{ marginTop: 10 }}>
-          <div style={{ fontSize: 10, color: C.mu, marginBottom: 5 }}>
-            최대 {MAX_SEL}개 선택 · <strong style={{ color: BLOG_COL }}>{selected.size}/{MAX_SEL}</strong>개 선택됨 · 블로그 생성 프롬프트에 포함
+          {/* 안내 문구 */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+            <span style={{ fontSize: 10, color: C.mu }}>
+              최대 {MAX_SEL}개까지 선택하세요 · <strong style={{ color: BLOG_COL }}>{selected.size}/{MAX_SEL}</strong>개 선택됨
+            </span>
+            <span style={{ fontSize: 10, color: C.fa }}>{results.length}개 키워드</span>
           </div>
+
+          {/* 초과 선택 토스트 */}
+          {maxAlert && (
+            <div style={{ fontSize: 11, color: '#d97706', background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 7, padding: '6px 10px', marginBottom: 6, fontWeight: 600 }}>
+              최대 {MAX_SEL}개까지만 선택할 수 있습니다
+            </div>
+          )}
+
           <div style={{ border: `1px solid ${C.bd}`, borderRadius: 9, overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
               <thead>
@@ -126,10 +136,10 @@ export default function BlogKeywords({ onKeywordsChange }) {
                   const on  = selected.has(k.relKeyword)
                   const maxed = !on && selected.size >= MAX_SEL
                   return (
-                    <tr key={i} onClick={() => !maxed && toggle(k.relKeyword)}
-                      style={{ cursor: maxed ? 'not-allowed' : 'pointer', background: on ? BLOG_LI : i % 2 === 0 ? C.sur : C.alt, borderTop: `1px solid ${C.bd}`, opacity: maxed ? 0.45 : 1 }}>
+                    <tr key={i} onClick={() => toggle(k.relKeyword)}
+                      style={{ cursor: 'pointer', background: on ? BLOG_LI : i % 2 === 0 ? C.sur : C.alt, borderTop: `1px solid ${C.bd}`, opacity: maxed ? 0.45 : 1 }}>
                       <td style={{ padding: '5px 8px', textAlign: 'center' }}>
-                        <input type="checkbox" checked={on} readOnly onClick={e => { e.stopPropagation(); !maxed && toggle(k.relKeyword) }} style={{ cursor: maxed ? 'not-allowed' : 'pointer', accentColor: BLOG_COL }} />
+                        <input type="checkbox" checked={on} readOnly onClick={e => { e.stopPropagation(); toggle(k.relKeyword) }} style={{ cursor: 'pointer', accentColor: BLOG_COL }} />
                       </td>
                       <td style={{ padding: '5px 10px', color: on ? BLOG_COL : C.tx, fontWeight: on ? 700 : 400 }}>{k.relKeyword}</td>
                       <td style={{ padding: '5px 10px', textAlign: 'right', color: C.mu, fontFamily: 'monospace' }}>{fmt(k.monthlyPcQcCnt)}</td>

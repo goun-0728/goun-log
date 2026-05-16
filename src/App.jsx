@@ -68,21 +68,33 @@ function DetailView({ result, savedSects, onSectsChange }) {
 
   return (
     <div>
-      {rep && <Blk title="기획 보고서" lines={rep.lines} />}
 
-      {/* 섹션별 기획안 (아코디언) */}
+      {/* ── 기획 보고서 ── 흰색 배경 */}
+      {rep && (
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 800, color: C.tx, letterSpacing: '-0.02em' }}>📋 기획 보고서</span>
+            <CopyBtn text={rep.lines.join('\n').trim()} />
+          </div>
+          <div style={{ background: C.alt, borderRadius: 10, border: `1px solid ${C.bd}`, padding: '14px 16px' }}>
+            <pre style={{ margin: 0, fontFamily: 'inherit', fontSize: 13.5, lineHeight: 1.9, color: C.tx, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{rep.lines.join('\n').trim()}</pre>
+          </div>
+        </div>
+      )}
+
+      {/* ── 섹션별 기획안 ── 연한 회색 배경 */}
       {sects.length > 0 && (
-        <div style={{ marginBottom: 28 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, color: C.fa, textTransform: 'uppercase', letterSpacing: '0.08em' }}>섹션별 기획안</span>
-            <span style={{ fontSize: 11, color: C.mu }}>— 촬영 가이드 · AI 프롬프트 포함</span>
+        <div style={{ background: '#F5F4F0', margin: '0 -20px', padding: '20px 20px 24px', borderTop: '1px solid #D8D5CF', borderBottom: '1px solid #D8D5CF' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <span style={{ fontSize: 12, fontWeight: 800, color: '#4A4840', letterSpacing: '-0.02em' }}>📐 섹션별 기획안</span>
+            <span style={{ fontSize: 11, color: '#78766E' }}>— 촬영 가이드 · AI 프롬프트 포함</span>
           </div>
           {sects.map((s, i) => {
             let sp = {}
             try { sp = JSON.parse(s.photoDir || '{}') } catch {}
             return (
               <div key={i} style={{ marginBottom: 6, border: `1px solid ${C.bd}`, borderRadius: 8, overflow: 'hidden' }}>
-                <button onClick={() => setPlanOpen(o => ({ ...o, [i]: !o[i] }))} style={{ width: '100%', padding: '9px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: 'none', background: planOpen[i] ? C.alt : C.sur, cursor: 'pointer', textAlign: 'left' }}>
+                <button onClick={() => setPlanOpen(o => ({ ...o, [i]: !o[i] }))} style={{ width: '100%', padding: '9px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: 'none', background: planOpen[i] ? '#ECEAE5' : C.sur, cursor: 'pointer', textAlign: 'left' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontSize: 10, fontWeight: 700, color: C.mu, background: C.alt, padding: '1px 7px', borderRadius: 4, border: `1px solid ${C.bd}` }}>S{i + 1}</span>
                     <span style={{ fontSize: 12, fontWeight: 600, color: C.tx }}>{s.sectionType}</span>
@@ -119,15 +131,15 @@ function DetailView({ result, savedSects, onSectsChange }) {
         </div>
       )}
 
-      {/* 다운로드용 섹션 카드 */}
+      {/* ── 다운로드용 섹션 이미지 ── 연한 파란빛 배경 */}
       {sects.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-            <div>
-              <span style={{ fontSize: 10, fontWeight: 700, color: C.fa, textTransform: 'uppercase', letterSpacing: '0.08em' }}>다운로드용 섹션 이미지</span>
-              <span style={{ fontSize: 11, color: C.mu, marginLeft: 8 }}>— 수정 후 PNG 저장</span>
+        <div style={{ background: '#EEF2F7', margin: '0 -20px', padding: '20px 20px 24px', borderBottom: '1px solid #C5D0E8' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 12, fontWeight: 800, color: '#1E3A6E', letterSpacing: '-0.02em' }}>🖼 다운로드용 섹션 이미지</span>
+              <span style={{ fontSize: 11, color: '#5A7AAA' }}>— 수정 후 PNG 저장</span>
             </div>
-            <button onClick={dlAllPNG} disabled={dlAll} style={{ padding: '6px 12px', fontSize: 11, borderRadius: 7, border: `1px solid ${C.bd}`, background: C.sur, color: dlAll ? C.fa : C.mu, cursor: dlAll ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+            <button onClick={dlAllPNG} disabled={dlAll} style={{ padding: '6px 12px', fontSize: 11, borderRadius: 7, border: `1px solid ${dlAll ? C.bd : '#93B4D8'}`, background: dlAll ? C.alt : '#D6E8F8', color: dlAll ? C.fa : '#1E3A6E', cursor: dlAll ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
               {dlAll ? <><Spin /> 저장 중…</> : '↓ 전체 PNG'}
             </button>
           </div>
@@ -135,7 +147,12 @@ function DetailView({ result, savedSects, onSectsChange }) {
         </div>
       )}
 
-      {seo && <Blk title={seo.title} lines={seo.lines} />}
+      {/* ── SEO 키워드 ── */}
+      {seo && (
+        <div style={{ marginTop: 20 }}>
+          <Blk title={seo.title} lines={seo.lines} />
+        </div>
+      )}
     </div>
   )
 }
@@ -256,7 +273,9 @@ export default function App() {
     saveResult(tid, '')
     setError('')
     try {
-      const userPrompt = curInput.trim() + (tid === 'blog' && keywordContext ? keywordContext : '')
+      const userPrompt = (tid === 'blog' && keywordContext)
+        ? `다음 키워드를 자연스럽게 포함하고, 아래 내용을 참고해서 블로그 글을 작성해줘.\n키워드: ${keywordContext}\n참고 내용: ${curInput.trim()}`
+        : curInput.trim()
       const text = await generateContent({
         systemPrompt: getSys(tid, tone),
         userPrompt,
