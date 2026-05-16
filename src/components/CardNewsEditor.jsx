@@ -185,12 +185,9 @@ function TextContent({ card }) {
         {card.subText || '서브 문구'}
       </p>
       <div style={{ width: 48, height: 4, background: card.accentColor, margin: '0 auto 24px', borderRadius: 2 }} />
-      <h1 style={{ fontSize: fs.main, fontWeight: 900, color: tc, lineHeight: 1.2, margin: '0 0 48px', whiteSpace: 'pre-wrap', textShadow: ts, wordBreak: 'keep-all' }}>
+      <h1 style={{ fontSize: fs.main, fontWeight: 900, color: tc, lineHeight: 1.2, margin: 0, whiteSpace: 'pre-wrap', textShadow: ts, wordBreak: 'keep-all' }}>
         {card.mainText || '메인 문구'}
       </h1>
-      <div style={{ display: 'inline-block', background: card.accentColor, borderRadius: 100, padding: '20px 60px' }}>
-        <span style={{ fontSize: fs.body, fontWeight: 700, color: card.bgColor }}>{card.buttonText || '버튼 문구'}</span>
-      </div>
     </div>
   )
 
@@ -377,9 +374,18 @@ function CardEditor({ card, idx, onUpdate }) {
   const dlPNG = async () => {
     if (!ref.current || !saved) return
     setDl(true)
-    try { await capturePNG(ref.current, `card_${idx + 1}_${card.type}.png`) }
+    // 부모의 scale transform이 html2canvas position 계산을 오염시키므로 캡처 전 임시 제거
+    const scaledEl = ref.current.parentElement
+    const origTransform = scaledEl?.style.transform ?? ''
+    try {
+      if (scaledEl) scaledEl.style.transform = 'none'
+      await capturePNG(ref.current, `card_${idx + 1}_${card.type}.png`)
+    }
     catch (e) { alert('저장 오류: ' + e.message) }
-    finally { setDl(false) }
+    finally {
+      if (scaledEl) scaledEl.style.transform = origTransform
+      setDl(false)
+    }
   }
 
   const handleImg = async e => {
@@ -608,7 +614,6 @@ function CardEditor({ card, idx, onUpdate }) {
                 {card.type === 'CTA' && <>
                   <Field label="메인 문구"  value={dr.mainText}   onChange={v => change('mainText',   v)} />
                   <Field label="서브 문구"  value={dr.subText}    onChange={v => change('subText',    v)} />
-                  <Field label="버튼 문구"  value={dr.buttonText} onChange={v => change('buttonText', v)} />
                 </>}
                 {['공감', '핵심', '차별점'].includes(card.type) && <>
                   <Field label="제목"      value={dr.title}     onChange={v => change('title',     v)} />
@@ -654,10 +659,15 @@ export default function CardNewsView({ result, savedCards, onCardsChange }) {
     setDlAll(true)
     const els = document.querySelectorAll('[data-card-img]')
     for (let i = 0; i < els.length; i++) {
+      const el = els[i]
+      const scaledEl = el.parentElement
+      const origTransform = scaledEl?.style.transform ?? ''
       try {
-        await capturePNG(els[i], `card_${i + 1}.png`)
-        await new Promise(r => setTimeout(r, 600))
+        if (scaledEl) scaledEl.style.transform = 'none'
+        await capturePNG(el, `card_${i + 1}.png`)
       } catch (e) { console.error(e) }
+      finally { if (scaledEl) scaledEl.style.transform = origTransform }
+      await new Promise(r => setTimeout(r, 600))
     }
     setDlAll(false)
   }
