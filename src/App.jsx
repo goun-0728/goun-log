@@ -4,6 +4,7 @@ import { C, TASKS, BLOG_TONES, getSys } from './constants'
 import { parseBlocks, parseSections, capturePNG, downloadURL } from './utils'
 import { generateContent } from './api/generate'
 import SectionEditor from './components/SectionEditor'
+import CardNewsView from './components/CardNewsEditor'
 
 /* ── 미니 컴포넌트 ─────────────────────────────────── */
 function Spin() {
@@ -135,10 +136,28 @@ function DetailView({ result }) {
 export default function App() {
   const [task, setTask] = useState(TASKS[0])
   const [input, setInput] = useState('')
-  const [tone, setTone] = useState('생활형') // {url: dataUrl}
-  const [result, setResult] = useState('')
+  const [tone, setTone] = useState('생활형')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // 탭별 결과 — localStorage에 각각 저장
+  const [tabResults, setTabResults] = useState(() => {
+    const r = {}
+    try {
+      for (const t of TASKS) {
+        r[t.id] = localStorage.getItem(`cos_result_${t.id}`) || ''
+      }
+    } catch {}
+    return r
+  })
+
+  const result = tabResults[task.id] || ''
+
+  const saveResult = useCallback((tid, text) => {
+    setTabResults(prev => ({ ...prev, [tid]: text }))
+    try { localStorage.setItem(`cos_result_${tid}`, text) } catch {}
+  }, [])
+
   const [history, setHistory] = useState(() => {
     try { return JSON.parse(localStorage.getItem('cos_history') || '[]') } catch { return [] }
   })
@@ -159,21 +178,25 @@ export default function App() {
     try { localStorage.setItem('cos_history', JSON.stringify(history.slice(0, 20))) } catch {}
   }, [history])
 
-  const sw = t => { setTask(t); setResult(''); setError('') }
+  // 탭 전환 — 결과는 유지
+  const sw = t => { setTask(t); setError('') }
 
   const run = async () => {
     if (!input.trim() || loading) return
-    setLoading(true); setResult(''); setError('')
+    const tid = task.id
+    setLoading(true)
+    saveResult(tid, '')
+    setError('')
     try {
       const text = await generateContent({
-        systemPrompt: getSys(task.id, tone),
+        systemPrompt: getSys(tid, tone),
         userPrompt: input.trim(),
         images: [],
         model: 'gpt-4o',
-        maxTokens: task.id === 'detail' ? 4000 : 2000,
+        maxTokens: tid === 'detail' ? 4000 : 2000,
       })
-      setResult(text)
-      const h = { id: Date.now(), taskId: task.id, label: task.label, preview: input.slice(0, 60), result: text, ts: new Date().toISOString() }
+      saveResult(tid, text)
+      const h = { id: Date.now(), taskId: tid, label: task.label, preview: input.slice(0, 60), result: text, ts: new Date().toISOString() }
       setHistory(p => [h, ...p].slice(0, 20))
       setTimeout(() => resRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
     } catch (e) {
@@ -211,7 +234,13 @@ export default function App() {
               : history.map(h => {
                 const tk = TASKS.find(t => t.id === h.taskId) || TASKS[0]
                 return (
-                  <button key={h.id} onClick={() => { setResult(h.result); setHistOpen(false); setTimeout(() => resRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100) }} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: 9, border: `1px solid ${C.bd}`, background: C.sur, cursor: 'pointer', marginBottom: 6 }}>
+                  <button key={h.id} onClick={() => {
+                    const tk2 = TASKS.find(t => t.id === h.taskId) || TASKS[0]
+                    setTask(tk2)
+                    saveResult(h.taskId, h.result)
+                    setHistOpen(false)
+                    setTimeout(() => resRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
+                  }} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: 9, border: `1px solid ${C.bd}`, background: C.sur, cursor: 'pointer', marginBottom: 6 }}>
                     <div style={{ display: 'flex', gap: 6, marginBottom: 2 }}>
                       <span style={{ fontSize: 10, fontWeight: 700, color: tk.col }}>{tk.label}</span>
                       <span style={{ fontSize: 10, color: C.fa }}>{new Date(h.ts).toLocaleString('ko', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
@@ -235,8 +264,12 @@ export default function App() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginBottom: 16 }}>
           {TASKS.map(t => {
             const on = task.id === t.id
+            const hasResult = !!(tabResults[t.id])
             return (
-              <button key={t.id} onClick={() => sw(t)} style={{ padding: '13px 8px', borderRadius: 12, border: on ? `2px solid ${t.col}` : `1.5px solid ${C.bd}`, background: on ? t.li : C.sur, cursor: 'pointer', textAlign: 'center' }}>
+              <button key={t.id} onClick={() => sw(t)} style={{ padding: '13px 8px', borderRadius: 12, border: on ? `2px solid ${t.col}` : `1.5px solid ${C.bd}`, background: on ? t.li : C.sur, cursor: 'pointer', textAlign: 'center', position: 'relative' }}>
+                {hasResult && !on && (
+                  <span style={{ position: 'absolute', top: 6, right: 8, width: 6, height: 6, borderRadius: '50%', background: t.col, opacity: 0.6 }} />
+                )}
                 <div style={{ fontSize: 19, marginBottom: 4, color: on ? t.col : C.fa }}>{t.icon}</div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: on ? t.col : C.tx, letterSpacing: '-0.02em' }}>{t.label}</div>
                 <div style={{ fontSize: 10, color: on ? t.col + '99' : C.fa, marginTop: 2 }}>{t.sub}</div>
@@ -277,7 +310,7 @@ export default function App() {
 
         {loading && (
           <div style={{ background: C.sur, borderRadius: 14, border: `1.5px solid ${C.bd}`, padding: '28px 24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 22, color: C.mu, fontSize: 13 }}><Spin />{task.id === 'detail' ? '상세페이지 8개 섹션 생성 중…' : '콘텐츠 생성 중…'}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 22, color: C.mu, fontSize: 13 }}><Spin />{task.id === 'detail' ? '상세페이지 8개 섹션 생성 중…' : task.id === 'card' ? '카드뉴스 5장 생성 중…' : '콘텐츠 생성 중…'}</div>
             {[95, 75, 85, 60, 90, 50].map((w, i) => <div key={i} style={{ height: 10, background: C.alt, borderRadius: 5, width: `${w}%`, marginBottom: 9, animation: `pl 1.5s ease ${i * .12}s infinite` }} />)}
           </div>
         )}
@@ -294,7 +327,9 @@ export default function App() {
             <div style={{ padding: '16px 20px' }}>
               {task.id === 'detail'
                 ? <DetailView result={result} />
-                : topBlocks.map((b, i) => <Blk key={i} title={b.title} lines={b.lines} />)
+                : task.id === 'card'
+                  ? <CardNewsView result={result} />
+                  : topBlocks.map((b, i) => <Blk key={i} title={b.title} lines={b.lines} />)
               }
             </div>
           </div>
