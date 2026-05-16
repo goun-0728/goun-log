@@ -210,71 +210,159 @@ function PointList({ pts, t, editing, onChange, s, numbered = false, plain = fal
    8가지 템플릿
 ════════════════════════════════════════════════ */
 
-/* ── 1. Hero ──────────────────────────────────── */
+/* ── 1. Hero (스마트스토어형) ─────────────────────
+   구조: 브랜드 태그 → 강한 타이포 → 풀블리드 이미지
+         → 곡선 구분선 → 핵심포인트 3열 (밝은 배경)
+   배경: 디자인 테마 t.bg 자동 적용
+─────────────────────────────────────────────── */
 export function TplHero({ s, img, t, editing, onChange, secMeta, onSecMeta }) {
   const pts = s.points || []
-  const displayPts = editing ? (pts.length ? pts : ['']) : pts.filter(p => p && p.trim())
-  const cols = Math.max(1, displayPts.length)
+  const displayPts = editing ? (pts.length ? pts : ['', '', '']) : pts.filter(p => p && p.trim())
+  const cols = Math.max(1, Math.min(displayPts.length, 4))
   const addHeroPt = () => onChange('points', [...pts, ''])
   const delHeroPt = i => onChange('points', pts.filter((_, j) => j !== i))
+
   return (
-    <CardWrapper bg="#e1dee3">
-      <div style={{ fontFamily: "'Noto Serif KR','Noto Sans KR',serif" }}>
-        <div style={{ padding: '72px 80px 48px', textAlign: 'center' }}>
-          <EditText editing={editing} value={s.mainCopy} onChange={v => onChange('mainCopy', v)}
-            style={{ fontSize: 52, fontWeight: 800, color: '#231815', lineHeight: 1.25, letterSpacing: '-0.02em', marginBottom: 18, wordBreak: 'keep-all' }} />
-          <EditText editing={editing} value={s.subCopy} onChange={v => onChange('subCopy', v)}
-            style={{ fontSize: 26, fontWeight: 500, color: '#231815', opacity: 0.72, lineHeight: 1.5, wordBreak: 'keep-all' }} />
-        </div>
-        <div style={{ margin: '0 40px' }}>
-          <ImgBox url={img} t={t} label="메인 제품 이미지" editing={editing} onImgChange={v => onChange('secImg', v)}
-            imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} />
-        </div>
-        {s.secImg2 && (
-          <div style={{ margin: '16px 40px 0' }}>
-            <ImgBox url={s.secImg2} t={t} label="서브 이미지" editing={editing} onImgChange={v => onChange('secImg2', v)}
-              imgMeta={secMeta?.img2} onMetaChange={m => onSecMeta?.('img2', m)} />
+    <CardWrapper bg={t.bg}>
+
+      {/* ── 상단: 브랜드 태그 + 헤드라인 ── */}
+      <div style={{ padding: '52px 64px 40px', textAlign: 'center' }}>
+
+        {/* 브랜드/시리즈 라벨 (description 필드 활용) */}
+        {(s.description || editing) && (
+          <div style={{ marginBottom: 22 }}>
+            <EditText editing={editing} value={s.description} onChange={v => onChange('description', v)}
+              style={{
+                display: 'inline-block', fontSize: 11, fontWeight: 800,
+                color: t.ac, letterSpacing: '0.26em', textTransform: 'uppercase',
+                border: `1.5px solid ${t.ac}55`, padding: '5px 20px',
+                borderRadius: 30, background: `${t.ac}18`,
+              }}
+            />
           </div>
         )}
-        <div style={{ position: 'relative', marginTop: 40 }}>
-          <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '130%', height: '100%', background: '#fff', borderRadius: '50% 50% 0 0 / 12% 12% 0 0' }} />
-          <div style={{ position: 'relative', padding: '72px 48px 72px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: 24 }}>
-              {displayPts.map((raw, i) => {
-                const lines = raw.split('\n')
-                const ptTitle = lines[0]?.trim() || `포인트 ${i + 1}`
-                const ptDesc = lines.slice(1).join('\n').trim()
-                return (
-                  <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', width: cols <= 3 ? '28%' : '22%', gap: 14, position: 'relative' }}>
-                    {editing && (
-                      <button onClick={() => delHeroPt(i)}
-                        style={{ position: 'absolute', top: -8, right: -8, width: 22, height: 22, borderRadius: '50%', border: '1px solid #fca5a5', background: '#fef2f2', color: '#ef4444', fontSize: 12, cursor: 'pointer', fontWeight: 700, lineHeight: 1, zIndex: 2 }}>×</button>
-                    )}
-                    <div style={{ width: 100, height: 100, borderRadius: '50%', background: '#f8b62d', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 20px rgba(248,182,45,0.4)', flexShrink: 0 }}>
-                      <span style={{ fontSize: 36, fontWeight: 700, color: '#231815', fontFamily: sectionFont(i), lineHeight: 1 }}>{sectionRoman(i)}</span>
-                    </div>
-                    {editing
-                      ? <PointInput value={raw} onChange={v => { const n = [...pts]; n[i] = v; onChange('points', n) }} placeholder={'제목\n설명(엔터로 구분)'} />
-                      : <>
-                          <p style={{ fontSize: 19, fontWeight: 700, color: '#231815', margin: 0, lineHeight: 1.3, wordBreak: 'keep-all' }}>{ptTitle}</p>
-                          {ptDesc && <p style={{ fontSize: 15, fontWeight: 400, color: '#231815', opacity: 0.6, margin: 0, lineHeight: 1.4, wordBreak: 'keep-all', whiteSpace: 'pre-wrap' }}>{ptDesc}</p>}
-                        </>
-                    }
-                  </div>
-                )
-              })}
-            </div>
-            {editing && (
-              <div style={{ textAlign: 'center', marginTop: 24 }}>
-                <button onClick={addHeroPt}
-                  style={{ padding: '8px 24px', fontSize: 13, fontWeight: 600, border: '1.5px dashed #ccc', borderRadius: 8, background: 'transparent', color: '#888', cursor: 'pointer' }}>
-                  + 포인트 추가
-                </button>
-              </div>
-            )}
+
+        {/* 메인 헤드라인 */}
+        <EditText editing={editing} value={s.mainCopy} onChange={v => onChange('mainCopy', v)}
+          style={{
+            fontSize: 58, fontWeight: 900, color: t.fg,
+            lineHeight: 1.18, letterSpacing: '-0.03em',
+            marginBottom: 16, wordBreak: 'keep-all',
+          }}
+        />
+
+        {/* 서브 카피 */}
+        <EditText editing={editing} value={s.subCopy} onChange={v => onChange('subCopy', v)}
+          style={{
+            fontSize: 20, color: t.fg, opacity: 0.68,
+            lineHeight: 1.72, wordBreak: 'keep-all',
+          }}
+        />
+      </div>
+
+      {/* ── 제품 이미지 풀블리드 ── */}
+      <ImgBox
+        url={img} t={t} label="메인 제품 이미지"
+        editing={editing} onImgChange={v => onChange('secImg', v)}
+        imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)}
+        minH={400}
+      />
+
+      {/* ── 곡선 구분선 + 핵심 포인트 영역 ── */}
+      <div style={{ position: 'relative', overflow: 'hidden' }}>
+
+        {/* 달걀컵 곡선 배경 */}
+        <div style={{
+          position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
+          width: '145%', height: '100%',
+          background: '#ffffff',
+          borderRadius: '60% 60% 0 0 / 9% 9% 0 0',
+        }} />
+
+        <div style={{ position: 'relative', padding: '60px 52px 68px' }}>
+
+          {/* KEY POINT 라벨 */}
+          <div style={{ textAlign: 'center', marginBottom: 40 }}>
+            <span style={{
+              fontSize: 11, fontWeight: 800, letterSpacing: '0.26em',
+              color: t.ac, textTransform: 'uppercase',
+              borderBottom: `2.5px solid ${t.ac}`, paddingBottom: 5,
+            }}>KEY POINT</span>
           </div>
+
+          {/* 포인트 그리드 */}
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 28 }}>
+            {displayPts.map((raw, i) => {
+              const lines = raw.split('\n')
+              const ptTitle = lines[0]?.trim() || `포인트 ${i + 1}`
+              const ptDesc = lines.slice(1).join('\n').trim()
+              return (
+                <div key={i} style={{
+                  display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', textAlign: 'center',
+                  gap: 14, position: 'relative',
+                }}>
+                  {editing && (
+                    <button onClick={() => delHeroPt(i)}
+                      style={{
+                        position: 'absolute', top: -8, right: -4,
+                        width: 22, height: 22, borderRadius: '50%',
+                        border: '1px solid #fca5a5', background: '#fef2f2',
+                        color: '#ef4444', fontSize: 12, cursor: 'pointer',
+                        fontWeight: 700, lineHeight: 1, zIndex: 2,
+                      }}>×</button>
+                  )}
+
+                  {/* 아이콘 원 */}
+                  <div style={{
+                    width: 80, height: 80, borderRadius: '50%', background: t.ac,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: '0 8px 22px rgba(0,0,0,0.14)', flexShrink: 0,
+                  }}>
+                    <span style={{
+                      fontSize: 30, fontWeight: 700, color: t.bg,
+                      fontFamily: sectionFont(i), lineHeight: 1,
+                    }}>{sectionRoman(i)}</span>
+                  </div>
+
+                  {editing
+                    ? <PointInput
+                        value={raw}
+                        onChange={v => { const n = [...pts]; n[i] = v; onChange('points', n) }}
+                        placeholder={'제목\n설명(엔터로 구분)'}
+                      />
+                    : <>
+                        <p style={{
+                          fontSize: 18, fontWeight: 800, color: '#18170F',
+                          margin: 0, lineHeight: 1.3, wordBreak: 'keep-all',
+                        }}>{ptTitle}</p>
+                        {ptDesc && (
+                          <p style={{
+                            fontSize: 14, color: '#6B6860',
+                            margin: 0, lineHeight: 1.6,
+                            wordBreak: 'keep-all', whiteSpace: 'pre-wrap',
+                          }}>{ptDesc}</p>
+                        )}
+                      </>
+                  }
+                </div>
+              )
+            })}
+          </div>
+
+          {editing && (
+            <div style={{ textAlign: 'center', marginTop: 28 }}>
+              <button onClick={addHeroPt}
+                style={{
+                  padding: '8px 24px', fontSize: 13, fontWeight: 600,
+                  border: '1.5px dashed #ccc', borderRadius: 8,
+                  background: 'transparent', color: '#888', cursor: 'pointer',
+                }}>+ 포인트 추가</button>
+            </div>
+          )}
         </div>
       </div>
+
     </CardWrapper>
   )
 }
