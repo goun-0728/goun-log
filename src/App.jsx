@@ -36,13 +36,19 @@ function Blk({ title, lines }) {
 }
 
 /* ── 상세페이지 결과 뷰 ─────────────────────────────── */
-function DetailView({ result }) {
+function DetailView({ result, savedSects, onSectsChange }) {
   const top = parseBlocks(result)
   const rep = top.find(b => b.title === '기획 보고서')
   const seo = top.find(b => b.title.includes('SEO'))
-  const [sects, setSects] = useState(() => parseSections(result))
+  const [sects, setSects] = useState(() => savedSects ?? parseSections(result))
   const [planOpen, setPlanOpen] = useState({})
   const [dlAll, setDlAll] = useState(false)
+
+  const sectsInit = useRef(false)
+  useEffect(() => {
+    if (!sectsInit.current) { sectsInit.current = true; return }
+    onSectsChange?.(sects)
+  }, [sects])
 
   const upd = useCallback((i, v) => setSects(p => p.map((s, j) => j === i ? v : s)), [])
 
@@ -158,6 +164,51 @@ export default function App() {
     try { localStorage.setItem(`cos_result_${tid}`, text) } catch {}
   }, [])
 
+  // 카드/섹션 에디터 상태 (텍스트+이미지 포함 전체 저장)
+  const [cardData,   setCardData]   = useState(() => { try { return JSON.parse(localStorage.getItem('cos_card_data')   || 'null') } catch { return null } })
+  const [detailData, setDetailData] = useState(() => { try { return JSON.parse(localStorage.getItem('cos_detail_data') || 'null') } catch { return null } })
+  const [cardGenKey,   setCardGenKey]   = useState(0)
+  const [detailGenKey, setDetailGenKey] = useState(0)
+
+  // 이미지 제거 헬퍼 (1탭만 이미지 보관 — 용량 초과 방지)
+  const saveCardData = useCallback((cards) => {
+    setCardData(cards)
+    try {
+      // 저장 전 detail 이미지 제거
+      try {
+        const dd = localStorage.getItem('cos_detail_data')
+        if (dd) {
+          const p = JSON.parse(dd)
+          if (p.some(s => s.secImg || s.secImg2 || s.secImg3 || s.secImg4))
+            localStorage.setItem('cos_detail_data', JSON.stringify(p.map(s => ({ ...s, secImg: null, secImg2: null, secImg3: null, secImg4: null }))))
+        }
+      } catch {}
+      localStorage.setItem('cos_card_data', JSON.stringify(cards))
+    } catch {
+      // 용량 초과 시 이미지 제외 저장
+      try { localStorage.setItem('cos_card_data', JSON.stringify(cards.map(c => ({ ...c, image: null })))) } catch {}
+    }
+  }, [])
+
+  const saveDetailData = useCallback((sects) => {
+    setDetailData(sects)
+    try {
+      // 저장 전 card 이미지 제거
+      try {
+        const cd = localStorage.getItem('cos_card_data')
+        if (cd) {
+          const p = JSON.parse(cd)
+          if (p.some(c => c.image))
+            localStorage.setItem('cos_card_data', JSON.stringify(p.map(c => ({ ...c, image: null }))))
+        }
+      } catch {}
+      localStorage.setItem('cos_detail_data', JSON.stringify(sects))
+    } catch {
+      // 용량 초과 시 이미지 제외 저장
+      try { localStorage.setItem('cos_detail_data', JSON.stringify(sects.map(s => ({ ...s, secImg: null, secImg2: null, secImg3: null, secImg4: null })))) } catch {}
+    }
+  }, [])
+
   const [history, setHistory] = useState(() => {
     try { return JSON.parse(localStorage.getItem('cos_history') || '[]') } catch { return [] }
   })
@@ -196,6 +247,15 @@ export default function App() {
         maxTokens: tid === 'detail' ? 4000 : 2000,
       })
       saveResult(tid, text)
+      // 새 AI 결과 생성 시 에디터 상태 초기화 (컴포넌트 재마운트로 새 결과 파싱)
+      if (tid === 'card') {
+        setCardData(null); try { localStorage.removeItem('cos_card_data') } catch {}
+        setCardGenKey(k => k + 1)
+      }
+      if (tid === 'detail') {
+        setDetailData(null); try { localStorage.removeItem('cos_detail_data') } catch {}
+        setDetailGenKey(k => k + 1)
+      }
       const h = { id: Date.now(), taskId: tid, label: task.label, preview: input.slice(0, 60), result: text, ts: new Date().toISOString() }
       setHistory(p => [h, ...p].slice(0, 20))
       setTimeout(() => resRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
@@ -238,6 +298,14 @@ export default function App() {
                     const tk2 = TASKS.find(t => t.id === h.taskId) || TASKS[0]
                     setTask(tk2)
                     saveResult(h.taskId, h.result)
+                    if (h.taskId === 'card') {
+                      setCardData(null); try { localStorage.removeItem('cos_card_data') } catch {}
+                      setCardGenKey(k => k + 1)
+                    }
+                    if (h.taskId === 'detail') {
+                      setDetailData(null); try { localStorage.removeItem('cos_detail_data') } catch {}
+                      setDetailGenKey(k => k + 1)
+                    }
                     setHistOpen(false)
                     setTimeout(() => resRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
                   }} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: 9, border: `1px solid ${C.bd}`, background: C.sur, cursor: 'pointer', marginBottom: 6 }}>
@@ -326,9 +394,9 @@ export default function App() {
             </div>
             <div style={{ padding: '16px 20px' }}>
               {task.id === 'detail'
-                ? <DetailView result={result} />
+                ? <DetailView key={detailGenKey} result={result} savedSects={detailData} onSectsChange={saveDetailData} />
                 : task.id === 'card'
-                  ? <CardNewsView result={result} />
+                  ? <CardNewsView key={cardGenKey} result={result} savedCards={cardData} onCardsChange={saveCardData} />
                   : topBlocks.map((b, i) => <Blk key={i} title={b.title} lines={b.lines} />)
               }
             </div>

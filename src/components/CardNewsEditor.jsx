@@ -635,11 +635,16 @@ function SectionLabel({ children }) {
 }
 
 /* ── 카드뉴스 전체 뷰 ────────────────────────────────────────── */
-export default function CardNewsView({ result }) {
-  const [cards, setCards] = useState(() => parseCardResult(result))
+export default function CardNewsView({ result, savedCards, onCardsChange }) {
+  const [cards, setCards] = useState(() => savedCards ?? parseCardResult(result))
   const [dlAll, setDlAll] = useState(false)
 
-  useEffect(() => { setCards(parseCardResult(result)) }, [result])
+  // 카드 변경 시 부모에 전달 (localStorage 저장) — 첫 마운트는 스킵
+  const cardsInit = useRef(false)
+  useEffect(() => {
+    if (!cardsInit.current) { cardsInit.current = true; return }
+    onCardsChange?.(cards)
+  }, [cards])
 
   const updateCard = useCallback((idx, newCard) => {
     setCards(prev => prev.map((c, i) => i === idx ? { ...newCard } : c))
