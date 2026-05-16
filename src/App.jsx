@@ -5,6 +5,8 @@ import { parseBlocks, parseSections, capturePNG, downloadURL } from './utils'
 import { generateContent } from './api/generate'
 import SectionEditor from './components/SectionEditor'
 import CardNewsView from './components/CardNewsEditor'
+import BlogKeywords from './components/BlogKeywords'
+import BlogThumbnail from './components/BlogThumbnail'
 
 /* ── 미니 컴포넌트 ─────────────────────────────────── */
 function Spin() {
@@ -209,6 +211,9 @@ export default function App() {
     }
   }, [])
 
+  // 블로그 키워드 분석 컨텍스트 (GPT 프롬프트에 포함)
+  const [keywordContext, setKeywordContext] = useState('')
+
   const [history, setHistory] = useState(() => {
     try { return JSON.parse(localStorage.getItem('cos_history') || '[]') } catch { return [] }
   })
@@ -239,9 +244,11 @@ export default function App() {
     saveResult(tid, '')
     setError('')
     try {
+      // 블로그 탭: 키워드 분석 데이터를 사용자 프롬프트에 추가
+      const userPrompt = input.trim() + (tid === 'blog' && keywordContext ? keywordContext : '')
       const text = await generateContent({
         systemPrompt: getSys(tid, tone),
-        userPrompt: input.trim(),
+        userPrompt,
         images: [],
         model: 'gpt-4o',
         maxTokens: tid === 'detail' ? 4000 : 2000,
@@ -265,6 +272,15 @@ export default function App() {
   }
 
   const topBlocks = result ? parseBlocks(result) : []
+
+  // 블로그 결과에서 첫 번째 제목 후보 추출 (썸네일 기본값용)
+  const blogTitle = (() => {
+    if (task.id !== 'blog' || !result) return ''
+    const block = topBlocks.find(b => b.title.includes('제목'))
+    if (!block) return ''
+    const line = block.lines.find(l => /^\d[..]/.test(l.trim()))
+    return line ? line.replace(/^\d+[..]\s*/, '').trim() : ''
+  })()
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, color: C.tx }}>
@@ -346,14 +362,17 @@ export default function App() {
           })}
         </div>
 
-        {/* 블로그 말투 */}
+        {/* 블로그 말투 + 키워드 분석 */}
         {task.id === 'blog' && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 12, color: C.mu, fontWeight: 600 }}>말투</span>
-            {BLOG_TONES.map(t => (
-              <button key={t} onClick={() => setTone(t)} style={{ padding: '4px 11px', borderRadius: 20, fontSize: 11, fontWeight: 600, border: tone === t ? `1.5px solid ${TASKS[1].col}` : `1.5px solid ${C.bd}`, background: tone === t ? TASKS[1].li : C.sur, color: tone === t ? TASKS[1].col : C.mu, cursor: 'pointer' }}>{t}</button>
-            ))}
-          </div>
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 12, color: C.mu, fontWeight: 600 }}>말투</span>
+              {BLOG_TONES.map(t => (
+                <button key={t} onClick={() => setTone(t)} style={{ padding: '4px 11px', borderRadius: 20, fontSize: 11, fontWeight: 600, border: tone === t ? `1.5px solid ${TASKS[1].col}` : `1.5px solid ${C.bd}`, background: tone === t ? TASKS[1].li : C.sur, color: tone === t ? TASKS[1].col : C.mu, cursor: 'pointer' }}>{t}</button>
+              ))}
+            </div>
+            <BlogKeywords onKeywordsChange={setKeywordContext} />
+          </>
         )}
 
         {/* 입력창 */}
@@ -378,7 +397,7 @@ export default function App() {
 
         {loading && (
           <div style={{ background: C.sur, borderRadius: 14, border: `1.5px solid ${C.bd}`, padding: '28px 24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 22, color: C.mu, fontSize: 13 }}><Spin />{task.id === 'detail' ? '상세페이지 8개 섹션 생성 중…' : task.id === 'card' ? '카드뉴스 5장 생성 중…' : '콘텐츠 생성 중…'}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 22, color: C.mu, fontSize: 13 }}><Spin />{task.id === 'detail' ? '상세페이지 8개 섹션 생성 중…' : task.id === 'card' ? '카드뉴스 5장 생성 중…' : task.id === 'blog' ? '블로그 포스팅 생성 중…' : '콘텐츠 생성 중…'}</div>
             {[95, 75, 85, 60, 90, 50].map((w, i) => <div key={i} style={{ height: 10, background: C.alt, borderRadius: 5, width: `${w}%`, marginBottom: 9, animation: `pl 1.5s ease ${i * .12}s infinite` }} />)}
           </div>
         )}
@@ -397,7 +416,10 @@ export default function App() {
                 ? <DetailView key={detailGenKey} result={result} savedSects={detailData} onSectsChange={saveDetailData} />
                 : task.id === 'card'
                   ? <CardNewsView key={cardGenKey} result={result} savedCards={cardData} onCardsChange={saveCardData} />
-                  : topBlocks.map((b, i) => <Blk key={i} title={b.title} lines={b.lines} />)
+                  : <>
+                      {topBlocks.map((b, i) => <Blk key={i} title={b.title} lines={b.lines} />)}
+                      {task.id === 'blog' && <BlogThumbnail key={result.slice(0, 40)} blogTitle={blogTitle} />}
+                    </>
               }
             </div>
           </div>
