@@ -84,12 +84,14 @@ function ThumbText({ t }) {
       {t.accentLine && (
         <div style={{ width: 40, height: 4, background: t.accentColor, marginBottom: 28, borderRadius: 2 }} />
       )}
-      <h1 style={{ fontSize: fs.title, fontWeight: 900, color: tc, lineHeight: 1.2, margin: '0 0 20px', whiteSpace: 'pre-wrap', textShadow: ts, wordBreak: 'keep-all' }}>
+      <h1 style={{ fontSize: fs.title, fontWeight: 900, color: tc, lineHeight: 1.2, margin: '0 0 20px', whiteSpace: 'pre-wrap', textShadow: ts, wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
         {t.mainTitle || '블로그 썸네일 제목'}
       </h1>
-      <p style={{ fontSize: fs.sub, color: tc, opacity: 0.85, lineHeight: 1.65, margin: 0, textShadow: ts, wordBreak: 'keep-all' }}>
-        {t.subTitle || '서브 타이틀'}
-      </p>
+      {t.subTitle && (
+        <p style={{ fontSize: fs.sub, color: tc, opacity: 0.85, lineHeight: 1.65, margin: 0, textShadow: ts, wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
+          {t.subTitle}
+        </p>
+      )}
     </div>
   )
 }
@@ -246,7 +248,7 @@ export default function BlogThumbnail({ blogTitle }) {
               {/* 글자 크기 */}
               <PL>글자 크기</PL>
               <div style={{ display: 'flex', gap: 4, marginBottom: 14 }}>
-                {[['sm', '작게'], ['md', '보통'], ['lg', '크게']].map(([v, l]) => {
+                {[['sm', '작게'], ['md', '보통']].map(([v, l]) => {
                   const on = thumb.fontSize === v
                   return (
                     <button key={v} onClick={() => ch('fontSize', v)}

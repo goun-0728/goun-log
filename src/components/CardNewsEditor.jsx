@@ -465,7 +465,7 @@ function CardEditor({ card, idx, onUpdate }) {
                 <button onClick={cancel} style={{ padding: '5px 10px', fontSize: 11, borderRadius: 7, border: `1px solid ${C.bd}`, background: C.sur, color: C.mu, cursor: 'pointer' }}>취소</button>
               </>
             : <button onClick={() => { setEditing(true); setShowPanel(true) }}
-                style={{ padding: '5px 12px', fontSize: 11, borderRadius: 7, border: `1px solid ${C.bd}`, background: C.sur, color: C.mu, cursor: 'pointer', fontWeight: 600 }}>✎ 수정</button>
+                style={{ padding: '6px 14px', fontSize: 12, borderRadius: 7, border: 'none', background: '#3b82f6', color: '#fff', cursor: 'pointer', fontWeight: 700 }}>✎ 수정</button>
           }
           <button onClick={dlPNG} disabled={dlDisabled}
             title={!saved ? '수정 후 저장해야 다운로드 가능합니다' : 'PNG 저장'}

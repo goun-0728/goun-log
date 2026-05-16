@@ -88,7 +88,7 @@ function DetailView({ result, savedSects, onSectsChange }) {
                     <span style={{ fontSize: 12, fontWeight: 600, color: C.tx }}>{s.sectionType}</span>
                     {s.mainCopy && <span style={{ fontSize: 11, color: C.mu }}>— {s.mainCopy}</span>}
                   </div>
-                  <span style={{ fontSize: 10, color: C.fa, transform: planOpen[i] ? 'rotate(180deg)' : 'none' }}>▼</span>
+                  <span style={{ fontSize: 11, color: '#3b82f6', fontWeight: 700 }}>{planOpen[i] ? '접기' : '열어보기'}</span>
                 </button>
                 {planOpen[i] && (
                   <div style={{ padding: '14px 16px', borderTop: `1px solid ${C.bd}` }}>
@@ -143,10 +143,15 @@ function DetailView({ result, savedSects, onSectsChange }) {
 /* ── 메인 앱 ───────────────────────────────────────── */
 export default function App() {
   const [task, setTask] = useState(TASKS[0])
-  const [input, setInput] = useState('')
+  const [tabInputs, setTabInputs] = useState({ detail: '', blog: '', card: '' })
   const [tone, setTone] = useState('생활형')
-  const [loading, setLoading] = useState(false)
+  const [tabLoading, setTabLoading] = useState({})
   const [error, setError] = useState('')
+
+  // 현재 탭의 입력값·로딩 상태 (파생)
+  const input   = tabInputs[task.id] || ''
+  const loading = tabLoading[task.id] || false
+  const setInput = val => setTabInputs(prev => ({ ...prev, [task.id]: val }))
 
   // 탭별 결과 — localStorage에 각각 저장
   const [tabResults, setTabResults] = useState(() => {
@@ -227,25 +232,31 @@ export default function App() {
     if (!taRef.current) return
     taRef.current.style.height = 'auto'
     taRef.current.style.height = Math.max(150, taRef.current.scrollHeight) + 'px'
-  }, [input])
+  }, [tabInputs[task.id]])
 
   // 히스토리 localStorage 저장
   useEffect(() => {
     try { localStorage.setItem('cos_history', JSON.stringify(history.slice(0, 20))) } catch {}
   }, [history])
 
-  // 탭 전환 — 결과는 유지
-  const sw = t => { setTask(t); setError('') }
+  // 탭 전환 — 결과 유지, 블로그·카드 빈 경우 상세페이지 입력값 복사
+  const sw = t => {
+    setTask(t)
+    setError('')
+    if (t.id !== 'detail') {
+      setTabInputs(prev => ({ ...prev, [t.id]: prev[t.id] || prev.detail || '' }))
+    }
+  }
 
   const run = async () => {
-    if (!input.trim() || loading) return
+    const curInput = tabInputs[task.id] || ''
+    if (!curInput.trim() || tabLoading[task.id]) return
     const tid = task.id
-    setLoading(true)
+    setTabLoading(prev => ({ ...prev, [tid]: true }))
     saveResult(tid, '')
     setError('')
     try {
-      // 블로그 탭: 키워드 분석 데이터를 사용자 프롬프트에 추가
-      const userPrompt = input.trim() + (tid === 'blog' && keywordContext ? keywordContext : '')
+      const userPrompt = curInput.trim() + (tid === 'blog' && keywordContext ? keywordContext : '')
       const text = await generateContent({
         systemPrompt: getSys(tid, tone),
         userPrompt,
@@ -254,7 +265,6 @@ export default function App() {
         maxTokens: tid === 'detail' ? 4000 : 2000,
       })
       saveResult(tid, text)
-      // 새 AI 결과 생성 시 에디터 상태 초기화 (컴포넌트 재마운트로 새 결과 파싱)
       if (tid === 'card') {
         setCardData(null); try { localStorage.removeItem('cos_card_data') } catch {}
         setCardGenKey(k => k + 1)
@@ -263,12 +273,14 @@ export default function App() {
         setDetailData(null); try { localStorage.removeItem('cos_detail_data') } catch {}
         setDetailGenKey(k => k + 1)
       }
-      const h = { id: Date.now(), taskId: tid, label: task.label, preview: input.slice(0, 60), result: text, ts: new Date().toISOString() }
+      const h = { id: Date.now(), taskId: tid, label: task.label, preview: curInput.slice(0, 60), result: text, ts: new Date().toISOString() }
       setHistory(p => [h, ...p].slice(0, 20))
       setTimeout(() => resRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
     } catch (e) {
       setError('오류: ' + e.message)
-    } finally { setLoading(false) }
+    } finally {
+      setTabLoading(prev => ({ ...prev, [tid]: false }))
+    }
   }
 
   const topBlocks = result ? parseBlocks(result) : []
@@ -362,36 +374,49 @@ export default function App() {
           })}
         </div>
 
-        {/* 블로그 말투 + 키워드 분석 */}
-        {task.id === 'blog' && (
-          <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 12, color: C.mu, fontWeight: 600 }}>말투</span>
-              {BLOG_TONES.map(t => (
-                <button key={t} onClick={() => setTone(t)} style={{ padding: '4px 11px', borderRadius: 20, fontSize: 11, fontWeight: 600, border: tone === t ? `1.5px solid ${TASKS[1].col}` : `1.5px solid ${C.bd}`, background: tone === t ? TASKS[1].li : C.sur, color: tone === t ? TASKS[1].col : C.mu, cursor: 'pointer' }}>{t}</button>
-              ))}
+        {/* 입력창 — 블로그는 별도 레이아웃, 나머지는 공통 */}
+        {task.id === 'blog' ? (
+          <div style={{ background: C.sur, borderRadius: 16, border: `1.5px solid ${C.bd}`, boxShadow: '0 2px 24px rgba(0,0,0,0.05)', overflow: 'hidden', marginBottom: 12 }}>
+            <div style={{ padding: '12px 14px 4px' }}>
+              <BlogKeywords onKeywordsChange={setKeywordContext} />
             </div>
-            <BlogKeywords onKeywordsChange={setKeywordContext} />
-          </>
+            <div style={{ padding: '0 14px' }}>
+              <textarea ref={taRef} value={input} onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) run() }}
+                placeholder="하고 싶은 말 / 강조할 내용"
+                style={{ width: '100%', minHeight: 110, padding: '12px 6px', border: 'none', outline: 'none', resize: 'none', fontSize: 14.5, lineHeight: 1.85, color: C.tx, background: 'transparent', fontFamily: 'inherit', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div style={{ padding: '10px 14px', borderTop: `1px solid ${C.bd}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 9, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 11, color: C.mu, fontWeight: 600 }}>말투</span>
+                {BLOG_TONES.map(t => (
+                  <button key={t} onClick={() => setTone(t)} style={{ padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, border: tone === t ? `1.5px solid ${TASKS[1].col}` : `1.5px solid ${C.bd}`, background: tone === t ? TASKS[1].li : C.sur, color: tone === t ? TASKS[1].col : C.mu, cursor: 'pointer' }}>{t}</button>
+                ))}
+              </div>
+              <button onClick={run} disabled={loading || !input.trim()} style={{ padding: '9px 22px', borderRadius: 9, border: 'none', background: (!input.trim() || loading) ? '#ECEAE5' : TASKS[1].col, color: (!input.trim() || loading) ? C.fa : '#fff', fontSize: 13, fontWeight: 700, cursor: (!input.trim() || loading) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
+                {loading ? <><Spin />생성 중…</> : '✦ 블로그 글 생성'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ background: C.sur, borderRadius: 16, border: `1.5px solid ${C.bd}`, boxShadow: '0 2px 24px rgba(0,0,0,0.05)', overflow: 'hidden', marginBottom: 12 }}>
+            <div style={{ padding: '8px 16px', background: task.li, borderBottom: `1px solid ${task.col}22`, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ color: task.col }}>{task.icon}</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: task.col }}>{task.label} — {task.sub}</span>
+            </div>
+            <textarea ref={taRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) run() }}
+              placeholder={'마케팅을 시작하세요. 제품 특징이나 원하는 내용을 자유롭게 입력해보세요.\n\n예) 듀라론 냉감패드 상세페이지 만들어줘'}
+              style={{ width: '100%', minHeight: 150, padding: '18px 20px', border: 'none', outline: 'none', resize: 'none', fontSize: 14.5, lineHeight: 1.85, color: C.tx, background: 'transparent', fontFamily: 'inherit' }}
+            />
+            <div style={{ padding: '10px 14px', borderTop: `1px solid ${C.bd}`, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 9 }}>
+              <span style={{ fontSize: 11, color: C.fa }}>⌘ Enter</span>
+              <button onClick={run} disabled={loading || !input.trim()} style={{ padding: '9px 22px', borderRadius: 9, border: 'none', background: (!input.trim() || loading) ? '#ECEAE5' : C.tx, color: (!input.trim() || loading) ? C.fa : '#fff', fontSize: 13, fontWeight: 700, cursor: (!input.trim() || loading) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
+                {loading ? <><Spin />생성 중…</> : '✦ 생성하기'}
+              </button>
+            </div>
+          </div>
         )}
-
-        {/* 입력창 */}
-        <div style={{ background: C.sur, borderRadius: 16, border: `1.5px solid ${C.bd}`, boxShadow: '0 2px 24px rgba(0,0,0,0.05)', overflow: 'hidden', marginBottom: 12 }}>
-          <div style={{ padding: '8px 16px', background: task.li, borderBottom: `1px solid ${task.col}22`, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ color: task.col }}>{task.icon}</span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: task.col }}>{task.label} — {task.sub}</span>
-          </div>
-          <textarea ref={taRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) run() }}
-            placeholder={'마케팅을 시작하세요. 제품 특징이나 원하는 내용을 자유롭게 입력해보세요.\n\n예) 듀라론 냉감패드 상세페이지 만들어줘'}
-            style={{ width: '100%', minHeight: 150, padding: '18px 20px', border: 'none', outline: 'none', resize: 'none', fontSize: 14.5, lineHeight: 1.85, color: C.tx, background: 'transparent', fontFamily: 'inherit' }}
-          />
-          <div style={{ padding: '10px 14px', borderTop: `1px solid ${C.bd}`, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 9 }}>
-            <span style={{ fontSize: 11, color: C.fa }}>⌘ Enter</span>
-            <button onClick={run} disabled={loading || !input.trim()} style={{ padding: '9px 22px', borderRadius: 9, border: 'none', background: (!input.trim() || loading) ? '#ECEAE5' : C.tx, color: (!input.trim() || loading) ? C.fa : '#fff', fontSize: 13, fontWeight: 700, cursor: (!input.trim() || loading) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
-              {loading ? <><Spin />생성 중…</> : '✦ 생성하기'}
-            </button>
-          </div>
-        </div>
 
         {error && <div style={{ padding: '12px 15px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 9, fontSize: 13, color: '#b91c1c', marginBottom: 14 }}>{error}</div>}
 
