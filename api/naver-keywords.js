@@ -43,15 +43,17 @@ export default async function handler(req, res) {
       .update(`${timestamp}.${method}.${uri}`)
       .digest('base64')
 
-    const params = new URLSearchParams({ hintKeywords: keywords, showDetail: '1' })
+    // URLSearchParams는 공백을 '+'로 인코딩 → 네이버 API가 거부함
+    // encodeURIComponent로 '%20' 형식(RFC 3986) 사용
+    const qs = `hintKeywords=${encodeURIComponent(keywords)}&showDetail=1`
+    const url = `https://api.naver.com${uri}?${qs}`
 
-    const resp = await fetch(`https://api.naver.com${uri}?${params}`, {
+    const resp = await fetch(url, {
       headers: {
-        'X-Timestamp' : timestamp,
-        'X-API-KEY'   : accessLicense,
-        'X-Customer'  : customerId,
-        'X-Signature' : signature,
-        'Content-Type': 'application/json; charset=UTF-8',
+        'X-Timestamp': timestamp,
+        'X-API-KEY'  : accessLicense,
+        'X-Customer' : customerId,
+        'X-Signature': signature,
       },
     })
 
@@ -59,7 +61,7 @@ export default async function handler(req, res) {
       const body = await resp.text()
       return res.status(resp.status).json({
         error: `네이버 API 오류 (${resp.status}): ${body}`,
-        debug: { customerId, accessLicensePrefix: accessLicense.slice(0, 8) + '…' },
+        debug: { customerId, accessLicensePrefix: accessLicense.slice(0, 8) + '…', url },
       })
     }
 
