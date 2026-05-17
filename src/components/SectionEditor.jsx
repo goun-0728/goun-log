@@ -330,10 +330,13 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
                 <>
                   <p style={{ fontSize:10,fontWeight:700,color:C.fa,letterSpacing:'0.07em',textTransform:'uppercase',marginBottom:7 }}>사진 슬롯</p>
                   <div style={{ display:'flex',gap:5,flexWrap:'wrap',marginBottom:18 }}>
-                    <button onClick={()=>{setDr(d=>({...d,secImg2:d.secImg2?null:'slot'}));setSaved(false)}}
-                      style={{ padding:'6px 10px',fontSize:11,borderRadius:7,border:`1px solid ${dr.secImg2?'#3b82f6':C.bd}`,background:dr.secImg2?'#EFF6FF':C.sur,color:dr.secImg2?'#1d4ed8':C.mu,cursor:'pointer',fontWeight:600 }}>
-                      {dr.secImg2?'📷2 제거':'+ 사진2'}
-                    </button>
+                    {/* detail2col은 이미지2가 왼쪽 컬럼에 항상 표시되므로 툴바 버튼 숨김 */}
+                    {dr.template !== 'detail2col' && (
+                      <button onClick={()=>{setDr(d=>({...d,secImg2:d.secImg2?null:'slot'}));setSaved(false)}}
+                        style={{ padding:'6px 10px',fontSize:11,borderRadius:7,border:`1px solid ${dr.secImg2?'#3b82f6':C.bd}`,background:dr.secImg2?'#EFF6FF':C.sur,color:dr.secImg2?'#1d4ed8':C.mu,cursor:'pointer',fontWeight:600 }}>
+                        {dr.secImg2?'📷2 제거':'+ 사진2'}
+                      </button>
+                    )}
                     {dr.template==='detail2col' && (
                       <button onClick={()=>{setDr(d=>({...d,secImg3:d.secImg3?null:'slot'}));setSaved(false)}}
                         style={{ padding:'6px 10px',fontSize:11,borderRadius:7,border:`1px solid ${dr.secImg3?'#3b82f6':C.bd}`,background:dr.secImg3?'#EFF6FF':C.sur,color:dr.secImg3?'#1d4ed8':C.mu,cursor:'pointer',fontWeight:600 }}>

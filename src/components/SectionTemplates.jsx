@@ -314,8 +314,10 @@ export function TplMaterial({ s, img, t, editing, onChange, secMeta, onSecMeta }
 }
 
 /* ── 3. Detail2col (디테일형) ──────────────────────
-   좌우 50:50 분할 / 이미지쪽 배경 t.ac 강하게
-   텍스트쪽 여백 넉넉 / 포인트 체크 아이콘
+   좌우 50:50 분할
+   왼쪽: 이미지 1·2 세로 쌓기 (기본 2장, 빈칸 업로드박스)
+   오른쪽: 텍스트 + 체크 아이콘 포인트
+   하단: 이미지 3·4 (툴바 추가 시) → 2열 그리드
 ─────────────────────────────────────────────── */
 export function TplDetail2col({ s, img, t, editing, onChange, secMeta, onSecMeta }) {
   const pts        = s.points || []
@@ -323,24 +325,57 @@ export function TplDetail2col({ s, img, t, editing, onChange, secMeta, onSecMeta
   const addPt      = () => onChange('points', [...pts, ''])
   const delPt      = i  => onChange('points', pts.filter((_, j) => j !== i))
 
+  const img2 = s.secImg2
+  const img3 = s.secImg3
+  const img4 = s.secImg4
+
   return (
     <CardWrapper bg={t.bg}>
 
-      {/* 50:50 분할 */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', minHeight: 640 }}>
+      {/* ── 상단 50:50 분할 ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
 
-        {/* 왼쪽: 이미지 (강한 배경) */}
-        <div style={{ background: t.ac, position: 'relative', overflow: 'hidden', minHeight: 640 }}>
-          {img
-            ? <>
-                <ImgBox url={img} t={t} label="디테일 이미지" editing={editing} onImgChange={v => onChange('secImg', v)}
-                  imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} minH={640} />
-                <div style={{ position: 'absolute', inset: 0, background: `${t.ac}2a`, pointerEvents: 'none' }} />
-              </>
-            : <div style={{ minHeight: 640, background: `linear-gradient(160deg, ${t.ac} 0%, ${t.ac}bb 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: 72, opacity: 0.18 }}>📷</span>
-              </div>
-          }
+        {/* 왼쪽: 이미지 2장 세로 쌓기 */}
+        <div style={{ display: 'flex', flexDirection: 'column', background: t.ac }}>
+
+          {/* 이미지 1 (위) */}
+          <div style={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 320 }}>
+            {img
+              ? <>
+                  <ImgBox url={img} t={t} label="이미지 1" editing={editing} onImgChange={v => onChange('secImg', v)}
+                    imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} minH={320} />
+                  <div style={{ position: 'absolute', inset: 0, background: `${t.ac}22`, pointerEvents: 'none' }} />
+                </>
+              : editing
+                ? <ImgBox url="slot" t={t} label="이미지 1 업로드" editing={editing} onImgChange={v => onChange('secImg', v)}
+                    imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} minH={320} />
+                : <div style={{ minHeight: 320, background: `linear-gradient(160deg, ${t.ac} 0%, ${t.ac}cc 100%)`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: 60, opacity: 0.15 }}>📷</span>
+                  </div>
+            }
+          </div>
+
+          {/* 구분선 */}
+          <div style={{ height: 3, background: `${t.bg}55`, flexShrink: 0 }} />
+
+          {/* 이미지 2 (아래) */}
+          <div style={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 320 }}>
+            {img2
+              ? <>
+                  <ImgBox url={img2} t={t} label="이미지 2" editing={editing} onImgChange={v => onChange('secImg2', v)}
+                    imgMeta={secMeta?.img2} onMetaChange={m => onSecMeta?.('img2', m)} minH={320} />
+                  <div style={{ position: 'absolute', inset: 0, background: `${t.ac}22`, pointerEvents: 'none' }} />
+                </>
+              : editing
+                ? <ImgBox url="slot" t={t} label="이미지 2 업로드" editing={editing} onImgChange={v => onChange('secImg2', v)}
+                    imgMeta={secMeta?.img2} onMetaChange={m => onSecMeta?.('img2', m)} minH={320} />
+                : <div style={{ minHeight: 320, background: `linear-gradient(160deg, ${t.ac}cc 0%, ${t.ac}88 100%)`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: 60, opacity: 0.10 }}>📷</span>
+                  </div>
+            }
+          </div>
         </div>
 
         {/* 오른쪽: 텍스트 */}
@@ -373,10 +408,18 @@ export function TplDetail2col({ s, img, t, editing, onChange, secMeta, onSecMeta
         </div>
       </div>
 
-      {/* 추가 이미지 */}
-      {s.secImg2 && (
-        <ImgBox url={s.secImg2} t={t} label="추가 이미지" editing={editing} onImgChange={v => onChange('secImg2', v)}
-          imgMeta={secMeta?.img2} onMetaChange={m => onSecMeta?.('img2', m)} />
+      {/* ── 하단: 이미지 3·4 (툴바에서 추가 시) → 2열 그리드 ── */}
+      {(img3 || img4) && (
+        <div style={{ display: 'grid', gridTemplateColumns: (img3 && img4) ? '1fr 1fr' : '1fr' }}>
+          {img3 && (
+            <ImgBox url={img3} t={t} label="이미지 3" editing={editing} onImgChange={v => onChange('secImg3', v)}
+              imgMeta={secMeta?.img3} onMetaChange={m => onSecMeta?.('img3', m)} />
+          )}
+          {img4 && (
+            <ImgBox url={img4} t={t} label="이미지 4" editing={editing} onImgChange={v => onChange('secImg4', v)}
+              imgMeta={secMeta?.img4} onMetaChange={m => onSecMeta?.('img4', m)} />
+          )}
+        </div>
       )}
 
     </CardWrapper>
