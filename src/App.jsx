@@ -48,7 +48,7 @@ function parseExtraSection(text, typeInfo) {
   return mkSec({
     sectionType: typeInfo.label,
     template: typeInfo.template,
-    designStyle: typeInfo.designStyle || '미니멀',
+    designStyle: typeInfo.designStyle || '크림',
     mainCopy: gf('메인카피', text),
     subCopy:  gf('서브카피', text),
     points:   gb('포인트', text),
@@ -103,7 +103,7 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
       })
       setSects(p => [...p, { ...parseExtraSection(text, typeInfo), _userAdded: true }])
     } catch {
-      setSects(p => [...p, mkSec({ sectionType: typeInfo.label, template: typeInfo.template, designStyle: typeInfo.designStyle || '미니멀', _userAdded: true })])
+      setSects(p => [...p, mkSec({ sectionType: typeInfo.label, template: typeInfo.template, designStyle: typeInfo.designStyle || '크림', _userAdded: true })])
     } finally {
       setAddLoading(null)
     }

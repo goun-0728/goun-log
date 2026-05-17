@@ -171,7 +171,7 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
     setDr(prev => ({ ...sec, secImg: prev.secImg ?? sec.secImg }))
   }, [sec])
 
-  const t = DS[dr.designStyle] || DS['미니멀']
+  const t = DS[dr.designStyle] || Object.values(DS)[0]
 
   const change = (key, val) => { setDr(d => ({...d,[key]:val})); setSaved(false) }
 

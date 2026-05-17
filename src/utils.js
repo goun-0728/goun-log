@@ -35,7 +35,7 @@ export function parseSections(text) {
       sectionType: sn, title: sn,
       mainCopy: gf('메인카피'), subCopy: gf('서브카피'),
       points: gb('포인트'), cta: gf('버튼문구'),
-      designStyle: AUTO_DS[sn] || '미니멀',
+      designStyle: AUTO_DS[sn] || '크림',
       template: AUTO_TPL[sn] || 'material',
       photoDir: JSON.stringify(gs('촬영기획')),
       imagePrompt: gf('AI프롬프트'),
