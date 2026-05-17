@@ -260,7 +260,7 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
       <div style={{ display:'flex', alignItems:'stretch' }}>
 
         {/* LEFT: 카드 미리보기 (PNG 캡처 대상) */}
-        <div ref={wrapRef} style={{ flex:1,minWidth:0,position:'relative',background:'#e8e6e0',overflow:'hidden' }}>
+        <div ref={wrapRef} style={{ flex:1,minWidth:0,position:'relative',background:'#e8e6e0',overflowX:'hidden',overflowY:editing?'auto':'hidden',maxHeight:editing?'calc(100vh - 130px)':'none' }}>
           <div style={{ width:860,transformOrigin:'top left',transform:`scale(${scale})` }}>
             <div ref={ref} style={{ fontFamily:"'Noto Sans KR','Apple SD Gothic Neo',sans-serif",width:860 }}>
               <Tpl s={dr} img={img} t={t} editing={editing} onChange={change}
@@ -298,7 +298,7 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
 
         {/* RIGHT: 사이드 패널 — 수정/레이아웃 컨트롤 */}
         {(editing||showTpl) && (
-          <div style={{ width:296,minWidth:296,borderLeft:`1px solid ${C.bd}`,background:'#F8FAFF',overflowY:'auto',animation:'slideInRight .22s ease',display:'flex',flexDirection:'column' }}>
+          <div style={{ width:296,minWidth:296,borderLeft:`1px solid ${C.bd}`,background:'#F8FAFF',overflowY:'auto',maxHeight:'calc(100vh - 130px)',animation:'slideInRight .22s ease',display:'flex',flexDirection:'column' }}>
             <div style={{ padding:'16px 14px 24px',flex:1 }}>
 
               {/* 레이아웃 */}

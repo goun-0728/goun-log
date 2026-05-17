@@ -101,9 +101,9 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
         model: 'gpt-4o',
         maxTokens: 700,
       })
-      setSects(p => [...p, parseExtraSection(text, typeInfo)])
+      setSects(p => [...p, { ...parseExtraSection(text, typeInfo), _userAdded: true }])
     } catch {
-      setSects(p => [...p, mkSec({ sectionType: typeInfo.label, template: typeInfo.template, designStyle: typeInfo.designStyle || '미니멀' })])
+      setSects(p => [...p, mkSec({ sectionType: typeInfo.label, template: typeInfo.template, designStyle: typeInfo.designStyle || '미니멀', _userAdded: true })])
     } finally {
       setAddLoading(null)
     }
@@ -157,8 +157,10 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ fontSize: 11, color: '#3b82f6', fontWeight: 700 }}>{planOpen[i] ? '접기' : '열어보기'}</span>
-                    <span onClick={e => { e.stopPropagation(); deleteSection(i) }}
-                      style={{ fontSize: 12, color: '#ef4444', fontWeight: 700, cursor: 'pointer', padding: '2px 7px', borderRadius: 4, background: '#fef2f2', border: '1px solid #fca5a5', lineHeight: 1 }}>×</span>
+                    {s._userAdded && (
+                      <span onClick={e => { e.stopPropagation(); deleteSection(i) }}
+                        style={{ fontSize: 12, color: '#ef4444', fontWeight: 700, cursor: 'pointer', padding: '2px 7px', borderRadius: 4, background: '#fef2f2', border: '1px solid #fca5a5', lineHeight: 1 }}>×</span>
+                    )}
                   </div>
                 </button>
                 {planOpen[i] && (
@@ -229,7 +231,7 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
           </div>
           {sects.map((s, i) => (
             <div key={s._id || i} data-sect>
-              <SectionEditor sec={s} idx={i} onUpdate={upd} onDelete={() => deleteSection(i)} />
+              <SectionEditor sec={s} idx={i} onUpdate={upd} onDelete={s._userAdded ? () => deleteSection(i) : undefined} />
             </div>
           ))}
         </div>
@@ -248,15 +250,15 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
 /* ── 메인 앱 ───────────────────────────────────────── */
 export default function App() {
   const [task, setTask] = useState(TASKS[0])
-  const [tabInputs, setTabInputs] = useState({ detail: '', blog: '', card: '' })
+  const [sharedInput, setSharedInput] = useState('')
   const [tone, setTone] = useState('생활형')
   const [tabLoading, setTabLoading] = useState({})
   const [error, setError] = useState('')
 
-  // 현재 탭의 입력값·로딩 상태 (파생)
-  const input   = tabInputs[task.id] || ''
+  // 모든 탭이 같은 입력값 공유
+  const input   = sharedInput
   const loading = tabLoading[task.id] || false
-  const setInput = val => setTabInputs(prev => ({ ...prev, [task.id]: val }))
+  const setInput = setSharedInput
 
   // 탭별 결과 — localStorage에 각각 저장
   const [tabResults, setTabResults] = useState(() => {
@@ -335,7 +337,7 @@ export default function App() {
 
   // 전체 리셋 (히스토리는 유지)
   const resetAll = () => {
-    setTabInputs({ detail: '', blog: '', card: '' })
+    setSharedInput('')
     const empty = {}
     for (const t of TASKS) {
       empty[t.id] = ''
@@ -354,24 +356,21 @@ export default function App() {
     if (!taRef.current) return
     taRef.current.style.height = 'auto'
     taRef.current.style.height = Math.max(150, taRef.current.scrollHeight) + 'px'
-  }, [tabInputs[task.id]])
+  }, [sharedInput, task.id])
 
   // 히스토리 localStorage 저장
   useEffect(() => {
     try { localStorage.setItem('cos_history', JSON.stringify(history.slice(0, 20))) } catch {}
   }, [history])
 
-  // 탭 전환 — 결과 유지, 블로그·카드 빈 경우 상세페이지 입력값 복사
+  // 탭 전환 — 결과 유지, 입력값은 공통 공유
   const sw = t => {
     setTask(t)
     setError('')
-    if (t.id !== 'detail') {
-      setTabInputs(prev => ({ ...prev, [t.id]: prev[t.id] || prev.detail || '' }))
-    }
   }
 
   const run = async () => {
-    const curInput = tabInputs[task.id] || ''
+    const curInput = sharedInput
     if (!curInput.trim() || tabLoading[task.id]) return
     const tid = task.id
     setTabLoading(prev => ({ ...prev, [tid]: true }))
@@ -572,7 +571,7 @@ export default function App() {
             </div>
             <div style={{ padding: '16px 20px' }}>
               {task.id === 'detail'
-                ? <DetailView key={detailGenKey} result={result} savedSects={detailData} onSectsChange={saveDetailData} productInput={tabInputs.detail} />
+                ? <DetailView key={detailGenKey} result={result} savedSects={detailData} onSectsChange={saveDetailData} productInput={sharedInput} />
                 : task.id === 'card'
                   ? <CardNewsView key={cardGenKey} result={result} savedCards={cardData} onCardsChange={saveCardData} />
                   : <>
