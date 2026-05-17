@@ -15,23 +15,23 @@ export const TASKS = [
 export const BLOG_TONES = ['생활형', '후기형', '공감형', '정보형', '전문가형']
 
 export const DS = {
-  '모던그린':   { bg: '#071A52', fg: '#E8F8F5', ac: '#31E3CB', sub: '#0E2460', bd: '#1A3570' },
-  '어텀':       { bg: '#FFB173', fg: '#2D1200', ac: '#B31E6F', sub: '#FFD4A8', bd: '#E89A55' },
-  '퍼플틸':     { bg: '#571B97', fg: '#FFF8E0', ac: '#FAEE1C', sub: '#6B2AAD', bd: '#7B3ABD' },
-  '포레스트':   { bg: '#107A8A', fg: '#F0FFF8', ac: '#2CB977', sub: '#1A8A9A', bd: '#258A7A' },
-  '선셋':       { bg: '#C94F4E', fg: '#FFF8E8', ac: '#FFF691', sub: '#D96060', bd: '#B03A3A' },
-  '오션블루':   { bg: '#0D153A', fg: '#E8F4FF', ac: '#22D1EE', sub: '#152050', bd: '#1E2D60' },
-  '로즈골드':   { bg: '#F8CFAF', fg: '#2D1810', ac: '#3F3B3A', sub: '#F5E8D8', bd: '#E0C0A0' },
-  '라임프레시': { bg: '#245643', fg: '#F0FFF8', ac: '#A7FFF3', sub: '#2E6653', bd: '#1A4535' },
-  '골든어스':   { bg: '#49253F', fg: '#FFF0E8', ac: '#F26D5C', sub: '#5A3050', bd: '#3A1A30' },
-  '미드나잇':   { bg: '#1E2978', fg: '#FFFFF0', ac: '#F9FF21', sub: '#252F88', bd: '#1A2568' },
+  '프리미엄블랙': { bg: '#18170F', fg: '#F5F4F0', ac: '#C8A96E', sub: '#272420', bd: '#3A3828' },
+  '딥네이비':     { bg: '#0D1B2A', fg: '#E8F0F8', ac: '#7EB8D4', sub: '#162436', bd: '#243548' },
+  '포레스트그린': { bg: '#1A3020', fg: '#F0FFF8', ac: '#5B9E6E', sub: '#243828', bd: '#2E4835' },
+  '버건디':       { bg: '#2D0A0A', fg: '#FFF0EE', ac: '#C0614A', sub: '#3D1212', bd: '#501A1A' },
+  '슬레이트':     { bg: '#2D3748', fg: '#F7FAFC', ac: '#90CDF4', sub: '#3D4A5C', bd: '#4A5568' },
+  '웜베이지':     { bg: '#FAF3E0', fg: '#2D2000', ac: '#8B6914', sub: '#F0E8CC', bd: '#DDD0A0' },
+  '로즈':         { bg: '#FDF2F2', fg: '#2D0808', ac: '#C0404A', sub: '#F8E8E8', bd: '#E8C0C0' },
+  '올리브':       { bg: '#2A2E1A', fg: '#F8F8E8', ac: '#8B9E3A', sub: '#383C28', bd: '#484C38' },
+  '스틸블루':     { bg: '#1A2A3A', fg: '#EEF4F8', ac: '#5B8DB8', sub: '#253545', bd: '#304555' },
+  '크림':         { bg: '#FDFAF5', fg: '#2A2010', ac: '#A0784A', sub: '#F5F0E8', bd: '#E0D8C8' },
 }
 export const DS_KEYS = Object.keys(DS)
 
 export const AUTO_DS = {
-  HERO: '오션블루', '문제 공감': '로즈골드', '해결 제안': '라임프레시',
-  '특징 강조': '모던그린', '사용 상황': '포레스트', '비교': '미드나잇',
-  '추천 대상': '골든어스', CTA: '어텀',
+  HERO: '프리미엄블랙', '문제 공감': '크림', '해결 제안': '포레스트그린',
+  '특징 강조': '딥네이비', '사용 상황': '올리브', '비교': '슬레이트',
+  '추천 대상': '웜베이지', CTA: '버건디',
 }
 
 export const AUTO_TPL = {
