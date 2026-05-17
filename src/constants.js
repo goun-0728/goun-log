@@ -15,33 +15,23 @@ export const TASKS = [
 export const BLOG_TONES = ['생활형', '후기형', '공감형', '정보형', '전문가형']
 
 export const DS = {
-  // ── 다크/프리미엄 계열
-  '블랙':      { bg: '#0F0F0F', fg: '#F0EEE8', ac: '#D4A853', sub: '#1C1C1C', bd: '#2E2E2E' },
-  '프리미엄':  { bg: '#18170F', fg: '#F5F4F0', ac: '#C8A96E', sub: '#272420', bd: '#3A3828' },
-  '네이비':    { bg: '#0D1B2A', fg: '#E8F0F8', ac: '#4A9EE8', sub: '#162436', bd: '#243548' },
-  '다크그린':  { bg: '#0A1F1A', fg: '#E8F5F0', ac: '#3DBE82', sub: '#122A23', bd: '#1E3D33' },
-  '버건디':    { bg: '#1A0808', fg: '#F5EEE8', ac: '#C8614A', sub: '#2A1212', bd: '#3D1E1E' },
-
-  // ── 뉴트럴/미니멀 계열
-  '화이트':    { bg: '#FFFFFF', fg: '#18170F', ac: '#18170F', sub: '#F5F4F0', bd: '#E4E2DC' },
-  '미니멀':    { bg: '#FFFFFF', fg: '#18170F', ac: '#1D6B45', sub: '#F5F4F0', bd: '#E4E2DC' },
-  '차콜':      { bg: '#2D2D2D', fg: '#F0F0F0', ac: '#E8C84A', sub: '#3A3A3A', bd: '#484848' },
-
-  // ── 비비드 컬러 계열
-  '에메랄드':  { bg: '#064E3B', fg: '#ECFDF5', ac: '#34D399', sub: '#065F46', bd: '#059669' },
-  '코발트':    { bg: '#1E3A8A', fg: '#EFF6FF', ac: '#60A5FA', sub: '#1E40AF', bd: '#3B82F6' },
-  '오렌지':    { bg: '#C2410C', fg: '#FFF7ED', ac: '#FCD34D', sub: '#9A3412', bd: '#EA580C' },
-  '바이올렛':  { bg: '#5B21B6', fg: '#F5F3FF', ac: '#FCD34D', sub: '#4C1D95', bd: '#7C3AED' },
-  '마젠타':    { bg: '#9D174D', fg: '#FFF0F6', ac: '#FCD34D', sub: '#831843', bd: '#DB2777' },
-  '라임':      { bg: '#15803D', fg: '#F0FDF4', ac: '#86EFAC', sub: '#166534', bd: '#22C55E' },
-  '레드':      { bg: '#991B1B', fg: '#FFF1F2', ac: '#FCD34D', sub: '#7F1D1D', bd: '#DC2626' },
+  '모던그린':   { bg: '#071A52', fg: '#E8F8F5', ac: '#31E3CB', sub: '#0E2460', bd: '#1A3570' },
+  '어텀':       { bg: '#FFB173', fg: '#2D1200', ac: '#B31E6F', sub: '#FFD4A8', bd: '#E89A55' },
+  '퍼플틸':     { bg: '#571B97', fg: '#FFF8E0', ac: '#FAEE1C', sub: '#6B2AAD', bd: '#7B3ABD' },
+  '포레스트':   { bg: '#107A8A', fg: '#F0FFF8', ac: '#2CB977', sub: '#1A8A9A', bd: '#258A7A' },
+  '선셋':       { bg: '#C94F4E', fg: '#FFF8E8', ac: '#FFF691', sub: '#D96060', bd: '#B03A3A' },
+  '오션블루':   { bg: '#0D153A', fg: '#E8F4FF', ac: '#22D1EE', sub: '#152050', bd: '#1E2D60' },
+  '로즈골드':   { bg: '#F8CFAF', fg: '#2D1810', ac: '#3F3B3A', sub: '#F5E8D8', bd: '#E0C0A0' },
+  '라임프레시': { bg: '#245643', fg: '#F0FFF8', ac: '#A7FFF3', sub: '#2E6653', bd: '#1A4535' },
+  '골든어스':   { bg: '#49253F', fg: '#FFF0E8', ac: '#F26D5C', sub: '#5A3050', bd: '#3A1A30' },
+  '미드나잇':   { bg: '#1E2978', fg: '#FFFFF0', ac: '#F9FF21', sub: '#252F88', bd: '#1A2568' },
 }
 export const DS_KEYS = Object.keys(DS)
 
 export const AUTO_DS = {
-  HERO: '프리미엄', '문제 공감': '화이트', '해결 제안': '화이트',
-  '특징 강조': '코발트', '사용 상황': '에메랄드', '비교': '차콜',
-  '추천 대상': '미니멀', CTA: '블랙',
+  HERO: '오션블루', '문제 공감': '로즈골드', '해결 제안': '라임프레시',
+  '특징 강조': '모던그린', '사용 상황': '포레스트', '비교': '미드나잇',
+  '추천 대상': '골든어스', CTA: '어텀',
 }
 
 export const AUTO_TPL = {

@@ -219,7 +219,7 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
   const dlLabel = dl ? '변환 중' : (!saved ? '저장 후 다운로드' : '↓ PNG')
 
   return (
-    <div style={{ marginBottom:20,borderRadius:12,overflow:'hidden',border:`2px solid ${editing?'#3b82f6':C.bd}`,transition:'border-color .2s' }}>
+    <div style={{ marginBottom:20,borderRadius:12,overflow:'clip',border:`2px solid ${editing?'#3b82f6':C.bd}`,transition:'border-color .2s' }}>
 
       {/* ── 툴바 ── */}
       <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 14px',background:editing?'#EFF6FF':C.alt,borderBottom:`1px solid ${editing?'#BFDBFE':C.bd}`,flexWrap:'wrap',gap:6 }}>
@@ -257,10 +257,10 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
       </div>
 
       {/* ── 2단 레이아웃: 카드(좌) + 사이드 패널(우) ── */}
-      <div style={{ display:'flex', alignItems:'stretch' }}>
+      <div style={{ display:'flex', alignItems:'flex-start' }}>
 
         {/* LEFT: 카드 미리보기 (PNG 캡처 대상) */}
-        <div ref={wrapRef} style={{ flex:1,minWidth:0,position:'relative',background:'#e8e6e0',overflowX:'hidden',overflowY:editing?'auto':'hidden',maxHeight:editing?'calc(100vh - 130px)':'none' }}>
+        <div ref={wrapRef} style={{ flex:1,minWidth:0,position:'relative',background:'#e8e6e0',overflowX:'hidden' }}>
           <div style={{ width:860,transformOrigin:'top left',transform:`scale(${scale})` }}>
             <div ref={ref} style={{ fontFamily:"'Noto Sans KR','Apple SD Gothic Neo',sans-serif",width:860 }}>
               <Tpl s={dr} img={img} t={t} editing={editing} onChange={change}
@@ -298,7 +298,7 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
 
         {/* RIGHT: 사이드 패널 — 수정/레이아웃 컨트롤 */}
         {(editing||showTpl) && (
-          <div style={{ width:296,minWidth:296,borderLeft:`1px solid ${C.bd}`,background:'#F8FAFF',overflowY:'auto',maxHeight:'calc(100vh - 130px)',animation:'slideInRight .22s ease',display:'flex',flexDirection:'column' }}>
+          <div style={{ width:296,minWidth:296,borderLeft:`1px solid ${C.bd}`,background:'#F8FAFF',position:'sticky',top:60,height:'calc(100vh - 60px)',overflowY:'auto',animation:'slideInRight .22s ease',display:'flex',flexDirection:'column' }}>
             <div style={{ padding:'16px 14px 24px',flex:1 }}>
 
               {/* 레이아웃 */}
