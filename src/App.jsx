@@ -1,6 +1,6 @@
 // src/App.jsx
 import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { C, TASKS, BLOG_TONES, getSys } from './constants'
+import { C, TASKS, BLOG_TONES, getSys, EXTRA_SECTIONS, getExtraSectSys, mkSec } from './constants'
 import { parseBlocks, parseSections, capturePNG, downloadURL } from './utils'
 import { generateContent } from './api/generate'
 import SectionEditor from './components/SectionEditor'
@@ -37,22 +37,77 @@ function Blk({ title, lines }) {
   )
 }
 
+/* ── 추가 섹션 AI 출력 파서 ─────────────────────────── */
+function parseExtraSection(text, typeInfo) {
+  const gf = (k, t) => { const rx = new RegExp(k + ':\\s*([^\\n]+)'); const f = t.match(rx); return f ? f[1].trim() : '' }
+  const gb = (k, t) => {
+    const rx = new RegExp(k + ':\\s*\\n([\\s\\S]*?)(?=\\n[가-힣A-Za-z]+:|$)')
+    const f = t.match(rx); if (!f) return []
+    return f[1].split('\n').map(l => l.replace(/^[\s•\-\d\.]+/, '').trim()).filter(l => l.length > 1)
+  }
+  return mkSec({
+    sectionType: typeInfo.label,
+    template: typeInfo.template,
+    designStyle: typeInfo.designStyle || '미니멀',
+    mainCopy: gf('메인카피', text),
+    subCopy:  gf('서브카피', text),
+    points:   gb('포인트', text),
+  })
+}
+
 /* ── 상세페이지 결과 뷰 ─────────────────────────────── */
-function DetailView({ result, savedSects, onSectsChange }) {
+function DetailView({ result, savedSects, onSectsChange, productInput }) {
   const top = parseBlocks(result)
   const rep = top.find(b => b.title === '기획 보고서')
   const seo = top.find(b => b.title.includes('SEO'))
-  const [sects, setSects] = useState(() => savedSects ?? parseSections(result))
+  const [sects,    setSects]    = useState(() => savedSects ?? parseSections(result))
   const [planOpen, setPlanOpen] = useState({})
-  const [dlAll, setDlAll] = useState(false)
+  const [dlAll,    setDlAll]    = useState(false)
+  const [addOpen,  setAddOpen]  = useState(false)
+  const [addLoading, setAddLoading] = useState(null) // 로딩 중인 섹션 타입
 
-  const sectsInit = useRef(false)
+  const addBtnRef    = useRef(null)
+  const sectsInit    = useRef(false)
+
   useEffect(() => {
     if (!sectsInit.current) { sectsInit.current = true; return }
     onSectsChange?.(sects)
   }, [sects])
 
+  // 팝업 외부 클릭 시 닫기
+  useEffect(() => {
+    if (!addOpen) return
+    const handler = e => { if (addBtnRef.current && !addBtnRef.current.contains(e.target)) setAddOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [addOpen])
+
   const upd = useCallback((i, v) => setSects(p => p.map((s, j) => j === i ? v : s)), [])
+
+  const deleteSection = useCallback(i => {
+    setSects(p => p.filter((_, j) => j !== i))
+    setPlanOpen({})
+  }, [])
+
+  const addSection = useCallback(async typeInfo => {
+    setAddOpen(false)
+    setAddLoading(typeInfo.type)
+    try {
+      const text = await generateContent({
+        systemPrompt: getExtraSectSys(typeInfo.type),
+        userPrompt: productInput?.trim()
+          ? `다음 제품 정보를 참고해서 "${typeInfo.label}" 섹션을 만들어줘:\n${productInput}`
+          : `"${typeInfo.label}" 섹션 내용을 작성해줘.`,
+        model: 'gpt-4o',
+        maxTokens: 700,
+      })
+      setSects(p => [...p, parseExtraSection(text, typeInfo)])
+    } catch {
+      setSects(p => [...p, mkSec({ sectionType: typeInfo.label, template: typeInfo.template, designStyle: typeInfo.designStyle || '미니멀' })])
+    } finally {
+      setAddLoading(null)
+    }
+  }, [productInput])
 
   const dlAllPNG = async () => {
     setDlAll(true)
@@ -93,14 +148,18 @@ function DetailView({ result, savedSects, onSectsChange }) {
             let sp = {}
             try { sp = JSON.parse(s.photoDir || '{}') } catch {}
             return (
-              <div key={i} style={{ marginBottom: 6, border: `1px solid ${C.bd}`, borderRadius: 8, overflow: 'hidden' }}>
+              <div key={s._id || i} style={{ marginBottom: 6, border: `1px solid ${C.bd}`, borderRadius: 8, overflow: 'hidden' }}>
                 <button onClick={() => setPlanOpen(o => ({ ...o, [i]: !o[i] }))} style={{ width: '100%', padding: '9px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: 'none', background: planOpen[i] ? '#ECEAE5' : C.sur, cursor: 'pointer', textAlign: 'left' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontSize: 10, fontWeight: 700, color: C.mu, background: C.alt, padding: '1px 7px', borderRadius: 4, border: `1px solid ${C.bd}` }}>S{i + 1}</span>
                     <span style={{ fontSize: 12, fontWeight: 600, color: C.tx }}>{s.sectionType}</span>
                     {s.mainCopy && <span style={{ fontSize: 11, color: C.mu }}>— {s.mainCopy}</span>}
                   </div>
-                  <span style={{ fontSize: 11, color: '#3b82f6', fontWeight: 700 }}>{planOpen[i] ? '접기' : '열어보기'}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 11, color: '#3b82f6', fontWeight: 700 }}>{planOpen[i] ? '접기' : '열어보기'}</span>
+                    <span onClick={e => { e.stopPropagation(); deleteSection(i) }}
+                      style={{ fontSize: 12, color: '#ef4444', fontWeight: 700, cursor: 'pointer', padding: '2px 7px', borderRadius: 4, background: '#fef2f2', border: '1px solid #fca5a5', lineHeight: 1 }}>×</span>
+                  </div>
                 </button>
                 {planOpen[i] && (
                   <div style={{ padding: '14px 16px', borderTop: `1px solid ${C.bd}` }}>
@@ -139,11 +198,40 @@ function DetailView({ result, savedSects, onSectsChange }) {
               <span style={{ fontSize: 12, fontWeight: 800, color: '#1E3A6E', letterSpacing: '-0.02em' }}>🖼 다운로드용 섹션 이미지</span>
               <span style={{ fontSize: 11, color: '#5A7AAA' }}>— 수정 후 PNG 저장</span>
             </div>
-            <button onClick={dlAllPNG} disabled={dlAll} style={{ padding: '6px 12px', fontSize: 11, borderRadius: 7, border: `1px solid ${dlAll ? C.bd : '#93B4D8'}`, background: dlAll ? C.alt : '#D6E8F8', color: dlAll ? C.fa : '#1E3A6E', cursor: dlAll ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
-              {dlAll ? <><Spin /> 저장 중…</> : '↓ 전체 PNG'}
-            </button>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              {/* 섹션 추가 버튼 */}
+              <div ref={addBtnRef} style={{ position: 'relative' }}>
+                <button onClick={() => setAddOpen(o => !o)} disabled={addLoading !== null}
+                  style={{ padding: '6px 12px', fontSize: 11, borderRadius: 7, border: `1px solid ${addOpen ? '#3b82f6' : '#93B4D8'}`, background: addOpen ? '#EFF6FF' : '#D6E8F8', color: addOpen ? '#1d4ed8' : '#1E3A6E', cursor: addLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontWeight: 700 }}>
+                  {addLoading ? <><Spin /> 생성 중…</> : '+ 섹션 추가'}
+                </button>
+                {addOpen && (
+                  <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 60, background: '#fff', border: `1px solid ${C.bd}`, borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,0.14)', padding: '14px', width: 280 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: C.fa, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 10 }}>추가할 섹션 선택</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                      {EXTRA_SECTIONS.map(sec => (
+                        <button key={sec.type} onClick={() => addSection(sec)}
+                          style={{ padding: '10px 12px', borderRadius: 9, border: `1px solid ${C.bd}`, background: C.sur, cursor: 'pointer', textAlign: 'left', transition: 'border-color .12s' }}
+                          onMouseEnter={e => e.currentTarget.style.borderColor = '#3b82f6'}
+                          onMouseLeave={e => e.currentTarget.style.borderColor = C.bd}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: C.tx }}>{sec.label}</div>
+                          <div style={{ fontSize: 10, color: C.fa, marginTop: 2 }}>{sec.sub}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <button onClick={dlAllPNG} disabled={dlAll} style={{ padding: '6px 12px', fontSize: 11, borderRadius: 7, border: `1px solid ${dlAll ? C.bd : '#93B4D8'}`, background: dlAll ? C.alt : '#D6E8F8', color: dlAll ? C.fa : '#1E3A6E', cursor: dlAll ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
+                {dlAll ? <><Spin /> 저장 중…</> : '↓ 전체 PNG'}
+              </button>
+            </div>
           </div>
-          {sects.map((s, i) => <div key={i} data-sect><SectionEditor sec={s} idx={i} onUpdate={upd} /></div>)}
+          {sects.map((s, i) => (
+            <div key={s._id || i} data-sect>
+              <SectionEditor sec={s} idx={i} onUpdate={upd} onDelete={() => deleteSection(i)} />
+            </div>
+          ))}
         </div>
       )}
 
@@ -484,7 +572,7 @@ export default function App() {
             </div>
             <div style={{ padding: '16px 20px' }}>
               {task.id === 'detail'
-                ? <DetailView key={detailGenKey} result={result} savedSects={detailData} onSectsChange={saveDetailData} />
+                ? <DetailView key={detailGenKey} result={result} savedSects={detailData} onSectsChange={saveDetailData} productInput={tabInputs.detail} />
                 : task.id === 'card'
                   ? <CardNewsView key={cardGenKey} result={result} savedCards={cardData} onCardsChange={saveCardData} />
                   : <>

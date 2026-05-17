@@ -59,12 +59,57 @@ export const TPL_LABELS = [
   { k: 'points3',    l: '포인트3단형' },
   { k: 'target',     l: '추천대상형' },
   { k: 'cta',        l: 'CTA형' },
+  { k: 'specTable',  l: '제품상세표시' },
 ]
+
+// 추가 가능한 섹션 목록
+export const EXTRA_SECTIONS = [
+  { type: '재료/성분',    label: '재료/성분',    sub: '원재료 설명',      template: 'material',   designStyle: '화이트' },
+  { type: '제조과정',     label: '제조과정',     sub: '만드는 방법',      template: 'points3',    designStyle: '화이트' },
+  { type: '수상/인증',    label: '수상/인증',     sub: '품질 인증',        template: 'points3',    designStyle: '미니멀' },
+  { type: '실제후기',     label: '실제 후기',    sub: '고객 리뷰',        template: 'target',     designStyle: '화이트' },
+  { type: 'FAQ',          label: 'FAQ',          sub: '자주 묻는 질문',   template: 'material',   designStyle: '화이트' },
+  { type: '보관방법',     label: '보관방법',     sub: '사용/보관 안내',   template: 'detail2col', designStyle: '미니멀' },
+  { type: '제품상세표시', label: '제품상세표시', sub: '법적 필수 표기',   template: 'specTable',  designStyle: '화이트' },
+  { type: '브랜드소개',   label: '브랜드소개',   sub: '회사/브랜드 소개', template: 'hero',       designStyle: '미니멀' },
+]
+
+// 추가 섹션 AI 시스템 프롬프트
+export function getExtraSectSys(typeKey) {
+  if (typeKey === '제품상세표시') {
+    return `당신은 스마트스토어 상세페이지 전문가입니다.
+제품 정보를 참고하여 법적 필수 표시 정보를 작성하세요.
+:: 구분자로 항목명과 값을 구분합니다. 값을 최대한 구체적으로 추정해서 채워주세요.
+반드시 아래 형식만 출력:
+메인카피: 제품 상세 정보
+서브카피: 상품 구매 전 필독 사항
+포인트:
+• 제품명::
+• 식품유형::
+• 업소명::
+• 소재지::
+• 유통기한::
+• 중량::
+• 원재료::
+• 보관방법::
+• 주의사항::`
+  }
+  return `당신은 스마트스토어 상세페이지 전문 기획자입니다.
+제품 정보를 참고하여 섹션 내용을 간결하게 작성하세요.
+반드시 아래 형식만 출력:
+메인카피: (15자 이내)
+서브카피: (1줄)
+포인트:
+• 항목1
+• 항목2
+• 항목3`
+}
 
 export const AUTO_ICONS = ['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ','Ⅶ','Ⅷ','Ⅸ','Ⅹ'] // 하위호환용, 실제는 SectionTemplates의 ROMAN 사용
 
 // 섹션 데이터 기본 스키마
 export const mkSec = (o = {}) => ({
+  _id: Math.random().toString(36).slice(2, 9),
   sectionType: '', title: '', mainCopy: '', subCopy: '',
   points: [], description: '', designStyle: '미니멀',
   template: 'material', photoDir: '{}', imagePrompt: '', cta: '',

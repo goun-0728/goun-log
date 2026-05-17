@@ -143,7 +143,7 @@ function AddBlockBtn({ onAddText, onAddImg, editing }) {
 /* ══════════════════════════════════════════════════
    SectionEditor 메인
 ══════════════════════════════════════════════════ */
-export default function SectionEditor({ sec, idx, onUpdate }) {
+export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
   const [editing, setEditing] = useState(false)
   const [dr, setDr]           = useState(sec)
   const [saved, setSaved]     = useState(true)
@@ -246,6 +246,13 @@ export default function SectionEditor({ sec, idx, onUpdate }) {
             style={{ padding:'5px 10px',fontSize:11,borderRadius:7,border:`1px solid ${dlDisabled?C.bd:'#1d6b45'}`,background:dlDisabled?C.alt:'#f0fdf4',color:dlDisabled?C.fa:'#1d6b45',cursor:dlDisabled?'not-allowed':'pointer',display:'flex',alignItems:'center',gap:4,fontWeight:dlDisabled?400:600 }}>
             {dl?<><Spin/>{dlLabel}</>:dlLabel}
           </button>
+          {onDelete && (
+            <button onClick={onDelete}
+              title="이 섹션 삭제"
+              style={{ padding:'5px 10px',fontSize:11,borderRadius:7,border:'1px solid #fca5a5',background:'#fef2f2',color:'#ef4444',cursor:'pointer',fontWeight:700 }}>
+              × 삭제
+            </button>
+          )}
         </div>
       </div>
 

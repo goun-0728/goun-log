@@ -676,4 +676,84 @@ const addBtnStyle    = { padding: '10px 28px', fontSize: 13, fontWeight: 600, bo
 const overlayInput   = { display: 'block', width: '100%', background: 'rgba(255,255,255,0.92)', border: '2px solid #3b82f6', borderRadius: 8, padding: '8px 14px', outline: 'none', fontFamily: 'inherit', color: '#111', boxSizing: 'border-box', fontWeight: 700 }
 const cmpInput       = { width: '100%', fontSize: 15, border: '1px solid #3b82f6', borderRadius: 6, padding: '7px 10px', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }
 
-export const TPL = { hero: TplHero, material: TplMaterial, detail2col: TplDetail2col, scene: TplScene, compare: TplCompare, points3: TplPoints3, target: TplTarget, cta: TplCTA }
+/* ── 9. SpecTable (제품상세표시) ────────────────────────
+   항목::값 형식의 points 배열을 표로 렌더링
+   편집 시 각 셀 인라인 input / 행 추가·삭제
+─────────────────────────────────────────────── */
+const DEFAULT_SPEC_ROWS = [
+  '제품명::','식품유형::','업소명::','소재지::',
+  '유통기한::','중량::','원재료::','보관방법::','주의사항::',
+]
+
+export function TplSpecTable({ s, img, t, editing, onChange }) {
+  const pts        = s.points || []
+  const displayPts = editing ? (pts.length ? pts : [...DEFAULT_SPEC_ROWS]) : pts.filter(p => p && p.trim())
+  const addRow     = () => onChange('points', [...pts, '항목::'])
+  const delRow     = i  => onChange('points', pts.filter((_, j) => j !== i))
+
+  return (
+    <CardWrapper bg="#fff">
+
+      {/* 헤더 */}
+      <div style={{ padding: '52px 64px 36px', textAlign: 'center', borderBottom: '2.5px solid #111' }}>
+        <EditText editing={editing} value={s.mainCopy || '제품 상세 정보'} onChange={v => onChange('mainCopy', v)}
+          style={{ fontSize: 32, fontWeight: 900, color: '#111', letterSpacing: '-0.025em', marginBottom: 10, fontFamily: SERIF }} />
+        {(s.subCopy || editing) && (
+          <EditText editing={editing} value={s.subCopy} onChange={v => onChange('subCopy', v)}
+            style={{ fontSize: 15, color: '#888', lineHeight: 1.65 }} />
+        )}
+      </div>
+
+      {/* 표 */}
+      <div style={{ padding: '0 64px 72px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 36 }}>
+          <thead>
+            <tr style={{ background: '#f5f4f0', borderBottom: '2px solid #333' }}>
+              <th style={{ padding: '14px 20px', fontSize: 13, fontWeight: 700, color: '#333', textAlign: 'left', width: '28%', borderRight: '1px solid #e4e2dc' }}>항목</th>
+              <th style={{ padding: '14px 20px', fontSize: 13, fontWeight: 700, color: '#333', textAlign: 'left' }}>내용</th>
+              {editing && <th style={{ width: 44 }} />}
+            </tr>
+          </thead>
+          <tbody>
+            {displayPts.map((p, i) => {
+              const sep = p.indexOf('::')
+              const key = sep >= 0 ? p.slice(0, sep) : p
+              const val = sep >= 0 ? p.slice(sep + 2) : ''
+              return (
+                <tr key={i} style={{ borderBottom: '1px solid #e4e2dc', background: i % 2 === 0 ? '#fff' : '#fafaf8' }}>
+                  <td style={{ padding: '14px 20px', fontSize: 14, fontWeight: 600, color: '#555', borderRight: '1px solid #e4e2dc', verticalAlign: 'middle' }}>
+                    {editing
+                      ? <input value={key} onChange={e => { const n=[...pts]; n[i]=e.target.value+'::'+val; onChange('points',n) }}
+                          style={{ width:'100%', border:'1px solid #3b82f6', borderRadius:5, padding:'5px 8px', fontSize:13, fontFamily:'inherit', outline:'none', boxSizing:'border-box' }} />
+                      : key
+                    }
+                  </td>
+                  <td style={{ padding: '14px 20px', fontSize: 14, color: '#222', verticalAlign: 'middle' }}>
+                    {editing
+                      ? <input value={val} onChange={e => { const n=[...pts]; n[i]=key+'::'+e.target.value; onChange('points',n) }}
+                          style={{ width:'100%', border:'1px solid #3b82f6', borderRadius:5, padding:'5px 8px', fontSize:13, fontFamily:'inherit', outline:'none', boxSizing:'border-box' }} />
+                      : val ? <span style={{ whiteSpace:'pre-wrap' }}>{val}</span> : <span style={{ color:'#ccc' }}>—</span>
+                    }
+                  </td>
+                  {editing && (
+                    <td style={{ textAlign:'center', padding:'0 8px', verticalAlign:'middle' }}>
+                      <button onClick={() => delRow(i)} style={{ width:24, height:24, borderRadius:6, border:'1px solid #fca5a5', background:'#fef2f2', color:'#ef4444', fontSize:13, cursor:'pointer', fontWeight:700, lineHeight:1 }}>×</button>
+                    </td>
+                  )}
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+        {editing && (
+          <button onClick={addRow} style={{ marginTop:16, width:'100%', padding:'11px 0', fontSize:13, fontWeight:600, border:'1.5px dashed #ccc', borderRadius:8, background:'transparent', color:'#888', cursor:'pointer' }}>
+            + 항목 추가
+          </button>
+        )}
+      </div>
+
+    </CardWrapper>
+  )
+}
+
+export const TPL = { hero: TplHero, material: TplMaterial, detail2col: TplDetail2col, scene: TplScene, compare: TplCompare, points3: TplPoints3, target: TplTarget, cta: TplCTA, specTable: TplSpecTable }
