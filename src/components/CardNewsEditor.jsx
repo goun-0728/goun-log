@@ -55,8 +55,8 @@ function parseCardResult(text) {
     cardLayout: layout,
     textPosition,
     fontSize: 'md',
-    textColor: null,   // null → use fgColor
-    textPosX: null,    // null → auto (getDefaultPos)
+    textColor: null,
+    textPosX: null,
     textPosY: null,
   })
   const DEFS = [
@@ -93,23 +93,6 @@ function parseCardResult(text) {
   } catch { return DEFS }
 }
 
-/* ── 강조 텍스트 ───────────────────────────────────────────────── */
-function HL({ text, word, color }) {
-  if (!text) return null
-  if (!word) return <>{text}</>
-  const parts = text.split(word)
-  return (
-    <>
-      {parts.map((p, i) => (
-        <React.Fragment key={i}>
-          {p}
-          {i < parts.length - 1 && <span style={{ color }}>{word}</span>}
-        </React.Fragment>
-      ))}
-    </>
-  )
-}
-
 /* ── 미니 컴포넌트 ─────────────────────────────────────────────── */
 function CopyBtn({ text }) {
   const [ok, set] = useState(false)
@@ -136,27 +119,13 @@ function Blk({ title, lines }) {
   )
 }
 
-function Field({ label, value, onChange, multiline }) {
-  return (
-    <div>
-      <label style={{ fontSize: 10, color: C.mu, display: 'block', marginBottom: 3 }}>{label}</label>
-      {multiline
-        ? <textarea value={value} onChange={e => onChange(e.target.value)} rows={3}
-            style={{ width: '100%', padding: '6px 8px', fontSize: 12, border: `1px solid ${C.bd}`, borderRadius: 6, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box', outline: 'none' }} />
-        : <input value={value} onChange={e => onChange(e.target.value)}
-            style={{ width: '100%', padding: '6px 8px', fontSize: 12, border: `1px solid ${C.bd}`, borderRadius: 6, fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none' }} />
-      }
-    </div>
-  )
+/* ── 섹션 레이블 ───────────────────────────────────────────────── */
+function SectionLabel({ children }) {
+  return <p style={{ fontSize: 10, fontWeight: 700, color: C.fa, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 7 }}>{children}</p>
 }
 
-/* ── 카드 텍스트 내용 ────────────────────────────────────────────
-   textShadow는 레이아웃/배경에 따라 조정:
-   overlay  → 매우 강한 shadow (어떤 배경에서도 보임)
-   gradient → 중간 shadow
-   나머지   → 없음 (배경색이 있으므로)
-─────────────────────────────────────────────────────────────── */
-function TextContent({ card }) {
+/* ── 카드 텍스트 내용 (인라인 편집 지원) ───────────────────────── */
+function TextContent({ card, editing, onChangeText }) {
   const fs = FONT_SIZES[card.fontSize] || FONT_SIZES.md
   const tc = card.textColor || card.fgColor || '#ffffff'
   const ts =
@@ -166,28 +135,39 @@ function TextContent({ card }) {
       ? '0 2px 16px rgba(0,0,0,0.85)'
       : 'none'
 
+  // 인라인 편집 래퍼
+  const E = ({ value, fieldKey, tag: Tag = 'div', style }) => {
+    if (!editing) return <Tag style={style}>{value || ''}</Tag>
+    return (
+      <Tag
+        contentEditable
+        suppressContentEditableWarning
+        onMouseDown={e => e.stopPropagation()}
+        onBlur={e => onChangeText?.(fieldKey, e.currentTarget.innerText)}
+        dangerouslySetInnerHTML={{ __html: value || '' }}
+        style={{ ...style, outline: 'none', borderBottom: '2px solid rgba(96,165,250,0.7)', cursor: 'text', minWidth: 40, whiteSpace: 'pre-wrap' }}
+      />
+    )
+  }
+
   if (card.type === '훅') return (
     <div style={{ textAlign: 'center' }}>
       <div style={{ width: 48, height: 4, background: card.accentColor, margin: '0 auto 44px', borderRadius: 2 }} />
-      <h1 style={{ fontSize: fs.main, fontWeight: 900, color: tc, lineHeight: 1.15, margin: '0 0 28px', whiteSpace: 'pre-wrap', textShadow: ts, wordBreak: 'keep-all' }}>
-        {card.mainText || '메인 문구'}
-      </h1>
+      <E tag="h1" value={card.mainText || '메인 문구'} fieldKey="mainText"
+        style={{ fontSize: fs.main, fontWeight: 900, color: tc, lineHeight: 1.15, margin: '0 0 28px', textShadow: ts, wordBreak: 'keep-all' }} />
       <div style={{ width: 48, height: 2, background: card.accentColor, opacity: 0.5, margin: '0 auto 28px', borderRadius: 2 }} />
-      <p style={{ fontSize: fs.sub, color: tc, opacity: 0.88, lineHeight: 1.65, margin: 0, textShadow: ts, wordBreak: 'keep-all' }}>
-        {card.subText || '서브 문구'}
-      </p>
+      <E tag="p" value={card.subText || '서브 문구'} fieldKey="subText"
+        style={{ fontSize: fs.sub, color: tc, opacity: 0.88, lineHeight: 1.65, margin: 0, textShadow: ts, wordBreak: 'keep-all' }} />
     </div>
   )
 
   if (card.type === 'CTA') return (
     <div style={{ textAlign: 'center' }}>
-      <p style={{ fontSize: fs.sub, color: tc, opacity: 0.78, margin: '0 0 22px', lineHeight: 1.65, textShadow: ts }}>
-        {card.subText || '서브 문구'}
-      </p>
+      <E tag="p" value={card.subText || '서브 문구'} fieldKey="subText"
+        style={{ fontSize: fs.sub, color: tc, opacity: 0.78, margin: '0 0 22px', lineHeight: 1.65, textShadow: ts }} />
       <div style={{ width: 48, height: 4, background: card.accentColor, margin: '0 auto 24px', borderRadius: 2 }} />
-      <h1 style={{ fontSize: fs.main, fontWeight: 900, color: tc, lineHeight: 1.2, margin: 0, whiteSpace: 'pre-wrap', textShadow: ts, wordBreak: 'keep-all' }}>
-        {card.mainText || '메인 문구'}
-      </h1>
+      <E tag="h1" value={card.mainText || '메인 문구'} fieldKey="mainText"
+        style={{ fontSize: fs.main, fontWeight: 900, color: tc, lineHeight: 1.2, margin: 0, textShadow: ts, wordBreak: 'keep-all' }} />
     </div>
   )
 
@@ -197,36 +177,25 @@ function TextContent({ card }) {
       <div style={{ fontSize: 18, color: card.accentColor, fontWeight: 700, letterSpacing: '0.15em', marginBottom: 20, textShadow: ts }}>
         {String(card.id).padStart(2, '0')}
       </div>
-      <h2 style={{ fontSize: fs.title, fontWeight: 800, color: tc, lineHeight: 1.2, margin: '0 0 28px', textShadow: ts, wordBreak: 'keep-all' }}>
-        {card.title || '제목'}
-      </h2>
-      <p style={{ fontSize: fs.body, color: tc, opacity: 0.9, lineHeight: 1.75, margin: 0, textShadow: ts, wordBreak: 'keep-all' }}>
-        <HL text={card.content || '내용'} word={card.highlight} color={card.accentColor} />
-      </p>
+      <E tag="h2" value={card.title || '제목'} fieldKey="title"
+        style={{ fontSize: fs.title, fontWeight: 800, color: tc, lineHeight: 1.2, margin: '0 0 28px', textShadow: ts, wordBreak: 'keep-all' }} />
+      <E tag="p" value={card.content || '내용'} fieldKey="content"
+        style={{ fontSize: fs.body, color: tc, opacity: 0.9, lineHeight: 1.75, margin: 0, textShadow: ts, wordBreak: 'keep-all' }} />
     </div>
   )
 }
 
-/* ── 레이아웃 배경 레이어 ────────────────────────────────────────
-   6종 레이아웃:
-   gradient  사진 전체 + 하단 강한 그라데이션
-   overlay   사진 전체 + 오버레이 없음 (텍스트 shadow 활용)
-   textbox   상단 65% 사진 + 하단 35% 배경색 박스
-   border    굵은 테두리 + 하단에 사진 (텍스트는 상단)
-   simple    배경색만 (사진 무시)
-   toptext   상단 38% 배경색 + 하단 62% 사진
-─────────────────────────────────────────────────────────────── */
+/* ── 레이아웃 배경 레이어 ────────────────────────────────────────── */
 function LayoutBg({ card }) {
   const { cardLayout, image, bgColor, accentColor } = card
-  const PHOTO_H_TEXTBOX = Math.round(CARD_H * 0.65)  // 877px
-  const PHOTO_Y_TOPTEXT = Math.round(CARD_H * 0.38)  // 513px
+  const PHOTO_H_TEXTBOX = Math.round(CARD_H * 0.65)
+  const PHOTO_Y_TOPTEXT = Math.round(CARD_H * 0.38)
   const IMG_STYLE = { width: '100%', height: '100%', objectFit: 'cover', display: 'block' }
 
   if (cardLayout === 'gradient') return (
     <>
       <div style={{ position: 'absolute', inset: 0, background: bgColor }} />
       {image && <img src={image} alt="" style={{ position: 'absolute', inset: 0, ...IMG_STYLE }} />}
-      {/* 충분히 강한 그라데이션 — 글자가 항상 보임 */}
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.88) 20%, rgba(0,0,0,0.55) 42%, rgba(0,0,0,0.18) 65%, transparent 100%)' }} />
     </>
   )
@@ -235,18 +204,15 @@ function LayoutBg({ card }) {
     <>
       <div style={{ position: 'absolute', inset: 0, background: bgColor }} />
       {image && <img src={image} alt="" style={{ position: 'absolute', inset: 0, ...IMG_STYLE }} />}
-      {/* 은은한 암막 — 텍스트 shadow가 메인 가독성 처리 */}
       {image && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.18)' }} />}
     </>
   )
 
   if (cardLayout === 'textbox') return (
     <>
-      {/* 상단 65% — 사진 */}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: PHOTO_H_TEXTBOX, background: '#1a1a1a', overflow: 'hidden' }}>
         {image && <img src={image} alt="" style={IMG_STYLE} />}
       </div>
-      {/* 하단 35% — 배경색 텍스트 영역 */}
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: CARD_H - PHOTO_H_TEXTBOX, background: bgColor }} />
     </>
   )
@@ -254,9 +220,7 @@ function LayoutBg({ card }) {
   if (cardLayout === 'border') return (
     <>
       <div style={{ position: 'absolute', inset: 0, background: bgColor }} />
-      {/* 굵은 테두리 */}
       <div style={{ position: 'absolute', inset: 0, border: `28px solid ${accentColor}`, boxSizing: 'border-box', pointerEvents: 'none', zIndex: 4 }} />
-      {/* 하단 사진 (테두리 안쪽) */}
       {image && (
         <div style={{ position: 'absolute', left: 52, right: 52, bottom: 52, height: 660, overflow: 'hidden' }}>
           <img src={image} alt="" style={IMG_STYLE} />
@@ -272,7 +236,6 @@ function LayoutBg({ card }) {
   if (cardLayout === 'toptext') return (
     <>
       <div style={{ position: 'absolute', inset: 0, background: bgColor }} />
-      {/* 하단 62% — 사진 */}
       {image && (
         <div style={{ position: 'absolute', top: PHOTO_Y_TOPTEXT, left: 0, right: 0, bottom: 0, overflow: 'hidden' }}>
           <img src={image} alt="" style={IMG_STYLE} />
@@ -285,20 +248,15 @@ function LayoutBg({ card }) {
 }
 
 /* ── 카드 렌더러 (PNG 캡처 대상) ─────────────────────────────── */
-function CardContent({ card, editing, textBlockRef, onDragStart, isDragging }) {
+function CardContent({ card, editing, textBlockRef, onDragStart, isDragging, onChangeText }) {
   const def = getDefaultPos(card.cardLayout, card.textPosition)
   const tx = card.textPosX ?? def.x
   const ty = card.textPosY ?? def.y
-  // 텍스트 블록 최대 너비: 카드 오른쪽까지 여유 두기
   const maxW = (card.type === '훅' || card.type === 'CTA') ? 936 : Math.max(320, CARD_W - tx - 56)
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', fontFamily: "'Noto Sans KR','Apple SD Gothic Neo',sans-serif" }}>
-
-      {/* 배경 레이어 */}
       <LayoutBg card={card} />
-
-      {/* 드래그 가능 텍스트 블록 */}
       <div
         ref={textBlockRef}
         onMouseDown={editing ? onDragStart : undefined}
@@ -314,7 +272,6 @@ function CardContent({ card, editing, textBlockRef, onDragStart, isDragging }) {
           WebkitUserSelect: 'none',
         }}
       >
-        {/* 편집 모드 - 드래그 가이드 테두리 */}
         {editing && (
           <div style={{
             position: 'absolute',
@@ -324,10 +281,8 @@ function CardContent({ card, editing, textBlockRef, onDragStart, isDragging }) {
             pointerEvents: 'none',
           }} />
         )}
-        <TextContent card={card} />
+        <TextContent card={card} editing={editing} onChangeText={onChangeText} />
       </div>
-
-      {/* 브랜딩 */}
       <div style={{ position: 'absolute', bottom: 20, right: 28, fontSize: 14, color: card.fgColor, opacity: 0.12, zIndex: 3, pointerEvents: 'none' }}>
         ContentOS
       </div>
@@ -337,21 +292,21 @@ function CardContent({ card, editing, textBlockRef, onDragStart, isDragging }) {
 
 /* ── 개별 카드 에디터 ────────────────────────────────────────── */
 function CardEditor({ card, idx, onUpdate }) {
-  const [editing,    setEditing]    = useState(false)
+  const [editing,    setEditing]    = useState(true)
   const [dr,         setDr]         = useState({ ...card })
   const [saved,      setSaved]      = useState(true)
   const [dl,         setDl]         = useState(false)
-  const [showPanel,  setShowPanel]  = useState(true)   // 기본으로 패널 열림
+  const [showPanel,  setShowPanel]  = useState(true)
   const [scale,      setScale]      = useState(0.5)
   const [isDragging, setIsDragging] = useState(false)
 
-  const ref          = useRef(null)   // 카드 div (PNG 캡처 / getBoundingClientRect)
-  const wrapRef      = useRef(null)   // 스케일 컨테이너
-  const textBlockRef = useRef(null)   // 드래그 텍스트 블록
+  const ref          = useRef(null)
+  const wrapRef      = useRef(null)
+  const textBlockRef = useRef(null)
   const fileRef      = useRef(null)
   const dragInfo     = useRef(null)
   const drRef        = useRef(dr)
-  drRef.current = dr                  // 항상 최신 dr 참조 (drag closure용)
+  drRef.current = dr
 
   useEffect(() => { setDr({ ...card }); setSaved(true) }, [card])
 
@@ -374,7 +329,6 @@ function CardEditor({ card, idx, onUpdate }) {
   const dlPNG = async () => {
     if (!ref.current || !saved) return
     setDl(true)
-    // 부모의 scale transform이 html2canvas position 계산을 오염시키므로 캡처 전 임시 제거
     const scaledEl = ref.current.parentElement
     const origTransform = scaledEl?.style.transform ?? ''
     try {
@@ -413,14 +367,12 @@ function CardEditor({ card, idx, onUpdate }) {
       if (ev.cancelable) ev.preventDefault()
       const cx = ev.touches ? ev.touches[0].clientX : ev.clientX
       const cy = ev.touches ? ev.touches[0].clientY : ev.clientY
-      // 실제 표시 스케일 = 화면 픽셀 width / 카드 CSS width
       const rect = ref.current?.getBoundingClientRect()
       const dispScale = rect ? rect.width / CARD_W : 0.5
       const dx = (cx - dragInfo.current.startScreen.x) / dispScale
       const dy = (cy - dragInfo.current.startScreen.y) / dispScale
       let nx = dragInfo.current.startCardPos.x + dx
       let ny = dragInfo.current.startCardPos.y + dy
-      // 카드 경계 제한
       const bW = textBlockRef.current?.offsetWidth  ?? 400
       const bH = textBlockRef.current?.offsetHeight ?? 200
       nx = Math.max(0, Math.min(CARD_W - bW, nx))
@@ -442,7 +394,7 @@ function CardEditor({ card, idx, onUpdate }) {
     document.addEventListener('mouseup',   onEnd)
     document.addEventListener('touchmove', onMove, { passive: false })
     document.addEventListener('touchend',  onEnd)
-  }, [editing])   // editing만 의존 — dr은 drRef.current로 읽음
+  }, [editing])
 
   const dlDisabled = dl || !saved
   const hasDragPos = dr.textPosX !== null || dr.textPosY !== null
@@ -480,7 +432,6 @@ function CardEditor({ card, idx, onUpdate }) {
 
         {/* 카드 미리보기 */}
         <div ref={wrapRef} style={{ flex: 1, minWidth: 0, position: 'relative', background: '#e0ddd8', overflow: 'hidden' }}>
-          {/* 4:5 비율박스 */}
           <div style={{ paddingTop: '125%', position: 'relative' }}>
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden' }}>
               <div style={{ width: CARD_W, transformOrigin: 'top left', transform: `scale(${scale})` }}>
@@ -491,40 +442,49 @@ function CardEditor({ card, idx, onUpdate }) {
                     textBlockRef={textBlockRef}
                     onDragStart={handleDragStart}
                     isDragging={isDragging}
+                    onChangeText={(key, val) => change(key, val)}
                   />
                 </div>
               </div>
             </div>
+
+            {/* 사진 없을 때 클릭 업로드 오버레이 */}
+            {editing && !dr.image && (
+              <div onClick={() => fileRef.current?.click()}
+                style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', zIndex: 10, pointerEvents: 'auto' }}>
+                <span style={{ fontSize: 28, opacity: 0.5 }}>📷</span>
+                <span style={{ fontSize: 11, color: '#555', fontWeight: 600, background: 'rgba(255,255,255,0.88)', padding: '4px 14px', borderRadius: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>클릭하여 사진 업로드</span>
+              </div>
+            )}
+
+            {/* 사진 있을 때 교체/제거 버튼 */}
+            {editing && dr.image && (
+              <div style={{ position: 'absolute', top: 8, left: 8, display: 'flex', gap: 4, zIndex: 10 }}>
+                <button onClick={() => fileRef.current?.click()}
+                  style={{ padding: '5px 10px', fontSize: 11, fontWeight: 700, background: 'rgba(0,0,0,0.65)', color: '#fff', border: 'none', borderRadius: 7, cursor: 'pointer' }}>📷 교체</button>
+                <button onClick={() => change('image', null)}
+                  style={{ padding: '5px 8px', fontSize: 11, background: 'rgba(220,38,38,0.75)', color: '#fff', border: 'none', borderRadius: 7, cursor: 'pointer', fontWeight: 700 }}>✕</button>
+              </div>
+            )}
           </div>
-          {/* 편집 모드 힌트 오버레이 */}
+
+          {/* 편집 모드 드래그 힌트 */}
           {editing && (
             <div style={{ position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)', background: 'rgba(30,30,30,0.72)', color: '#fff', fontSize: 11, padding: '5px 12px', borderRadius: 20, pointerEvents: 'none', whiteSpace: 'nowrap' }}>
-              ⠿ 텍스트 블록 드래그로 이동
+              ⠿ 텍스트 블록 드래그로 이동 · 글자 클릭으로 수정
             </div>
           )}
         </div>
 
-        {/* 사이드 패널 */}
+        {/* 사이드 패널 — 상세페이지 패널과 동일한 구조 */}
         {(editing || showPanel) && (
-          <div style={{ width: 288, minWidth: 288, borderLeft: `1px solid ${C.bd}`, background: '#F8FAFF', overflowY: 'auto', animation: 'slideInRight .22s ease' }}>
-            <div style={{ padding: '16px 14px 32px' }}>
+          <div style={{ width: 220, minWidth: 220, borderLeft: `1px solid ${C.bd}`, background: '#F8FAFF', overflowY: 'auto', animation: 'slideInRight .22s ease' }}>
+            <div style={{ padding: '16px 14px 16px' }}>
               <input ref={fileRef} type="file" accept="image/*" onChange={handleImg} style={{ display: 'none' }} />
-
-              {/* ── 사진 ── */}
-              <SectionLabel>사진</SectionLabel>
-              <div style={{ marginBottom: 18 }}>
-                {dr.image
-                  ? <div style={{ display: 'flex', gap: 6 }}>
-                      <button onClick={() => fileRef.current?.click()} style={{ flex: 1, padding: '8px', fontSize: 11, borderRadius: 7, border: `1px solid ${C.bd}`, background: C.sur, cursor: 'pointer', color: C.tx, fontWeight: 600 }}>📷 교체</button>
-                      <button onClick={() => change('image', null)} style={{ padding: '8px 12px', fontSize: 11, borderRadius: 7, border: '1px solid #fca5a5', background: '#fef2f2', cursor: 'pointer', color: '#ef4444' }}>✕ 제거</button>
-                    </div>
-                  : <button onClick={() => fileRef.current?.click()} style={{ width: '100%', padding: '12px', fontSize: 11, borderRadius: 7, border: `2px dashed ${C.bd}`, background: C.sur, cursor: 'pointer', color: C.mu }}>📷 사진 업로드</button>
-                }
-              </div>
 
               {/* ── 레이아웃 ── */}
               <SectionLabel>레이아웃</SectionLabel>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5, marginBottom: 18 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5, marginBottom: 14 }}>
                 {LAYOUTS.map(({ k, l }) => {
                   const on = dr.cardLayout === k
                   return (
@@ -556,11 +516,11 @@ function CardEditor({ card, idx, onUpdate }) {
                   ↺ 위치 초기화
                 </button>
               )}
-              <div style={{ marginBottom: 12 }} />
+              <div style={{ marginBottom: 14 }} />
 
               {/* ── 글자 크기 ── */}
               <SectionLabel>글자 크기</SectionLabel>
-              <div style={{ display: 'flex', gap: 4, marginBottom: 18 }}>
+              <div style={{ display: 'flex', gap: 4, marginBottom: 14 }}>
                 {[['sm', '작게'], ['md', '보통'], ['lg', '크게'], ['xl', '아주크게']].map(([v, l]) => {
                   const on = dr.fontSize === v
                   return (
@@ -574,12 +534,12 @@ function CardEditor({ card, idx, onUpdate }) {
 
               {/* ── 글자색 ── */}
               <SectionLabel>글자색</SectionLabel>
-              <div style={{ display: 'flex', gap: 5, marginBottom: 18, flexWrap: 'wrap', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: 5, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
                 {[['#ffffff', '흰색', '#bbb'], ['#1a1a1a', '검정', '#1a1a1a'], ['#ffd700', '노랑', '#ffd700']].map(([v, l, border]) => {
                   const on = dr.textColor === v
                   return (
                     <button key={v} onClick={() => change('textColor', v)}
-                      style={{ padding: '5px 10px', fontSize: 11, borderRadius: 6, border: `2px solid ${on ? '#3b82f6' : border}`, background: v, color: v === '#ffffff' ? '#333' : '#fff', cursor: 'pointer', fontWeight: on ? 700 : 400 }}>
+                      style={{ padding: '5px 8px', fontSize: 10, borderRadius: 6, border: `2px solid ${on ? '#3b82f6' : border}`, background: v, color: v === '#ffffff' ? '#333' : '#fff', cursor: 'pointer', fontWeight: on ? 700 : 400 }}>
                       {l}
                     </button>
                   )
@@ -591,9 +551,9 @@ function CardEditor({ card, idx, onUpdate }) {
                 </label>
               </div>
 
-              {/* ── 배경 / 포인트색 ── */}
-              <SectionLabel>배경 / 포인트색</SectionLabel>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 18 }}>
+              {/* ── 배경·포인트색 ── */}
+              <SectionLabel>배경·포인트색</SectionLabel>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {[['bgColor', '배경색'], ['accentColor', '포인트색']].map(([key, label]) => (
                   <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <input type="color" value={dr[key]} onChange={e => change(key, e.target.value)}
@@ -604,28 +564,6 @@ function CardEditor({ card, idx, onUpdate }) {
                 ))}
               </div>
 
-              {/* ── 텍스트 편집 ── */}
-              <SectionLabel>텍스트</SectionLabel>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {card.type === '훅' && <>
-                  <Field label="메인 문구 (8자 이내)" value={dr.mainText}   onChange={v => change('mainText',   v)} />
-                  <Field label="서브 문구"            value={dr.subText}    onChange={v => change('subText',    v)} />
-                </>}
-                {card.type === 'CTA' && <>
-                  <Field label="메인 문구"  value={dr.mainText}   onChange={v => change('mainText',   v)} />
-                  <Field label="서브 문구"  value={dr.subText}    onChange={v => change('subText',    v)} />
-                </>}
-                {['공감', '핵심', '차별점'].includes(card.type) && <>
-                  <Field label="제목"      value={dr.title}     onChange={v => change('title',     v)} />
-                  <Field label="내용"      value={dr.content}   onChange={v => change('content',   v)} multiline />
-                  <Field label="강조 단어" value={dr.highlight} onChange={v => change('highlight', v)} />
-                </>}
-              </div>
-
-              <div style={{ marginTop: 16, padding: '10px 12px', background: '#EFF6FF', borderRadius: 9, border: '1px solid #BFDBFE', fontSize: 11, color: '#1d4ed8', lineHeight: 1.85 }}>
-                ⠿ 수정 모드에서 텍스트 블록 드래그<br />
-                저장 후 PNG 다운로드 가능
-              </div>
             </div>
           </div>
         )}
@@ -634,17 +572,11 @@ function CardEditor({ card, idx, onUpdate }) {
   )
 }
 
-/* ── 섹션 레이블 ───────────────────────────────────────────────── */
-function SectionLabel({ children }) {
-  return <p style={{ fontSize: 10, fontWeight: 700, color: C.fa, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 7 }}>{children}</p>
-}
-
 /* ── 카드뉴스 전체 뷰 ────────────────────────────────────────── */
 export default function CardNewsView({ result, savedCards, onCardsChange }) {
   const [cards, setCards] = useState(() => savedCards ?? parseCardResult(result))
   const [dlAll, setDlAll] = useState(false)
 
-  // 카드 변경 시 부모에 전달 (localStorage 저장) — 첫 마운트는 스킵
   const cardsInit = useRef(false)
   useEffect(() => {
     if (!cardsInit.current) { cardsInit.current = true; return }

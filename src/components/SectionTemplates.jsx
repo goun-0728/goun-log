@@ -139,17 +139,56 @@ function NoBg({ t, minH = 400, children }) {
    하단 흰 배경 포인트 3열 카드
 ─────────────────────────────────────────────── */
 export function TplHero({ s, img, t, editing, onChange, secMeta, onSecMeta }) {
+  const logoRef    = useRef(null)
   const pts        = s.points || []
   const displayPts = editing ? (pts.length ? pts : ['', '', '']) : pts.filter(p => p && p.trim())
   const cols       = Math.max(1, Math.min(displayPts.length, 3))
   const addPt      = () => onChange('points', [...pts, ''])
   const delPt      = i  => onChange('points', pts.filter((_, j) => j !== i))
 
+  const handleLogoImg = e => {
+    const f = e.target.files[0]; if (!f) return
+    const fr = new FileReader()
+    fr.onload = ev => onChange('logoImg', ev.target.result)
+    fr.readAsDataURL(f); e.target.value = ''
+  }
+
   return (
     <CardWrapper bg={t.bg}>
+      <input ref={logoRef} type="file" accept="image/*" onChange={handleLogoImg} style={{ display: 'none' }} />
 
-      {/* 상단: 브랜드 태그 + 헤드라인 */}
+      {/* 상단: 로고/텍스트 + 브랜드 태그 + 헤드라인 */}
       <div style={{ padding: '72px 72px 52px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+
+        {/* ── 로고 / 텍스트 삽입 영역 ── */}
+        {(s.logoImg || s.logoText || editing) && (
+          <div style={{ marginBottom: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+            {s.logoImg
+              ? <div style={{ position: 'relative', display: 'inline-block' }}>
+                  <img src={s.logoImg} alt="" style={{ maxHeight: 80, maxWidth: 300, objectFit: 'contain', display: 'block' }} />
+                  {editing && (
+                    <div style={{ position: 'absolute', top: -10, right: -10, display: 'flex', gap: 4 }}>
+                      <button onClick={() => logoRef.current?.click()}
+                        style={{ fontSize: 10, padding: '3px 8px', borderRadius: 5, border: '1px solid #3b82f6', background: '#EFF6FF', color: '#1d4ed8', cursor: 'pointer', fontWeight: 600 }}>교체</button>
+                      <button onClick={() => onChange('logoImg', null)}
+                        style={{ fontSize: 10, padding: '3px 8px', borderRadius: 5, border: '1px solid #fca5a5', background: '#fef2f2', color: '#ef4444', cursor: 'pointer', fontWeight: 600 }}>제거</button>
+                    </div>
+                  )}
+                </div>
+              : editing
+                ? <button onClick={() => logoRef.current?.click()}
+                    style={{ padding: '9px 22px', fontSize: 13, borderRadius: 8, border: `2px dashed ${t.bd}`, background: 'rgba(255,255,255,0.55)', color: t.fg, opacity: 0.55, cursor: 'pointer', fontWeight: 600 }}>
+                    + 로고 이미지 업로드
+                  </button>
+                : null
+            }
+            {!s.logoImg && (
+              <EditText editing={editing} value={s.logoText || ''} onChange={v => onChange('logoText', v)}
+                style={{ fontSize: 13, fontWeight: 700, color: t.ac, letterSpacing: '0.28em', textTransform: 'uppercase', minWidth: 60 }} />
+            )}
+          </div>
+        )}
+
         {(s.description || editing) && (
           <div style={{ marginBottom: 26 }}>
             <EditText editing={editing} value={s.description} onChange={v => onChange('description', v)}

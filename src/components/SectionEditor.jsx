@@ -144,11 +144,11 @@ function AddBlockBtn({ onAddText, onAddImg, editing }) {
    SectionEditor 메인
 ══════════════════════════════════════════════════ */
 export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
-  const [editing, setEditing] = useState(false)
+  const [editing, setEditing] = useState(true)
   const [dr, setDr]           = useState(sec)
   const [saved, setSaved]     = useState(true)
   const [dl, setDl]           = useState(false)
-  const [showTpl, setShowTpl] = useState(false)
+  const [showTpl, setShowTpl] = useState(true)
   const [scale, setScale]     = useState(1)
   const [secMeta, setSecMeta] = useState({})
   // 자유 블록 배열: [{id, type:'text'|'img', content, ...}]
