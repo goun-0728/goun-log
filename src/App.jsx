@@ -37,6 +37,22 @@ function Blk({ title, lines }) {
   )
 }
 
+/* ── 섹션 사이 추가 버튼 ────────────────────────────── */
+function AddBetweenBtn({ onClick, loading }) {
+  return (
+    <div style={{ display:'flex', alignItems:'center', padding:'6px 0' }}>
+      <div style={{ flex:1, height:1, background:C.bd, opacity:0.5 }} />
+      <button onClick={onClick} disabled={loading}
+        style={{ padding:'5px 18px', fontSize:11, borderRadius:20, border:`1px dashed ${C.bd}`, background:C.sur, color:C.mu, cursor:loading?'not-allowed':'pointer', fontWeight:600, margin:'0 10px', whiteSpace:'nowrap', opacity:loading?0.5:1, transition:'border-color .12s, color .12s' }}
+        onMouseEnter={e => { if (!loading) { e.currentTarget.style.borderColor='#3b82f6'; e.currentTarget.style.color='#3b82f6' } }}
+        onMouseLeave={e => { e.currentTarget.style.borderColor=C.bd; e.currentTarget.style.color=C.mu }}>
+        {loading ? '생성 중…' : '+ 섹션 추가'}
+      </button>
+      <div style={{ flex:1, height:1, background:C.bd, opacity:0.5 }} />
+    </div>
+  )
+}
+
 /* ── 추가 섹션 AI 출력 파서 ─────────────────────────── */
 function parseExtraSection(text, typeInfo) {
   const gf = (k, t) => { const rx = new RegExp(k + ':\\s*([^\\n]+)'); const f = t.match(rx); return f ? f[1].trim() : '' }
@@ -62,8 +78,10 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
   const seo = top.find(b => b.title.includes('SEO'))
   const [sects,    setSects]    = useState(() => savedSects ?? parseSections(result))
   const [planOpen, setPlanOpen] = useState({})
-  const [dlAll,    setDlAll]    = useState(false)
+  const [dlAll,      setDlAll]      = useState(false)
   const [addLoading, setAddLoading] = useState(null)
+  const [addModal,   setAddModal]   = useState(null)   // null | insertAfterIdx
+  const [deleteConfirm, setDeleteConfirm] = useState(null) // null | sectionIdx
 
   const sectsInit    = useRef(false)
 
@@ -79,7 +97,8 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
     setPlanOpen({})
   }, [])
 
-  const addSection = useCallback(async typeInfo => {
+  const addSection = useCallback(async (typeInfo, insertAfterIdx) => {
+    setAddModal(null)
     setAddLoading(typeInfo.type)
     try {
       const text = await generateContent({
@@ -90,9 +109,11 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
         model: 'gpt-4o',
         maxTokens: 700,
       })
-      setSects(p => [...p, { ...parseExtraSection(text, typeInfo), _userAdded: true }])
+      const ns = { ...parseExtraSection(text, typeInfo), _userAdded: true }
+      setSects(p => { const n = [...p]; n.splice(insertAfterIdx + 1, 0, ns); return n })
     } catch {
-      setSects(p => [...p, mkSec({ sectionType: typeInfo.label, template: typeInfo.template, designStyle: typeInfo.designStyle || '크림', _userAdded: true })])
+      const ns = mkSec({ sectionType: typeInfo.label, template: typeInfo.template, designStyle: typeInfo.designStyle || '크림', _userAdded: true })
+      setSects(p => { const n = [...p]; n.splice(insertAfterIdx + 1, 0, ns); return n })
     } finally {
       setAddLoading(null)
     }
@@ -194,9 +215,12 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
             </button>
           </div>
           {sects.map((s, i) => (
-            <div key={s._id || i} data-sect>
-              <SectionEditor sec={s} idx={i} onUpdate={upd} onDelete={s._userAdded ? () => deleteSection(i) : undefined} onAddSection={addSection} addLoading={addLoading} />
-            </div>
+            <React.Fragment key={s._id || i}>
+              <div data-sect>
+                <SectionEditor sec={s} idx={i} onUpdate={upd} onDelete={() => setDeleteConfirm(i)} />
+              </div>
+              <AddBetweenBtn onClick={() => setAddModal(i)} loading={addLoading !== null} />
+            </React.Fragment>
           ))}
         </div>
       )}
@@ -205,6 +229,48 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
       {seo && (
         <div style={{ marginTop: 20 }}>
           <Blk title={seo.title} lines={seo.lines} />
+        </div>
+      )}
+
+      {/* ── 섹션 추가 모달 ── */}
+      {addModal !== null && (
+        <div onClick={() => setAddModal(null)}
+          style={{ position:'fixed', inset:0, zIndex:200, background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background:'#fff', borderRadius:16, padding:'24px', maxWidth:480, width:'90%', maxHeight:'80vh', overflowY:'auto', boxShadow:'0 20px 60px rgba(0,0,0,0.3)' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
+              <span style={{ fontSize:14, fontWeight:700, color:C.tx }}>추가할 섹션 선택</span>
+              <button onClick={() => setAddModal(null)}
+                style={{ width:28, height:28, borderRadius:'50%', border:'none', background:C.alt, cursor:'pointer', fontSize:18, color:C.mu, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700 }}>×</button>
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8 }}>
+              {EXTRA_SECTIONS.map(sec => (
+                <button key={sec.type} onClick={() => addSection(sec, addModal)}
+                  style={{ padding:'12px 14px', borderRadius:10, border:`1px solid ${C.bd}`, background:C.sur, cursor:'pointer', textAlign:'left', transition:'border-color .12s' }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor='#3b82f6'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor=C.bd}>
+                  <div style={{ fontSize:13, fontWeight:700, color:C.tx }}>{sec.label}</div>
+                  <div style={{ fontSize:11, color:C.fa, marginTop:3 }}>{sec.sub}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 섹션 삭제 확인 모달 ── */}
+      {deleteConfirm !== null && (
+        <div style={{ position:'fixed', inset:0, zIndex:200, background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <div style={{ background:'#fff', borderRadius:14, padding:'28px 32px', maxWidth:320, width:'90%', boxShadow:'0 20px 60px rgba(0,0,0,0.3)', textAlign:'center' }}>
+            <p style={{ fontSize:15, fontWeight:600, color:C.tx, margin:'0 0 6px' }}>섹션을 삭제하시겠습니까?</p>
+            <p style={{ fontSize:12, color:C.fa, margin:'0 0 24px' }}>이 작업은 되돌릴 수 없습니다.</p>
+            <div style={{ display:'flex', gap:10, justifyContent:'center' }}>
+              <button onClick={() => setDeleteConfirm(null)}
+                style={{ padding:'9px 24px', borderRadius:8, border:`1px solid ${C.bd}`, background:C.sur, color:C.mu, cursor:'pointer', fontWeight:600, fontSize:13 }}>취소</button>
+              <button onClick={() => { deleteSection(deleteConfirm); setDeleteConfirm(null) }}
+                style={{ padding:'9px 24px', borderRadius:8, border:'none', background:'#ef4444', color:'#fff', cursor:'pointer', fontWeight:700, fontSize:13 }}>삭제</button>
+            </div>
+          </div>
         </div>
       )}
     </div>
