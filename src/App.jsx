@@ -63,24 +63,14 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
   const [sects,    setSects]    = useState(() => savedSects ?? parseSections(result))
   const [planOpen, setPlanOpen] = useState({})
   const [dlAll,    setDlAll]    = useState(false)
-  const [addOpen,  setAddOpen]  = useState(false)
-  const [addLoading, setAddLoading] = useState(null) // 로딩 중인 섹션 타입
+  const [addLoading, setAddLoading] = useState(null)
 
-  const addBtnRef    = useRef(null)
   const sectsInit    = useRef(false)
 
   useEffect(() => {
     if (!sectsInit.current) { sectsInit.current = true; return }
     onSectsChange?.(sects)
   }, [sects])
-
-  // 팝업 외부 클릭 시 닫기
-  useEffect(() => {
-    if (!addOpen) return
-    const handler = e => { if (addBtnRef.current && !addBtnRef.current.contains(e.target)) setAddOpen(false) }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [addOpen])
 
   const upd = useCallback((i, v) => setSects(p => p.map((s, j) => j === i ? v : s)), [])
 
@@ -90,7 +80,6 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
   }, [])
 
   const addSection = useCallback(async typeInfo => {
-    setAddOpen(false)
     setAddLoading(typeInfo.type)
     try {
       const text = await generateContent({
@@ -123,32 +112,6 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
 
   return (
     <div>
-
-      {/* ── 섹션 추가 버튼 — position:fixed 우측 상단 ── */}
-      {sects.length > 0 && (
-        <div ref={addBtnRef} style={{ position: 'fixed', top: 60, right: 16, zIndex: 80 }}>
-          <button onClick={() => setAddOpen(o => !o)} disabled={addLoading !== null}
-            style={{ padding: '7px 14px', fontSize: 12, borderRadius: 8, border: `1.5px solid ${addOpen ? '#3b82f6' : '#93B4D8'}`, background: addOpen ? '#EFF6FF' : '#D6E8F8', color: addOpen ? '#1d4ed8' : '#1E3A6E', cursor: addLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontWeight: 700, boxShadow: '0 2px 10px rgba(0,0,0,0.13)' }}>
-            {addLoading ? <><Spin /> 생성 중…</> : '+ 섹션 추가'}
-          </button>
-          {addOpen && (
-            <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 80, background: '#fff', border: `1px solid ${C.bd}`, borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,0.14)', padding: '14px', width: 280 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: C.fa, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 10 }}>추가할 섹션 선택</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                {EXTRA_SECTIONS.map(sec => (
-                  <button key={sec.type} onClick={() => addSection(sec)}
-                    style={{ padding: '10px 12px', borderRadius: 9, border: `1px solid ${C.bd}`, background: C.sur, cursor: 'pointer', textAlign: 'left', transition: 'border-color .12s' }}
-                    onMouseEnter={e => e.currentTarget.style.borderColor = '#3b82f6'}
-                    onMouseLeave={e => e.currentTarget.style.borderColor = C.bd}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: C.tx }}>{sec.label}</div>
-                    <div style={{ fontSize: 10, color: C.fa, marginTop: 2 }}>{sec.sub}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* ── 기획 보고서 ── 흰색 배경 */}
       {rep && (
@@ -232,7 +195,7 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
           </div>
           {sects.map((s, i) => (
             <div key={s._id || i} data-sect>
-              <SectionEditor sec={s} idx={i} onUpdate={upd} onDelete={s._userAdded ? () => deleteSection(i) : undefined} />
+              <SectionEditor sec={s} idx={i} onUpdate={upd} onDelete={s._userAdded ? () => deleteSection(i) : undefined} onAddSection={addSection} addLoading={addLoading} />
             </div>
           ))}
         </div>

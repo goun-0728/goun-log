@@ -1,6 +1,6 @@
 // src/components/SectionEditor.jsx
 import React, { useState, useRef, useEffect } from 'react'
-import { C, DS, DS_KEYS, TPL_LABELS } from '../constants'
+import { C, DS, DS_KEYS, TPL_LABELS, EXTRA_SECTIONS } from '../constants'
 import { TPL, ImageAdjust } from './SectionTemplates'
 import { capturePNG, readFileAsDataURL } from '../utils'
 
@@ -8,10 +8,7 @@ function Spin() {
   return <span style={{ display:'inline-block',width:13,height:13,borderRadius:'50%',border:'2px solid #ddd',borderTopColor:'#555',animation:'sp .6s linear infinite',flexShrink:0 }} />
 }
 
-/* ── 자유 블록 렌더러 ─────────────────────────────────
-   blocks: [{ id, type:'img'|'text', content, fontSize, align, padding }]
-   이미지 아래, 섹션 카드 아래 어디든 삽입 가능
-─────────────────────────────────────────────────── */
+/* ── 자유 블록 렌더러 ─────────────────────────────────── */
 function FreeBlock({ block, t, editing, onUpdate, onRemove, onMoveUp, onMoveDn, isFirst, isLast }) {
   const fileRef = useRef(null)
 
@@ -28,33 +25,27 @@ function FreeBlock({ block, t, editing, onUpdate, onRemove, onMoveUp, onMoveDn, 
     const pad   = block.padding   || 40
     return (
       <div style={{ position:'relative', background: t.bg }}>
-        {/* 편집 컨트롤 */}
         {editing && (
           <div style={{ position:'absolute', top:8, right:8, zIndex:10, display:'flex', gap:4 }}>
-            {/* 정렬 */}
             {['left','center','right'].map(a => (
               <button key={a} onClick={() => onUpdate({...block, align:a})}
                 style={{ width:24,height:24,borderRadius:4,border:`1px solid ${align===a?'#3b82f6':C.bd}`,background:align===a?'#EFF6FF':C.sur,fontSize:10,cursor:'pointer',color:align===a?'#1d4ed8':C.mu }}>
                 {a==='left'?'◀':a==='center'?'◆':'▶'}
               </button>
             ))}
-            {/* 폰트 크기 */}
             <select value={fs} onChange={e=>onUpdate({...block,fontSize:+e.target.value})}
               style={{ height:24,fontSize:10,border:`1px solid ${C.bd}`,borderRadius:4,padding:'0 2px',cursor:'pointer' }}>
               {[12,14,16,18,20,24,28,32,36,42].map(v=><option key={v} value={v}>{v}px</option>)}
             </select>
-            {/* 여백 */}
             <select value={pad} onChange={e=>onUpdate({...block,padding:+e.target.value})}
               style={{ height:24,fontSize:10,border:`1px solid ${C.bd}`,borderRadius:4,padding:'0 2px',cursor:'pointer' }}>
               {[0,16,24,32,40,56,64,80].map(v=><option key={v} value={v}>{v}px 여백</option>)}
             </select>
-            {/* 이동/삭제 */}
             {!isFirst && <button onClick={onMoveUp} style={{ width:24,height:24,borderRadius:4,border:`1px solid ${C.bd}`,background:C.sur,fontSize:10,cursor:'pointer' }}>↑</button>}
             {!isLast  && <button onClick={onMoveDn} style={{ width:24,height:24,borderRadius:4,border:`1px solid ${C.bd}`,background:C.sur,fontSize:10,cursor:'pointer' }}>↓</button>}
             <button onClick={onRemove} style={{ width:24,height:24,borderRadius:4,border:'1px solid #fca5a5',background:'#fef2f2',color:'#ef4444',fontSize:11,cursor:'pointer',fontWeight:700 }}>×</button>
           </div>
         )}
-        {/* 텍스트 내용 */}
         <div style={{ padding:`28px ${pad}px` }}>
           {editing
             ? <textarea value={block.content||''} onChange={e=>onUpdate({...block,content:e.target.value})}
@@ -66,7 +57,6 @@ function FreeBlock({ block, t, editing, onUpdate, onRemove, onMoveUp, onMoveDn, 
               </p>
           }
         </div>
-        {/* 하단 구분선 */}
         <div style={{ height:1, background:t.bd, opacity:0.4 }} />
       </div>
     )
@@ -140,10 +130,48 @@ function AddBlockBtn({ onAddText, onAddImg, editing }) {
   )
 }
 
+/* ── 섹션추가 드롭다운 버튼 (패널 옆 sticky) ─────── */
+function AddSectBtn({ onAdd, addLoading }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handler = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  return (
+    <div ref={ref} style={{ position:'sticky', top:60, alignSelf:'flex-start', flexShrink:0, marginLeft:4, zIndex:30 }}>
+      <button onClick={() => setOpen(o => !o)} disabled={addLoading !== null}
+        style={{ padding:'7px 11px', fontSize:11, borderRadius:8, border:`1.5px solid ${open?'#3b82f6':'#93B4D8'}`, background:open?'#EFF6FF':'#D6E8F8', color:open?'#1d4ed8':'#1E3A6E', cursor:addLoading?'not-allowed':'pointer', display:'flex', alignItems:'center', gap:5, fontWeight:700, whiteSpace:'nowrap', boxShadow:'0 2px 8px rgba(0,0,0,0.1)' }}>
+        {addLoading ? <><Spin/>생성 중</> : '+ 섹션 추가'}
+      </button>
+      {open && (
+        <div style={{ position:'absolute', top:'calc(100% + 6px)', left:0, zIndex:60, background:'#fff', border:`1px solid ${C.bd}`, borderRadius:14, boxShadow:'0 8px 32px rgba(0,0,0,0.14)', padding:'14px', width:240 }}>
+          <div style={{ fontSize:10, fontWeight:700, color:C.fa, letterSpacing:'0.07em', textTransform:'uppercase', marginBottom:10 }}>추가할 섹션 선택</div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6 }}>
+            {EXTRA_SECTIONS.map(sec => (
+              <button key={sec.type} onClick={() => { onAdd(sec); setOpen(false) }}
+                style={{ padding:'10px 12px', borderRadius:9, border:`1px solid ${C.bd}`, background:C.sur, cursor:'pointer', textAlign:'left', transition:'border-color .12s' }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = '#3b82f6'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = C.bd}>
+                <div style={{ fontSize:12, fontWeight:700, color:C.tx }}>{sec.label}</div>
+                <div style={{ fontSize:10, color:C.fa, marginTop:2 }}>{sec.sub}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ══════════════════════════════════════════════════
    SectionEditor 메인
 ══════════════════════════════════════════════════ */
-export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
+export default function SectionEditor({ sec, idx, onUpdate, onDelete, onAddSection, addLoading }) {
   const [editing, setEditing] = useState(true)
   const [dr, setDr]           = useState(sec)
   const [saved, setSaved]     = useState(true)
@@ -151,7 +179,6 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
   const [showTpl, setShowTpl] = useState(true)
   const [scale, setScale]     = useState(1)
   const [secMeta, setSecMeta] = useState({})
-  // 자유 블록 배열: [{id, type:'text'|'img', content, ...}]
   const [blocks, setBlocks]   = useState([])
 
   const ref     = useRef(null)
@@ -188,8 +215,9 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
   const change = (key, val) => { setDr(d => ({...d,[key]:val})); setSaved(false) }
 
   const startEdit = () => { setEditing(true); setShowTpl(true) }
-  const save = () => { onUpdate(idx, dr); setEditing(false); setShowTpl(false); setSaved(true) }
-  const cancel = () => { setDr(prev=>({...sec,secImg:prev.secImg})); setEditing(false); setShowTpl(false); setSaved(true) }
+  // 저장 후 편집 상태 유지 (패널 닫지 않음)
+  const save = () => { onUpdate(idx, dr); setSaved(true) }
+  const cancel = () => { setDr(prev=>({...sec, secImg:prev.secImg})); setSaved(true) }
 
   const dlPNG = async () => {
     if (!ref.current || !saved) return
@@ -199,10 +227,8 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
     finally { setDl(false) }
   }
 
-  /* 블록 조작 */
   const mkId = () => Date.now()+Math.random()
 
-  // 특정 위치(pos) 뒤에 삽입 (-1이면 맨 뒤)
   const addBlock = (type, afterIdx) => {
     const nb = { id: mkId(), type, content: type==='text'?'':'', fontSize:18, align:'left', padding:40 }
     setBlocks(bs => {
@@ -248,7 +274,10 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
         <div style={{ display:'flex',gap:6,alignItems:'center' }}>
           {editing
             ? <>
-                <button onClick={save} style={{ padding:'5px 14px',fontSize:11,borderRadius:7,border:'none',background:'#3b82f6',color:'#fff',cursor:'pointer',fontWeight:700 }}>✓ 저장</button>
+                <button onClick={save} disabled={saved}
+                  style={{ padding:'5px 14px',fontSize:11,borderRadius:7,border:'none',background:saved?C.alt:'#3b82f6',color:saved?C.fa:'#fff',cursor:saved?'default':'pointer',fontWeight:700 }}>
+                  {saved ? '✓ 저장됨' : '✓ 저장'}
+                </button>
                 <button onClick={cancel} style={{ padding:'5px 10px',fontSize:11,borderRadius:7,border:`1px solid ${C.bd}`,background:C.sur,color:C.mu,cursor:'pointer' }}>취소</button>
               </>
             : <button onClick={startEdit} style={{ padding:'6px 14px',fontSize:12,borderRadius:7,border:'none',background:'#3b82f6',color:'#fff',cursor:'pointer',fontWeight:700 }}>✎ 수정</button>
@@ -268,7 +297,7 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
         </div>
       </div>
 
-      {/* ── 2단 레이아웃: 카드(좌) + 사이드 패널(우) ── */}
+      {/* ── 2단 레이아웃: 카드(좌) + 사이드 패널(우) + 섹션추가(우끝) ── */}
       <div style={{ display:'flex', alignItems:'flex-start' }}>
 
         {/* LEFT: 카드 미리보기 (PNG 캡처 대상) */}
@@ -304,9 +333,9 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
           </div>
         </div>
 
-        {/* RIGHT: 사이드 패널 — 수정/레이아웃 컨트롤 */}
+        {/* RIGHT: 사이드 패널 — maxHeight로 콘텐츠 높이에 맞춤 (빈 여백 제거) */}
         {(editing||showTpl) && (
-          <div style={{ width:220,minWidth:220,borderLeft:`1px solid ${C.bd}`,background:'#F8FAFF',position:'sticky',top:60,height:'calc(100vh - 60px)',overflowY:'auto',animation:'slideInRight .22s ease',display:'flex',flexDirection:'column' }}>
+          <div style={{ width:220,minWidth:220,borderLeft:`1px solid ${C.bd}`,background:'#F8FAFF',position:'sticky',top:60,maxHeight:'calc(100vh - 60px)',overflowY:'auto',animation:'slideInRight .22s ease',display:'flex',flexDirection:'column' }}>
             <div style={{ padding:'16px 14px 24px',flex:1 }}>
 
               {/* 레이아웃 */}
@@ -338,7 +367,6 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
                 <>
                   <p style={{ fontSize:10,fontWeight:700,color:C.fa,letterSpacing:'0.07em',textTransform:'uppercase',marginBottom:7 }}>사진 슬롯</p>
                   <div style={{ display:'flex',gap:5,flexWrap:'wrap',marginBottom:18 }}>
-                    {/* detail2col은 이미지2가 왼쪽 컬럼에 항상 표시되므로 툴바 버튼 숨김 */}
                     {dr.template !== 'detail2col' && (
                       <button onClick={()=>{setDr(d=>({...d,secImg2:d.secImg2?null:'slot'}));setSaved(false)}}
                         style={{ padding:'6px 10px',fontSize:11,borderRadius:7,border:`1px solid ${dr.secImg2?'#3b82f6':C.bd}`,background:dr.secImg2?'#EFF6FF':C.sur,color:dr.secImg2?'#1d4ed8':C.mu,cursor:'pointer',fontWeight:600 }}>
@@ -359,7 +387,6 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
                     )}
                   </div>
 
-                  {/* 디테일형 사진 크기 조절 */}
                   {dr.template === 'detail2col' && (
                     <>
                       <p style={{ fontSize:10,fontWeight:700,color:C.fa,letterSpacing:'0.07em',textTransform:'uppercase',marginBottom:6 }}>사진 크기</p>
@@ -376,17 +403,20 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
                     </>
                   )}
 
-                  {/* 편집 힌트 */}
                   <div style={{ padding:'10px 12px',background:'#EFF6FF',borderRadius:9,border:'1px solid #BFDBFE',fontSize:11,color:'#1d4ed8',lineHeight:1.8 }}>
                     ✏️ 텍스트 클릭 → 수정<br/>
                     📷 이미지 클릭 → 업로드<br/>
-                    <strong>+ 블록 삽입</strong> → 원하는 위치에 추가<br/>
-                    저장 후 PNG 다운로드
+                    <strong>+ 블록 삽입</strong> → 원하는 위치에 추가
                   </div>
                 </>
               )}
             </div>
           </div>
+        )}
+
+        {/* 섹션추가 버튼 — 패널 바로 오른쪽에 sticky */}
+        {editing && onAddSection && (
+          <AddSectBtn onAdd={onAddSection} addLoading={addLoading} />
         )}
       </div>
     </div>
