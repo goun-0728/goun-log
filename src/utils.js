@@ -70,23 +70,48 @@ export async function capturePNG(el, filename, opts = {}) {
     s.onerror = rej
     document.head.appendChild(s)
   })
-  const canvas = await h2c(el, {
-    scale: 2,
-    useCORS: true,
-    allowTaint: true,
-    backgroundColor: null,
-    logging: false,
-    windowWidth: 860,
-    // 클론에서 CSS transform 제거 → html2canvas가 860px 기준 자연 크기로 렌더링
-    onclone: (_doc, cloned) => {
-      const parent = cloned.parentElement
-      if (parent) {
-        parent.style.transform = 'none'
-        parent.style.width = '860px'
-        parent.style.height = 'auto'
+
+  // el(data-sect-card) 부모는 transform:scale 래퍼, 그 위가 wrapRef
+  // 캡처 전 transform을 제거해야 html2canvas가 860px 기준 자연 크기로 정확히 렌더링됨
+  const scaler  = el.parentElement
+  const wrap    = scaler?.parentElement
+  const prevTx  = scaler?.style.transform || ''
+  const prevH   = wrap?.style.height     || ''
+  const prevOv  = wrap?.style.overflow   || ''
+
+  if (prevTx) {
+    scaler.style.transform = 'none'
+    if (wrap) {
+      wrap.style.height   = el.offsetHeight + 'px'
+      wrap.style.overflow = 'visible'
+    }
+    // 브라우저가 레이아웃을 재계산하도록 한 프레임 대기
+    await new Promise(r => requestAnimationFrame(r))
+  }
+
+  let canvas
+  try {
+    canvas = await h2c(el, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: null,
+      logging: false,
+      windowWidth: 860,
+      width:  el.offsetWidth,
+      height: el.offsetHeight,
+      ...opts,
+    })
+  } finally {
+    // 캡처 성공/실패 무관하게 DOM 복원
+    if (prevTx) {
+      scaler.style.transform = prevTx
+      if (wrap) {
+        wrap.style.height   = prevH
+        wrap.style.overflow = prevOv
       }
-    },
-    ...opts,
-  })
+    }
+  }
+
   downloadURL(canvas.toDataURL('image/png'), filename)
 }
