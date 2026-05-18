@@ -134,11 +134,11 @@ function AddBlockBtn({ onAddText, onAddImg, editing }) {
    SectionEditor 메인
 ══════════════════════════════════════════════════ */
 export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
-  const [editing, setEditing] = useState(true)
+  const [editing, setEditing] = useState(false)
   const [dr, setDr]           = useState(sec)
   const [saved, setSaved]     = useState(true)
   const [dl, setDl]           = useState(false)
-  const [showTpl, setShowTpl] = useState(true)
+  const [showTpl, setShowTpl] = useState(false)
   const [scale, setScale]     = useState(1)
   const [secMeta, setSecMeta] = useState({})
   const [blocks, setBlocks]   = useState([])
@@ -177,9 +177,8 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
   const change = (key, val) => { setDr(d => ({...d,[key]:val})); setSaved(false) }
 
   const startEdit = () => { setEditing(true); setShowTpl(true) }
-  // 저장 후 편집 상태 유지 (패널 닫지 않음)
-  const save = () => { onUpdate(idx, dr); setSaved(true) }
-  const cancel = () => { setDr(prev=>({...sec, secImg:prev.secImg})); setSaved(true) }
+  const save = () => { onUpdate(idx, dr); setSaved(true); setEditing(false); setShowTpl(false) }
+  const cancel = () => { setDr(prev=>({...sec, secImg:prev.secImg})); setSaved(true); setEditing(false); setShowTpl(false) }
 
   const dlPNG = async () => {
     if (!ref.current || !saved) return
@@ -236,9 +235,9 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
         <div style={{ display:'flex',gap:6,alignItems:'center' }}>
           {editing
             ? <>
-                <button onClick={save} disabled={saved}
-                  style={{ padding:'5px 14px',fontSize:11,borderRadius:7,border:'none',background:saved?C.alt:'#3b82f6',color:saved?C.fa:'#fff',cursor:saved?'default':'pointer',fontWeight:700 }}>
-                  {saved ? '✓ 저장됨' : '✓ 저장'}
+                <button onClick={save}
+                  style={{ padding:'5px 14px',fontSize:11,borderRadius:7,border:'none',background:'#3b82f6',color:'#fff',cursor:'pointer',fontWeight:700 }}>
+                  ✓ 저장
                 </button>
                 <button onClick={cancel} style={{ padding:'5px 10px',fontSize:11,borderRadius:7,border:`1px solid ${C.bd}`,background:C.sur,color:C.mu,cursor:'pointer' }}>취소</button>
               </>
@@ -296,7 +295,7 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
         </div>
 
         {/* RIGHT: 사이드 패널 — maxHeight로 콘텐츠 높이에 맞춤 (빈 여백 제거) */}
-        {(editing||showTpl) && (
+        {editing && showTpl && (
           <div style={{ width:220,minWidth:220,borderLeft:`1px solid ${C.bd}`,background:'#F8FAFF',position:'sticky',top:60,maxHeight:'calc(100vh - 60px)',overflowY:'auto',animation:'slideInRight .22s ease',display:'flex',flexDirection:'column' }}>
             <div style={{ padding:'16px 14px 24px',flex:1 }}>
 
