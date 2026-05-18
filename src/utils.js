@@ -71,8 +71,21 @@ export async function capturePNG(el, filename, opts = {}) {
     document.head.appendChild(s)
   })
   const canvas = await h2c(el, {
-    scale: 2, useCORS: true, allowTaint: true, backgroundColor: null, logging: false,
-    windowWidth: 860, width: el.scrollWidth, height: el.scrollHeight,
+    scale: 2,
+    useCORS: true,
+    allowTaint: true,
+    backgroundColor: null,
+    logging: false,
+    windowWidth: 860,
+    // 클론에서 CSS transform 제거 → html2canvas가 860px 기준 자연 크기로 렌더링
+    onclone: (_doc, cloned) => {
+      const parent = cloned.parentElement
+      if (parent) {
+        parent.style.transform = 'none'
+        parent.style.width = '860px'
+        parent.style.height = 'auto'
+      }
+    },
     ...opts,
   })
   downloadURL(canvas.toDataURL('image/png'), filename)

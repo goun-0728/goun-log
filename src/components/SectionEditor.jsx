@@ -270,26 +270,28 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
                 secMeta={secMeta}
                 onSecMeta={(key,val)=>{setSecMeta(p=>({...p,[key]:val}));setSaved(false)}}
               />
-              <div style={{ background:t.bg }}>
-                <AddBlockBtn editing={editing}
-                  onAddText={()=>addBlock('text',-1)}
-                  onAddImg={()=>addBlock('img',-1)} />
-                {blocks.map((b,i)=>(
-                  <React.Fragment key={b.id}>
-                    <FreeBlock
-                      block={b} t={t} editing={editing}
-                      onUpdate={data=>updBlock(b.id,data)}
-                      onRemove={()=>rmBlock(b.id)}
-                      onMoveUp={()=>mvBlock(b.id,-1)}
-                      onMoveDn={()=>mvBlock(b.id,1)}
-                      isFirst={i===0} isLast={i===blocks.length-1}
-                    />
-                    <AddBlockBtn editing={editing}
-                      onAddText={()=>addBlock('text',i)}
-                      onAddImg={()=>addBlock('img',i)} />
-                  </React.Fragment>
-                ))}
-              </div>
+              {(editing || blocks.length > 0) && (
+                <div style={{ background:t.bg }}>
+                  <AddBlockBtn editing={editing}
+                    onAddText={()=>addBlock('text',-1)}
+                    onAddImg={()=>addBlock('img',-1)} />
+                  {blocks.map((b,i)=>(
+                    <React.Fragment key={b.id}>
+                      <FreeBlock
+                        block={b} t={t} editing={editing}
+                        onUpdate={data=>updBlock(b.id,data)}
+                        onRemove={()=>rmBlock(b.id)}
+                        onMoveUp={()=>mvBlock(b.id,-1)}
+                        onMoveDn={()=>mvBlock(b.id,1)}
+                        isFirst={i===0} isLast={i===blocks.length-1}
+                      />
+                      <AddBlockBtn editing={editing}
+                        onAddText={()=>addBlock('text',i)}
+                        onAddImg={()=>addBlock('img',i)} />
+                    </React.Fragment>
+                  ))}
+                </div>
+              )}
               <div style={{ padding:'6px 20px',textAlign:'right',fontSize:9,color:t.fg,opacity:0.1,background:t.bg }}>ContentOS</div>
             </div>
           </div>
