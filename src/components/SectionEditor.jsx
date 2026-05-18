@@ -265,7 +265,7 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
         {/* LEFT: 카드 미리보기 (PNG 캡처 대상) */}
         <div ref={wrapRef} style={{ flex:1,minWidth:0,position:'relative',background:'#e8e6e0',overflow:'hidden' }}>
           <div style={{ width:860,transformOrigin:'top left',transform:`scale(${scale})` }}>
-            <div ref={ref} style={{ fontFamily:"'Noto Sans KR','Apple SD Gothic Neo',sans-serif",width:860 }}>
+            <div ref={ref} data-sect-card style={{ fontFamily:"'Noto Sans KR','Apple SD Gothic Neo',sans-serif",width:860 }}>
               <Tpl s={dr} img={img} t={t} editing={editing} onChange={change}
                 secMeta={secMeta}
                 onSecMeta={(key,val)=>{setSecMeta(p=>({...p,[key]:val}));setSaved(false)}}

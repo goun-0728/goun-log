@@ -122,7 +122,7 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
 
   const dlAllPNG = async () => {
     setDlAll(true)
-    const els = document.querySelectorAll('[data-sect]')
+    const els = document.querySelectorAll('[data-sect-card]')
     for (let i = 0; i < els.length; i++) {
       try {
         await capturePNG(els[i], `section_${i + 1}.png`)

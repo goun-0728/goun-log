@@ -61,7 +61,7 @@ export function downloadURL(url, name) {
 }
 
 // ── html2canvas PNG 저장 ────────────────────────────
-export async function capturePNG(el, filename) {
+export async function capturePNG(el, filename, opts = {}) {
   const h2c = await new Promise((res, rej) => {
     if (window.html2canvas) { res(window.html2canvas); return }
     const s = document.createElement('script')
@@ -70,6 +70,10 @@ export async function capturePNG(el, filename) {
     s.onerror = rej
     document.head.appendChild(s)
   })
-  const canvas = await h2c(el, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: null, logging: false })
+  const canvas = await h2c(el, {
+    scale: 2, useCORS: true, allowTaint: true, backgroundColor: null, logging: false,
+    windowWidth: 860, width: el.scrollWidth, height: el.scrollHeight,
+    ...opts,
+  })
   downloadURL(canvas.toDataURL('image/png'), filename)
 }
