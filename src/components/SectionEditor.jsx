@@ -123,7 +123,7 @@ function AddBlockBtn({ onAddText, onAddImg, editing }) {
       <div style={{ display:'flex', alignItems:'center' }}>
         <div style={{ flex:1, height:2, background: open ? '#3b82f6' : '#C7CBD3' }} />
         <button onClick={()=>setOpen(o=>!o)}
-          style={{ padding:'13px 32px', fontSize:15, fontWeight:700, border:`2.5px solid ${open?'#3b82f6':'#C7CBD3'}`, borderRadius:32, background: open?'#EFF6FF':'#F3F4F6', color: open?'#1d4ed8':'#4B5563', cursor:'pointer', whiteSpace:'nowrap', transition:'all .15s', margin:'0 8px' }}>
+          style={{ padding:'16px 40px', fontSize:17, fontWeight:700, border:`2.5px solid ${open?'#3b82f6':'#C7CBD3'}`, borderRadius:32, background: open?'#EFF6FF':'#F3F4F6', color: open?'#1d4ed8':'#4B5563', cursor:'pointer', whiteSpace:'nowrap', transition:'all .15s', margin:'0 8px' }}>
           + 블록 삽입
         </button>
         <div style={{ flex:1, height:2, background: open ? '#3b82f6' : '#C7CBD3' }} />
@@ -170,6 +170,18 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
   useEffect(() => {
     setDr(prev => ({ ...sec, secImg: prev.secImg ?? sec.secImg }))
   }, [sec])
+
+  useEffect(() => {
+    const inner = ref.current
+    if (!inner || !wrapRef.current) return
+    const update = () => {
+      if (wrapRef.current && ref.current) wrapRef.current.style.height = ref.current.offsetHeight * scale + 'px'
+    }
+    update()
+    const obs = new ResizeObserver(update)
+    obs.observe(inner)
+    return () => obs.disconnect()
+  }, [scale])
 
   const t = DS[dr.designStyle] || Object.values(DS)[0]
 
@@ -260,7 +272,7 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
       <div style={{ display:'flex', alignItems:'flex-start' }}>
 
         {/* LEFT: 카드 미리보기 (PNG 캡처 대상) */}
-        <div ref={wrapRef} style={{ flex:1,minWidth:0,position:'relative',background:'#e8e6e0',overflowX:'hidden' }}>
+        <div ref={wrapRef} style={{ flex:1,minWidth:0,position:'relative',background:'#e8e6e0',overflow:'hidden' }}>
           <div style={{ width:860,transformOrigin:'top left',transform:`scale(${scale})` }}>
             <div ref={ref} style={{ fontFamily:"'Noto Sans KR','Apple SD Gothic Neo',sans-serif",width:860 }}>
               <Tpl s={dr} img={img} t={t} editing={editing} onChange={change}
@@ -290,37 +302,33 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
               <div style={{ padding:'6px 20px',textAlign:'right',fontSize:9,color:t.fg,opacity:0.1,background:t.bg }}>ContentOS</div>
             </div>
           </div>
-          {/* 높이 보정 */}
-          <div style={{ height:0,visibility:'hidden' }} ref={el=>{
-            if(el&&ref.current){const h=ref.current.offsetHeight*scale;if(el.parentElement)el.parentElement.style.height=h+'px'}
-          }} />
         </div>
 
         {/* RIGHT: 사이드 패널 — 수정/레이아웃 컨트롤 */}
         {(editing||showTpl) && (
-          <div style={{ width:296,minWidth:296,borderLeft:`1px solid ${C.bd}`,background:'#F8FAFF',position:'sticky',top:60,height:'calc(100vh - 60px)',overflowY:'auto',animation:'slideInRight .22s ease',display:'flex',flexDirection:'column' }}>
+          <div style={{ width:220,minWidth:220,borderLeft:`1px solid ${C.bd}`,background:'#F8FAFF',position:'sticky',top:60,height:'calc(100vh - 60px)',overflowY:'auto',animation:'slideInRight .22s ease',display:'flex',flexDirection:'column' }}>
             <div style={{ padding:'16px 14px 24px',flex:1 }}>
 
               {/* 레이아웃 */}
               <p style={{ fontSize:10,fontWeight:700,color:C.fa,letterSpacing:'0.07em',textTransform:'uppercase',marginBottom:7 }}>레이아웃</p>
-              <div style={{ display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:5,marginBottom:18 }}>
+              <div style={{ display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:3,marginBottom:14 }}>
                 {TPL_LABELS.map(({k,l})=>{const on=dr.template===k;return(
                   <button key={k} onClick={()=>{const nx={...dr,template:k};setDr(nx);onUpdate(idx,nx)}}
-                    style={{ padding:'8px 6px',fontSize:11,borderRadius:8,border:`1.5px solid ${on?'#3b82f6':C.bd}`,background:on?'#EFF6FF':C.sur,color:on?'#1d4ed8':C.mu,cursor:'pointer',fontWeight:on?700:400,textAlign:'center' }}>{l}</button>
+                    style={{ padding:'5px 3px',fontSize:10,borderRadius:6,border:`1.5px solid ${on?'#3b82f6':C.bd}`,background:on?'#EFF6FF':C.sur,color:on?'#1d4ed8':C.mu,cursor:'pointer',fontWeight:on?700:400,textAlign:'center' }}>{l}</button>
                 );})}
               </div>
 
               {/* 디자인 / 색상 */}
               <p style={{ fontSize:10,fontWeight:700,color:C.fa,letterSpacing:'0.07em',textTransform:'uppercase',marginBottom:7 }}>디자인 / 색상</p>
-              <div style={{ display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:5,marginBottom:18 }}>
+              <div style={{ display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:3,marginBottom:14 }}>
                 {DS_KEYS.map(s=>{const on=dr.designStyle===s;const d=DS[s];return(
                   <button key={s} onClick={()=>{const nx={...dr,designStyle:s};setDr(nx);onUpdate(idx,nx)}}
-                    style={{ borderRadius:8,border:`2px solid ${on?'#3b82f6':'transparent'}`,cursor:'pointer',padding:0,overflow:'hidden',background:'none',outline:'none' }}>
-                    <div style={{ height:34,background:d.bg,display:'flex',alignItems:'center',justifyContent:'center',gap:3 }}>
-                      <div style={{ width:8,height:8,borderRadius:'50%',background:d.ac }} />
-                      <div style={{ width:14,height:3,borderRadius:2,background:d.fg,opacity:0.4 }} />
+                    style={{ borderRadius:6,border:`2px solid ${on?'#3b82f6':'transparent'}`,cursor:'pointer',padding:0,overflow:'hidden',background:'none',outline:'none' }}>
+                    <div style={{ height:26,background:d.bg,display:'flex',alignItems:'center',justifyContent:'center',gap:2 }}>
+                      <div style={{ width:7,height:7,borderRadius:'50%',background:d.ac }} />
+                      <div style={{ width:10,height:2,borderRadius:2,background:d.fg,opacity:0.4 }} />
                     </div>
-                    <div style={{ padding:'4px 2px',background:on?'#EFF6FF':C.alt,fontSize:9,color:on?'#1d4ed8':C.mu,fontWeight:on?700:400,textAlign:'center' }}>{s}</div>
+                    <div style={{ padding:'2px 1px',background:on?'#EFF6FF':C.alt,fontSize:8,color:on?'#1d4ed8':C.mu,fontWeight:on?700:400,textAlign:'center' }}>{s}</div>
                   </button>
                 );})}
               </div>
@@ -350,6 +358,23 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
                       </button>
                     )}
                   </div>
+
+                  {/* 디테일형 사진 크기 조절 */}
+                  {dr.template === 'detail2col' && (
+                    <>
+                      <p style={{ fontSize:10,fontWeight:700,color:C.fa,letterSpacing:'0.07em',textTransform:'uppercase',marginBottom:6 }}>사진 크기</p>
+                      <div style={{ display:'flex',alignItems:'center',gap:6,marginBottom:14 }}>
+                        <button onClick={()=>change('detailImgH', Math.max(180,(dr.detailImgH||320)-20))}
+                          style={{ width:26,height:26,borderRadius:6,border:`1px solid ${C.bd}`,background:C.sur,fontSize:15,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>−</button>
+                        <input type="range" min={180} max={520} step={20} value={dr.detailImgH||320}
+                          onChange={e=>change('detailImgH',+e.target.value)}
+                          style={{ flex:1,minWidth:0 }} />
+                        <button onClick={()=>change('detailImgH', Math.min(520,(dr.detailImgH||320)+20))}
+                          style={{ width:26,height:26,borderRadius:6,border:`1px solid ${C.bd}`,background:C.sur,fontSize:15,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>+</button>
+                        <span style={{ fontSize:10,color:C.mu,minWidth:34,textAlign:'right',flexShrink:0 }}>{dr.detailImgH||320}px</span>
+                      </div>
+                    </>
+                  )}
 
                   {/* 편집 힌트 */}
                   <div style={{ padding:'10px 12px',background:'#EFF6FF',borderRadius:9,border:'1px solid #BFDBFE',fontSize:11,color:'#1d4ed8',lineHeight:1.8 }}>

@@ -31,7 +31,7 @@ export function EditText({ value, onChange, editing, style }) {
 }
 
 /* ── ImageAdjust ── */
-export function ImageAdjust({ url, editing, imgMeta, onMetaChange }) {
+export function ImageAdjust({ url, editing, imgMeta, onMetaChange, fixedH }) {
   const [dragging, setDragging] = useState(false)
   const [start, setStart]       = useState({ x: 0, y: 0 })
   const meta = imgMeta || { scale: 1, x: 0, y: 0 }
@@ -54,10 +54,11 @@ export function ImageAdjust({ url, editing, imgMeta, onMetaChange }) {
   const reset   = () => onMetaChange({ scale: 1, x: 0, y: 0 })
 
   return (
-    <div style={{ position: 'relative', overflow: 'hidden' }}
+    <div style={{ position: 'relative', overflow: 'hidden', ...(fixedH ? { height: fixedH } : {}) }}
       onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onWheel={handleWheel}>
       <img src={url} alt="" draggable={false}
-        style={{ width: '100%', height: 'auto', display: 'block', userSelect: 'none',
+        style={{ width: '100%', height: fixedH ? '100%' : 'auto', display: 'block', userSelect: 'none',
+          objectFit: fixedH ? 'cover' : 'initial',
           transform: `scale(${meta.scale}) translate(${meta.x / meta.scale}px, ${meta.y / meta.scale}px)`,
           transformOrigin: 'center center',
           cursor: editing ? (dragging ? 'grabbing' : 'grab') : 'default',
@@ -76,7 +77,7 @@ export function ImageAdjust({ url, editing, imgMeta, onMetaChange }) {
 const btnCtrl = { width: 28, height: 28, borderRadius: 6, border: 'none', background: 'rgba(255,255,255,0.15)', color: '#fff', fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }
 
 /* ── ImgBox ── */
-export function ImgBox({ url, t, label, editing = false, onImgChange, minH = 320, imgMeta, onMetaChange }) {
+export function ImgBox({ url, t, label, editing = false, onImgChange, minH = 320, imgMeta, onMetaChange, fixedH }) {
   const ref = useRef(null)
   const handleFile = e => {
     const f = e.target.files[0]; if (!f || !onImgChange) return
@@ -87,7 +88,7 @@ export function ImgBox({ url, t, label, editing = false, onImgChange, minH = 320
   if (!url) return null
   if (url === 'slot') return (
     <div onClick={() => ref.current?.click()}
-      style={{ minHeight: minH, background: t.sub, border: `2px dashed ${t.bd}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, cursor: 'pointer' }}>
+      style={{ ...(fixedH ? { height: fixedH } : { minHeight: minH }), background: t.sub, border: `2px dashed ${t.bd}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, cursor: 'pointer' }}>
       <input ref={ref} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
       <span style={{ fontSize: 36, opacity: 0.2 }}>📷</span>
       <span style={{ fontSize: 15, color: t.fg, opacity: 0.45, fontWeight: 500 }}>클릭하여 사진 업로드</span>
@@ -103,7 +104,7 @@ export function ImgBox({ url, t, label, editing = false, onImgChange, minH = 320
           📷 교체
         </button>
       )}
-      <ImageAdjust url={url} editing={editing} imgMeta={imgMeta} onMetaChange={onMetaChange || (() => {})} />
+      <ImageAdjust url={url} editing={editing} imgMeta={imgMeta} onMetaChange={onMetaChange || (() => {})} fixedH={fixedH} />
     </div>
   )
 }
@@ -328,6 +329,7 @@ export function TplDetail2col({ s, img, t, editing, onChange, secMeta, onSecMeta
   const img2 = s.secImg2
   const img3 = s.secImg3
   const img4 = s.secImg4
+  const imgH = s.detailImgH || 320
 
   return (
     <CardWrapper bg={t.bg}>
@@ -338,18 +340,18 @@ export function TplDetail2col({ s, img, t, editing, onChange, secMeta, onSecMeta
         {/* 왼쪽: 이미지 2장 세로 쌓기 */}
         <div style={{ display: 'flex', flexDirection: 'column', background: t.ac }}>
 
-          {/* 이미지 1 (위) */}
-          <div style={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 320 }}>
+          {/* 이미지 1 (위) — 정사각형 크롭 */}
+          <div style={{ height: imgH, position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
             {img
               ? <>
                   <ImgBox url={img} t={t} label="이미지 1" editing={editing} onImgChange={v => onChange('secImg', v)}
-                    imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} minH={320} />
+                    imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} minH={imgH} fixedH={imgH} />
                   <div style={{ position: 'absolute', inset: 0, background: `${t.ac}22`, pointerEvents: 'none' }} />
                 </>
               : editing
                 ? <ImgBox url="slot" t={t} label="이미지 1 업로드" editing={editing} onImgChange={v => onChange('secImg', v)}
-                    imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} minH={320} />
-                : <div style={{ minHeight: 320, background: `linear-gradient(160deg, ${t.ac} 0%, ${t.ac}cc 100%)`,
+                    imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} minH={imgH} fixedH={imgH} />
+                : <div style={{ height: imgH, background: `linear-gradient(160deg, ${t.ac} 0%, ${t.ac}cc 100%)`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <span style={{ fontSize: 60, opacity: 0.15 }}>📷</span>
                   </div>
@@ -359,18 +361,18 @@ export function TplDetail2col({ s, img, t, editing, onChange, secMeta, onSecMeta
           {/* 구분선 */}
           <div style={{ height: 3, background: `${t.bg}55`, flexShrink: 0 }} />
 
-          {/* 이미지 2 (아래) */}
-          <div style={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 320 }}>
+          {/* 이미지 2 (아래) — 정사각형 크롭 */}
+          <div style={{ height: imgH, position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
             {img2
               ? <>
                   <ImgBox url={img2} t={t} label="이미지 2" editing={editing} onImgChange={v => onChange('secImg2', v)}
-                    imgMeta={secMeta?.img2} onMetaChange={m => onSecMeta?.('img2', m)} minH={320} />
+                    imgMeta={secMeta?.img2} onMetaChange={m => onSecMeta?.('img2', m)} minH={imgH} fixedH={imgH} />
                   <div style={{ position: 'absolute', inset: 0, background: `${t.ac}22`, pointerEvents: 'none' }} />
                 </>
               : editing
                 ? <ImgBox url="slot" t={t} label="이미지 2 업로드" editing={editing} onImgChange={v => onChange('secImg2', v)}
-                    imgMeta={secMeta?.img2} onMetaChange={m => onSecMeta?.('img2', m)} minH={320} />
-                : <div style={{ minHeight: 320, background: `linear-gradient(160deg, ${t.ac}cc 0%, ${t.ac}88 100%)`,
+                    imgMeta={secMeta?.img2} onMetaChange={m => onSecMeta?.('img2', m)} minH={imgH} fixedH={imgH} />
+                : <div style={{ height: imgH, background: `linear-gradient(160deg, ${t.ac}cc 0%, ${t.ac}88 100%)`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <span style={{ fontSize: 60, opacity: 0.10 }}>📷</span>
                   </div>
@@ -715,7 +717,7 @@ export function TplCTA({ s, img, t, editing, onChange, secMeta, onSecMeta }) {
 /* ── 공통 버튼 스타일 상수 ── */
 const delBtnAbsolute = { position: 'absolute', top: 10, right: 10, width: 22, height: 22, borderRadius: '50%', border: '1px solid #fca5a5', background: '#fef2f2', color: '#ef4444', fontSize: 12, cursor: 'pointer', fontWeight: 700, lineHeight: 1, zIndex: 2 }
 const delBtnInline   = { width: 26, height: 26, borderRadius: 6, border: '1px solid #fca5a5', background: '#fef2f2', color: '#ef4444', fontSize: 14, cursor: 'pointer', flexShrink: 0, fontWeight: 700, lineHeight: 1 }
-const addBtnStyle    = { padding: '10px 28px', fontSize: 13, fontWeight: 600, border: '1.5px dashed #ccc', borderRadius: 8, background: 'transparent', color: '#888', cursor: 'pointer' }
+const addBtnStyle    = { padding: '14px 36px', fontSize: 15, fontWeight: 700, border: '1.5px dashed #ccc', borderRadius: 8, background: 'transparent', color: '#888', cursor: 'pointer' }
 const overlayInput   = { display: 'block', width: '100%', background: 'rgba(255,255,255,0.92)', border: '2px solid #3b82f6', borderRadius: 8, padding: '8px 14px', outline: 'none', fontFamily: 'inherit', color: '#111', boxSizing: 'border-box', fontWeight: 700 }
 const cmpInput       = { width: '100%', fontSize: 15, border: '1px solid #3b82f6', borderRadius: 6, padding: '7px 10px', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }
 
