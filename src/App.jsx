@@ -37,6 +37,42 @@ function Blk({ title, lines }) {
   )
 }
 
+/* ── 섹션추가 드롭다운 버튼 ─────────────────────────── */
+function AddSectBtn({ onAdd, addLoading }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  useEffect(() => {
+    if (!open) return
+    const handler = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+  return (
+    <div ref={ref} style={{ position: 'sticky', top: 60, alignSelf: 'flex-start', flexShrink: 0, marginLeft: 8, zIndex: 80 }}>
+      <button onClick={() => setOpen(o => !o)} disabled={addLoading !== null}
+        style={{ padding: '7px 14px', fontSize: 12, borderRadius: 8, border: `1.5px solid ${open ? '#3b82f6' : '#93B4D8'}`, background: open ? '#EFF6FF' : '#D6E8F8', color: open ? '#1d4ed8' : '#1E3A6E', cursor: addLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontWeight: 700, whiteSpace: 'nowrap', boxShadow: '0 2px 10px rgba(0,0,0,0.13)' }}>
+        {addLoading ? <><Spin /> 생성 중…</> : '+ 섹션 추가'}
+      </button>
+      {open && (
+        <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 80, background: '#fff', border: `1px solid ${C.bd}`, borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,0.14)', padding: '14px', width: 260 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: C.fa, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 10 }}>추가할 섹션 선택</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+            {EXTRA_SECTIONS.map(sec => (
+              <button key={sec.type} onClick={() => { onAdd(sec); setOpen(false) }}
+                style={{ padding: '10px 12px', borderRadius: 9, border: `1px solid ${C.bd}`, background: C.sur, cursor: 'pointer', textAlign: 'left', transition: 'border-color .12s' }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = '#3b82f6'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = C.bd}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: C.tx }}>{sec.label}</div>
+                <div style={{ fontSize: 10, color: C.fa, marginTop: 2 }}>{sec.sub}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ── 추가 섹션 AI 출력 파서 ─────────────────────────── */
 function parseExtraSection(text, typeInfo) {
   const gf = (k, t) => { const rx = new RegExp(k + ':\\s*([^\\n]+)'); const f = t.match(rx); return f ? f[1].trim() : '' }
@@ -193,11 +229,16 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
               {dlAll ? <><Spin /> 저장 중…</> : '↓ 전체 PNG'}
             </button>
           </div>
-          {sects.map((s, i) => (
-            <div key={s._id || i} data-sect>
-              <SectionEditor sec={s} idx={i} onUpdate={upd} onDelete={s._userAdded ? () => deleteSection(i) : undefined} onAddSection={addSection} addLoading={addLoading} />
+          <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {sects.map((s, i) => (
+                <div key={s._id || i} data-sect>
+                  <SectionEditor sec={s} idx={i} onUpdate={upd} onDelete={s._userAdded ? () => deleteSection(i) : undefined} />
+                </div>
+              ))}
             </div>
-          ))}
+            <AddSectBtn onAdd={addSection} addLoading={addLoading} />
+          </div>
         </div>
       )}
 

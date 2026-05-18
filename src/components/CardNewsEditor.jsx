@@ -453,7 +453,7 @@ function CardEditor({ card, idx, onUpdate }) {
               <div onClick={() => fileRef.current?.click()}
                 style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', zIndex: 10, pointerEvents: 'auto' }}>
                 <span style={{ fontSize: 28, opacity: 0.5 }}>📷</span>
-                <span style={{ fontSize: 11, color: '#555', fontWeight: 600, background: 'rgba(255,255,255,0.88)', padding: '4px 14px', borderRadius: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>클릭하여 사진 업로드</span>
+                <span style={{ fontSize: 11, color: '#222222', fontWeight: 600, background: '#e0e0e0', padding: '4px 14px', borderRadius: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>클릭해서 사진 업로드</span>
               </div>
             )}
 

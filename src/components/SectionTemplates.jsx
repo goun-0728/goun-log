@@ -91,7 +91,7 @@ export function ImgBox({ url, t, label, editing = false, onImgChange, minH = 320
       style={{ ...(fixedH ? { height: fixedH } : { minHeight: minH }), background: t.sub, border: `2px dashed ${t.bd}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, cursor: 'pointer' }}>
       <input ref={ref} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
       <span style={{ fontSize: 40, opacity: 0.3 }}>📷</span>
-      <span style={{ fontSize: 14, color: t.fg, fontWeight: 600, background: 'rgba(255,255,255,0.8)', padding: '6px 18px', borderRadius: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>클릭하여 사진 업로드</span>
+      <span style={{ fontSize: 14, color: '#222222', fontWeight: 600, background: '#e0e0e0', padding: '6px 18px', borderRadius: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>클릭해서 사진 업로드</span>
     </div>
   )
   return (

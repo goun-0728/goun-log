@@ -1,6 +1,6 @@
 // src/components/SectionEditor.jsx
 import React, { useState, useRef, useEffect } from 'react'
-import { C, DS, DS_KEYS, TPL_LABELS, EXTRA_SECTIONS } from '../constants'
+import { C, DS, DS_KEYS, TPL_LABELS } from '../constants'
 import { TPL, ImageAdjust } from './SectionTemplates'
 import { capturePNG, readFileAsDataURL } from '../utils'
 
@@ -94,8 +94,8 @@ function FreeBlock({ block, t, editing, onUpdate, onRemove, onMoveUp, onMoveDn, 
                   <button onClick={onRemove} style={{ width:24,height:24,borderRadius:4,border:'1px solid #fca5a5',background:'#fef2f2',color:'#ef4444',fontSize:11,cursor:'pointer',fontWeight:700 }}>×</button>
                 </div>
               )}
-              <span style={{ fontSize:32,opacity:0.2 }}>📷</span>
-              <span style={{ fontSize:14,color:t.fg,opacity:0.4 }}>{editing?'클릭하여 사진 업로드':'이미지 블록'}</span>
+              <span style={{ fontSize:32,opacity:0.3 }}>📷</span>
+              <span style={{ fontSize:14,fontWeight:600,background:'#e0e0e0',color:'#222222',padding:'6px 18px',borderRadius:24 }}>{editing?'클릭해서 사진 업로드':'이미지 블록'}</span>
             </div>
         }
       </div>
@@ -130,48 +130,10 @@ function AddBlockBtn({ onAddText, onAddImg, editing }) {
   )
 }
 
-/* ── 섹션추가 드롭다운 버튼 (패널 옆 sticky) ─────── */
-function AddSectBtn({ onAdd, addLoading }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-
-  useEffect(() => {
-    if (!open) return
-    const handler = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [open])
-
-  return (
-    <div ref={ref} style={{ position:'sticky', top:60, alignSelf:'flex-start', flexShrink:0, marginLeft:4, zIndex:30 }}>
-      <button onClick={() => setOpen(o => !o)} disabled={addLoading !== null}
-        style={{ padding:'7px 11px', fontSize:11, borderRadius:8, border:`1.5px solid ${open?'#3b82f6':'#93B4D8'}`, background:open?'#EFF6FF':'#D6E8F8', color:open?'#1d4ed8':'#1E3A6E', cursor:addLoading?'not-allowed':'pointer', display:'flex', alignItems:'center', gap:5, fontWeight:700, whiteSpace:'nowrap', boxShadow:'0 2px 8px rgba(0,0,0,0.1)' }}>
-        {addLoading ? <><Spin/>생성 중</> : '+ 섹션 추가'}
-      </button>
-      {open && (
-        <div style={{ position:'absolute', top:'calc(100% + 6px)', left:0, zIndex:60, background:'#fff', border:`1px solid ${C.bd}`, borderRadius:14, boxShadow:'0 8px 32px rgba(0,0,0,0.14)', padding:'14px', width:240 }}>
-          <div style={{ fontSize:10, fontWeight:700, color:C.fa, letterSpacing:'0.07em', textTransform:'uppercase', marginBottom:10 }}>추가할 섹션 선택</div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6 }}>
-            {EXTRA_SECTIONS.map(sec => (
-              <button key={sec.type} onClick={() => { onAdd(sec); setOpen(false) }}
-                style={{ padding:'10px 12px', borderRadius:9, border:`1px solid ${C.bd}`, background:C.sur, cursor:'pointer', textAlign:'left', transition:'border-color .12s' }}
-                onMouseEnter={e => e.currentTarget.style.borderColor = '#3b82f6'}
-                onMouseLeave={e => e.currentTarget.style.borderColor = C.bd}>
-                <div style={{ fontSize:12, fontWeight:700, color:C.tx }}>{sec.label}</div>
-                <div style={{ fontSize:10, color:C.fa, marginTop:2 }}>{sec.sub}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
 /* ══════════════════════════════════════════════════
    SectionEditor 메인
 ══════════════════════════════════════════════════ */
-export default function SectionEditor({ sec, idx, onUpdate, onDelete, onAddSection, addLoading }) {
+export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
   const [editing, setEditing] = useState(true)
   const [dr, setDr]           = useState(sec)
   const [saved, setSaved]     = useState(true)
@@ -414,10 +376,6 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete, onAddSecti
           </div>
         )}
 
-        {/* 섹션추가 버튼 — 패널 바로 오른쪽에 sticky */}
-        {editing && onAddSection && (
-          <AddSectBtn onAdd={onAddSection} addLoading={addLoading} />
-        )}
       </div>
     </div>
   )
