@@ -40,15 +40,13 @@ function Blk({ title, lines }) {
 /* ── 섹션 사이 추가 버튼 ────────────────────────────── */
 function AddBetweenBtn({ onClick, loading }) {
   return (
-    <div style={{ display:'flex', alignItems:'center', padding:'6px 0' }}>
-      <div style={{ flex:1, height:1, background:C.bd, opacity:0.5 }} />
+    <div style={{ margin:'6px 0 14px' }}>
       <button onClick={onClick} disabled={loading}
-        style={{ padding:'5px 18px', fontSize:11, borderRadius:20, border:`1px dashed ${C.bd}`, background:C.sur, color:C.mu, cursor:loading?'not-allowed':'pointer', fontWeight:600, margin:'0 10px', whiteSpace:'nowrap', opacity:loading?0.5:1, transition:'border-color .12s, color .12s' }}
+        style={{ width:'100%', padding:'10px 0', fontSize:12, borderRadius:12, border:`1.5px solid ${C.bd}`, background:C.sur, color:C.mu, cursor:loading?'not-allowed':'pointer', fontWeight:600, transition:'border-color .12s, color .12s', opacity:loading?0.5:1 }}
         onMouseEnter={e => { if (!loading) { e.currentTarget.style.borderColor='#3b82f6'; e.currentTarget.style.color='#3b82f6' } }}
         onMouseLeave={e => { e.currentTarget.style.borderColor=C.bd; e.currentTarget.style.color=C.mu }}>
         {loading ? '생성 중…' : '+ 섹션 추가'}
       </button>
-      <div style={{ flex:1, height:1, background:C.bd, opacity:0.5 }} />
     </div>
   )
 }
