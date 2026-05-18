@@ -134,11 +134,11 @@ function AddBlockBtn({ onAddText, onAddImg, editing }) {
    SectionEditor 메인
 ══════════════════════════════════════════════════ */
 export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
-  const [editing, setEditing] = useState(false)
+  const [editing, setEditing] = useState(true)
   const [dr, setDr]           = useState(sec)
   const [saved, setSaved]     = useState(true)
   const [dl, setDl]           = useState(false)
-  const [showTpl, setShowTpl] = useState(false)
+  const [showTpl, setShowTpl] = useState(true)
   const [scale, setScale]     = useState(1)
   const [secMeta, setSecMeta] = useState({})
   const [blocks, setBlocks]   = useState([])
@@ -176,9 +176,9 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
 
   const change = (key, val) => { setDr(d => ({...d,[key]:val})); setSaved(false) }
 
-  const startEdit = () => { setEditing(true); setShowTpl(true) }
-  const save = () => { onUpdate(idx, dr); setSaved(true); setEditing(false); setShowTpl(false) }
-  const cancel = () => { setDr(prev=>({...sec, secImg:prev.secImg})); setSaved(true); setEditing(false); setShowTpl(false) }
+  const startEdit = () => { setEditing(true) }
+  const save = () => { onUpdate(idx, dr); setSaved(true); setEditing(false) }
+  const cancel = () => { setDr(prev=>({...sec, secImg:prev.secImg})); setSaved(true); setEditing(false) }
 
   const dlPNG = async () => {
     if (!ref.current || !saved) return
@@ -295,7 +295,7 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
         </div>
 
         {/* RIGHT: 사이드 패널 — maxHeight로 콘텐츠 높이에 맞춤 (빈 여백 제거) */}
-        {editing && showTpl && (
+        {showTpl && (
           <div style={{ width:220,minWidth:220,borderLeft:`1px solid ${C.bd}`,background:'#F8FAFF',position:'sticky',top:60,maxHeight:'calc(100vh - 60px)',overflowY:'auto',animation:'slideInRight .22s ease',display:'flex',flexDirection:'column' }}>
             <div style={{ padding:'16px 14px 24px',flex:1 }}>
 
