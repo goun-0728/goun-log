@@ -546,7 +546,7 @@ export function TplCompare({ s, img, t, editing, onChange, secMeta, onSecMeta })
                 style={{ fontSize: 16, fontWeight: 700, color: '#999' }} />
             </div>
             <div style={{ padding: '22px 28px', background: t.ac, textAlign: 'center' }}>
-              <EditText editing={editing} value={s.compareRight || '이 제품'} onChange={v => onChange('compareRight', v)}
+              <EditText editing={editing} value={s.compareRight || ''} onChange={v => onChange('compareRight', v)}
                 style={{ fontSize: 16, fontWeight: 800, color: '#fff' }} />
             </div>
           </div>

@@ -42,9 +42,7 @@ function AddBetweenBtn({ onClick, loading }) {
   return (
     <div style={{ margin:'6px 0 14px' }}>
       <button onClick={onClick} disabled={loading}
-        style={{ width:'100%', padding:'10px 0', fontSize:12, borderRadius:12, border:`1.5px solid ${C.bd}`, background:C.sur, color:C.mu, cursor:loading?'not-allowed':'pointer', fontWeight:600, transition:'border-color .12s, color .12s', opacity:loading?0.5:1 }}
-        onMouseEnter={e => { if (!loading) { e.currentTarget.style.borderColor='#3b82f6'; e.currentTarget.style.color='#3b82f6' } }}
-        onMouseLeave={e => { e.currentTarget.style.borderColor=C.bd; e.currentTarget.style.color=C.mu }}>
+        style={{ width:'100%', padding:'10px 0', fontSize:12, borderRadius:12, border:'1.5px solid #3B82F6', background:loading?'#93c5fd':'#3B82F6', color:'#fff', cursor:loading?'not-allowed':'pointer', fontWeight:600, transition:'background .12s', opacity:loading?0.7:1 }}>
         {loading ? '생성 중…' : '+ 섹션 추가'}
       </button>
     </div>
@@ -71,9 +69,14 @@ function parseExtraSection(text, typeInfo) {
 
 /* ── 상세페이지 결과 뷰 ─────────────────────────────── */
 function DetailView({ result, savedSects, onSectsChange, productInput }) {
-  const top = parseBlocks(result)
-  const rep = top.find(b => b.title === '기획 보고서')
-  const seo = top.find(b => b.title.includes('SEO'))
+  const top    = parseBlocks(result)
+  const rep    = top.find(b => b.title === '기획 보고서')
+  const ptMeta = top.find(b => b.title.includes('Page Title'))
+  const seo    = top.find(b => b.title.includes('SEO'))
+
+  const ptText   = ptMeta?.lines.join('\n') || ''
+  const pageTitle = ptText.match(/Page Title:\s*(.+)/)?.[1]?.trim() || ''
+  const metaDesc  = ptText.match(/Meta Description:\s*(.+)/)?.[1]?.trim() || ''
   const [sects,    setSects]    = useState(() => savedSects ?? parseSections(result))
   const [planOpen, setPlanOpen] = useState({})
   const [dlAll,      setDlAll]      = useState(false)
@@ -132,9 +135,9 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
   return (
     <div>
 
-      {/* ── 기획 보고서 ── 흰색 배경 */}
+      {/* ── 기획 보고서 ── #FFFFFF */}
       {rep && (
-        <div style={{ marginBottom: 20 }}>
+        <div style={{ background: '#FFFFFF', margin: '0 -20px', padding: '20px 20px 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
             <span style={{ fontSize: 12, fontWeight: 800, color: C.tx, letterSpacing: '-0.02em' }}>📋 기획 보고서</span>
             <CopyBtn text={rep.lines.join('\n').trim()} />
@@ -145,12 +148,40 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
         </div>
       )}
 
-      {/* ── 섹션별 기획안 ── 연한 회색 배경 */}
-      {sects.length > 0 && (
-        <div style={{ background: '#F5F4F0', margin: '0 -20px', padding: '20px 20px 24px', borderTop: '1px solid #D8D5CF', borderBottom: '1px solid #D8D5CF' }}>
+      {/* ── Page Title & Meta Description ── #EFF6FF */}
+      {(pageTitle || metaDesc) && (
+        <div style={{ background: '#EFF6FF', margin: '0 -20px', padding: '20px 20px', borderTop: '1px solid #BFDBFE', borderBottom: '1px solid #BFDBFE' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <span style={{ fontSize: 12, fontWeight: 800, color: '#4A4840', letterSpacing: '-0.02em' }}>📐 섹션별 기획안</span>
-            <span style={{ fontSize: 11, color: '#78766E' }}>— 촬영 가이드 · AI 프롬프트 포함</span>
+            <span style={{ fontSize: 12, fontWeight: 800, color: '#1E40AF', letterSpacing: '-0.02em' }}>🔍 Page Title & Meta Description</span>
+            <span style={{ fontSize: 11, color: '#3B82F6' }}>— SEO 최적화</span>
+          </div>
+          {pageTitle && (
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#1E40AF' }}>Page Title</span>
+                <CopyBtn text={pageTitle} />
+              </div>
+              <div style={{ background: '#fff', borderRadius: 8, border: '1px solid #BFDBFE', padding: '10px 14px', fontSize: 13.5, color: C.tx, lineHeight: 1.7 }}>{pageTitle}</div>
+            </div>
+          )}
+          {metaDesc && (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#1E40AF' }}>Meta Description</span>
+                <CopyBtn text={metaDesc} />
+              </div>
+              <div style={{ background: '#fff', borderRadius: 8, border: '1px solid #BFDBFE', padding: '10px 14px', fontSize: 13.5, color: C.tx, lineHeight: 1.7 }}>{metaDesc}</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── 섹션별 기획안 ── #FEFCE8 */}
+      {sects.length > 0 && (
+        <div style={{ background: '#FEFCE8', margin: '0 -20px', padding: '20px 20px 24px', borderTop: '1px solid #FEF08A', borderBottom: '1px solid #FEF08A' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <span style={{ fontSize: 12, fontWeight: 800, color: '#713F12', letterSpacing: '-0.02em' }}>📐 섹션별 기획안</span>
+            <span style={{ fontSize: 11, color: '#A16207' }}>— 촬영 가이드 · AI 프롬프트 포함</span>
           </div>
           {sects.map((s, i) => {
             let sp = {}
@@ -200,15 +231,15 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
         </div>
       )}
 
-      {/* ── 다운로드용 섹션 이미지 ── 연한 파란빛 배경 */}
+      {/* ── 다운로드용 섹션 이미지 ── #F8F8F8 */}
       {sects.length > 0 && (
-        <div style={{ background: '#EEF2F7', margin: '0 -20px', padding: '20px 20px 24px', borderBottom: '1px solid #C5D0E8' }}>
+        <div style={{ background: '#F8F8F8', margin: '0 -20px', padding: '20px 20px 24px', borderBottom: '1px solid #E0E0E0' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 12, fontWeight: 800, color: '#1E3A6E', letterSpacing: '-0.02em' }}>🖼 다운로드용 섹션 이미지</span>
-              <span style={{ fontSize: 11, color: '#5A7AAA' }}>— 수정 후 PNG 저장</span>
+              <span style={{ fontSize: 12, fontWeight: 800, color: C.tx, letterSpacing: '-0.02em' }}>🖼 다운로드용 섹션 이미지</span>
+              <span style={{ fontSize: 11, color: C.mu }}>— 수정 후 PNG 저장</span>
             </div>
-            <button onClick={dlAllPNG} disabled={dlAll} style={{ padding: '6px 12px', fontSize: 11, borderRadius: 7, border: `1px solid ${dlAll ? C.bd : '#93B4D8'}`, background: dlAll ? C.alt : '#D6E8F8', color: dlAll ? C.fa : '#1E3A6E', cursor: dlAll ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
+            <button onClick={dlAllPNG} disabled={dlAll} style={{ padding: '6px 12px', fontSize: 11, borderRadius: 7, border: `1px solid ${dlAll ? C.bd : C.bdm}`, background: dlAll ? C.alt : C.sur, color: dlAll ? C.fa : C.tx, cursor: dlAll ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
               {dlAll ? <><Spin /> 저장 중…</> : '↓ 전체 PNG'}
             </button>
           </div>
