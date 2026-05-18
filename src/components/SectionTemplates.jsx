@@ -1,5 +1,5 @@
 // src/components/SectionTemplates.jsx
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 
 const CARD_W = 860
 const SERIF  = "'Noto Serif KR', 'Noto Serif', Georgia, serif"
@@ -31,10 +31,13 @@ export function EditText({ value, onChange, editing, style }) {
 }
 
 /* ── ImageAdjust ── */
-export function ImageAdjust({ url, editing, imgMeta, onMetaChange, fixedH }) {
+export function ImageAdjust({ url, editing, imgMeta, onMetaChange, fixedH, fitMode = 'cover' }) {
   const [dragging, setDragging] = useState(false)
   const [start, setStart]       = useState({ x: 0, y: 0 })
-  const meta = imgMeta || { scale: 1, x: 0, y: 0 }
+  const meta    = imgMeta || { scale: 1, x: 0, y: 0 }
+  const divRef  = useRef(null)
+  const snapRef = useRef(null)
+  snapRef.current = { editing, meta, onMetaChange }
 
   const handleMouseDown = e => {
     if (!editing) return
@@ -44,40 +47,37 @@ export function ImageAdjust({ url, editing, imgMeta, onMetaChange, fixedH }) {
   }
   const handleMouseMove = e => { if (!dragging) return; onMetaChange({ ...meta, x: e.clientX - start.x, y: e.clientY - start.y }) }
   const handleMouseUp   = () => setDragging(false)
-  const handleWheel     = e => {
-    if (!editing) return
-    e.preventDefault()
-    onMetaChange({ ...meta, scale: Math.max(0.5, Math.min(4, meta.scale + (e.deltaY > 0 ? -0.05 : 0.05))) })
-  }
-  const zoomIn  = () => onMetaChange({ ...meta, scale: Math.min(4, meta.scale + 0.15) })
-  const zoomOut = () => onMetaChange({ ...meta, scale: Math.max(0.5, meta.scale - 0.15) })
-  const reset   = () => onMetaChange({ scale: 1, x: 0, y: 0 })
+
+  useEffect(() => {
+    const el = divRef.current
+    if (!el) return
+    const handler = e => {
+      const { editing, meta, onMetaChange } = snapRef.current
+      if (!editing) return
+      e.preventDefault()
+      onMetaChange({ ...meta, scale: Math.max(0.5, Math.min(4, meta.scale + (e.deltaY > 0 ? -0.05 : 0.05))) })
+    }
+    el.addEventListener('wheel', handler, { passive: false })
+    return () => el.removeEventListener('wheel', handler)
+  }, [])
 
   return (
-    <div style={{ position: 'relative', overflow: 'hidden', ...(fixedH ? { height: fixedH } : {}) }}
-      onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onWheel={handleWheel}>
+    <div ref={divRef} style={{ position: 'relative', overflow: 'hidden', ...(fixedH ? { height: fixedH } : {}) }}
+      onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
       <img src={url} alt="" draggable={false}
         style={{ width: '100%', height: fixedH ? '100%' : 'auto', display: 'block', userSelect: 'none',
-          objectFit: fixedH ? 'cover' : 'initial',
+          objectFit: fixedH ? fitMode : 'initial',
           transform: `scale(${meta.scale}) translate(${meta.x / meta.scale}px, ${meta.y / meta.scale}px)`,
           transformOrigin: 'center center',
           cursor: editing ? (dragging ? 'grabbing' : 'grab') : 'default',
           transition: dragging ? 'none' : 'transform 0.1s' }}
         onMouseDown={handleMouseDown} />
-      {editing && (
-        <div style={{ position: 'absolute', bottom: 10, right: 10, display: 'flex', gap: 4, background: 'rgba(0,0,0,0.6)', borderRadius: 8, padding: '5px 8px' }}>
-          <button onClick={zoomOut} style={btnCtrl}>−</button>
-          <button onClick={reset}   style={{ ...btnCtrl, width: 'auto', padding: '0 8px', fontSize: 11 }}>초기화</button>
-          <button onClick={zoomIn}  style={btnCtrl}>+</button>
-        </div>
-      )}
     </div>
   )
 }
-const btnCtrl = { width: 28, height: 28, borderRadius: 6, border: 'none', background: 'rgba(255,255,255,0.15)', color: '#fff', fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }
 
 /* ── ImgBox ── */
-export function ImgBox({ url, t, label, editing = false, onImgChange, minH = 320, imgMeta, onMetaChange, fixedH }) {
+export function ImgBox({ url, t, label, editing = false, onImgChange, minH = 320, imgMeta, onMetaChange, fixedH, fitMode }) {
   const ref = useRef(null)
   const handleFile = e => {
     const f = e.target.files[0]; if (!f || !onImgChange) return
@@ -100,11 +100,11 @@ export function ImgBox({ url, t, label, editing = false, onImgChange, minH = 320
       <input ref={ref} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
       {editing && (
         <button onClick={() => ref.current?.click()}
-          style={{ position: 'absolute', top: 10, left: 10, zIndex: 10, padding: '5px 12px', fontSize: 11, fontWeight: 600, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
+          style={{ position: 'absolute', top: 10, left: 10, zIndex: 10, padding: '8px 18px', fontSize: 13, fontWeight: 700, background: 'rgba(0,0,0,0.65)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}>
           📷 교체
         </button>
       )}
-      <ImageAdjust url={url} editing={editing} imgMeta={imgMeta} onMetaChange={onMetaChange || (() => {})} fixedH={fixedH} />
+      <ImageAdjust url={url} editing={editing} imgMeta={imgMeta} onMetaChange={onMetaChange || (() => {})} fixedH={fixedH} fitMode={fitMode} />
     </div>
   )
 }
@@ -345,12 +345,12 @@ export function TplDetail2col({ s, img, t, editing, onChange, secMeta, onSecMeta
             {img
               ? <>
                   <ImgBox url={img} t={t} label="이미지 1" editing={editing} onImgChange={v => onChange('secImg', v)}
-                    imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} minH={imgH} fixedH={imgH} />
+                    imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} minH={imgH} fixedH={imgH} fitMode='contain' />
                   <div style={{ position: 'absolute', inset: 0, background: `${t.ac}22`, pointerEvents: 'none' }} />
                 </>
               : editing
                 ? <ImgBox url="slot" t={t} label="이미지 1 업로드" editing={editing} onImgChange={v => onChange('secImg', v)}
-                    imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} minH={imgH} fixedH={imgH} />
+                    imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} minH={imgH} fixedH={imgH} fitMode='contain' />
                 : <div style={{ height: imgH, background: `linear-gradient(160deg, ${t.ac} 0%, ${t.ac}cc 100%)`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <span style={{ fontSize: 60, opacity: 0.15 }}>📷</span>
@@ -366,12 +366,12 @@ export function TplDetail2col({ s, img, t, editing, onChange, secMeta, onSecMeta
             {img2
               ? <>
                   <ImgBox url={img2} t={t} label="이미지 2" editing={editing} onImgChange={v => onChange('secImg2', v)}
-                    imgMeta={secMeta?.img2} onMetaChange={m => onSecMeta?.('img2', m)} minH={imgH} fixedH={imgH} />
+                    imgMeta={secMeta?.img2} onMetaChange={m => onSecMeta?.('img2', m)} minH={imgH} fixedH={imgH} fitMode='contain' />
                   <div style={{ position: 'absolute', inset: 0, background: `${t.ac}22`, pointerEvents: 'none' }} />
                 </>
               : editing
                 ? <ImgBox url="slot" t={t} label="이미지 2 업로드" editing={editing} onImgChange={v => onChange('secImg2', v)}
-                    imgMeta={secMeta?.img2} onMetaChange={m => onSecMeta?.('img2', m)} minH={imgH} fixedH={imgH} />
+                    imgMeta={secMeta?.img2} onMetaChange={m => onSecMeta?.('img2', m)} minH={imgH} fixedH={imgH} fitMode='contain' />
                 : <div style={{ height: imgH, background: `linear-gradient(160deg, ${t.ac}cc 0%, ${t.ac}88 100%)`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <span style={{ fontSize: 60, opacity: 0.10 }}>📷</span>

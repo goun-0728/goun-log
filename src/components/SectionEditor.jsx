@@ -88,7 +88,7 @@ function FreeBlock({ block, t, editing, onUpdate, onRemove, onMoveUp, onMoveDn, 
               {editing && (
                 <div style={{ position:'absolute', top:8, left:8, display:'flex', gap:4, zIndex:20 }}>
                   <button onClick={()=>fileRef.current?.click()}
-                    style={{ padding:'4px 10px',fontSize:11,fontWeight:600,background:'rgba(0,0,0,0.6)',color:'#fff',border:'none',borderRadius:6,cursor:'pointer' }}>📷 교체</button>
+                    style={{ padding:'8px 18px',fontSize:13,fontWeight:700,background:'rgba(0,0,0,0.65)',color:'#fff',border:'none',borderRadius:8,cursor:'pointer' }}>📷 교체</button>
                   {!isFirst && <button onClick={onMoveUp} style={{ width:28,height:28,borderRadius:4,border:'none',background:'rgba(0,0,0,0.5)',color:'#fff',fontSize:12,cursor:'pointer' }}>↑</button>}
                   {!isLast  && <button onClick={onMoveDn} style={{ width:28,height:28,borderRadius:4,border:'none',background:'rgba(0,0,0,0.5)',color:'#fff',fontSize:12,cursor:'pointer' }}>↓</button>}
                   <button onClick={onRemove} style={{ width:28,height:28,borderRadius:4,border:'none',background:'rgba(220,38,38,0.8)',color:'#fff',fontSize:14,cursor:'pointer',fontWeight:700 }}>×</button>
@@ -320,15 +320,15 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
 
               {/* 디자인 / 색상 */}
               <p style={{ fontSize:10,fontWeight:700,color:C.fa,letterSpacing:'0.07em',textTransform:'uppercase',marginBottom:7 }}>디자인 / 색상</p>
-              <div style={{ display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:3,marginBottom:14 }}>
+              <div style={{ display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:4,marginBottom:14 }}>
                 {DS_KEYS.map(s=>{const on=dr.designStyle===s;const d=DS[s];return(
                   <button key={s} onClick={()=>{const nx={...dr,designStyle:s};setDr(nx);onUpdate(idx,nx)}}
-                    style={{ borderRadius:6,border:`2px solid ${on?'#3b82f6':'transparent'}`,cursor:'pointer',padding:0,overflow:'hidden',background:'none',outline:'none' }}>
-                    <div style={{ height:26,background:d.bg,display:'flex',alignItems:'center',justifyContent:'center',gap:2 }}>
-                      <div style={{ width:7,height:7,borderRadius:'50%',background:d.ac }} />
-                      <div style={{ width:10,height:2,borderRadius:2,background:d.fg,opacity:0.4 }} />
+                    style={{ borderRadius:7,border:`2px solid ${on?'#3b82f6':'transparent'}`,cursor:'pointer',padding:0,overflow:'hidden',background:'none',outline:'none' }}>
+                    <div style={{ height:30,background:d.bg,display:'flex',alignItems:'center',justifyContent:'center',gap:4 }}>
+                      <div style={{ width:10,height:10,borderRadius:'50%',background:d.ac }} />
+                      <div style={{ width:16,height:3,borderRadius:2,background:d.fg,opacity:0.4 }} />
                     </div>
-                    <div style={{ padding:'2px 1px',background:on?'#EFF6FF':C.alt,fontSize:8,color:on?'#1d4ed8':C.mu,fontWeight:on?700:400,textAlign:'center' }}>{s}</div>
+                    <div style={{ padding:'3px 2px',background:on?'#EFF6FF':C.alt,fontSize:9,color:on?'#1d4ed8':C.mu,fontWeight:on?700:400,textAlign:'center' }}>{s}</div>
                   </button>
                 );})}
               </div>
