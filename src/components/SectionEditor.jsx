@@ -254,7 +254,8 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete, onAddSecti
   const dlLabel = dl ? '변환 중' : (!saved ? '저장 후 다운로드' : '↓ PNG')
 
   return (
-    <div style={{ marginBottom:20,borderRadius:12,overflow:'clip',border:`2px solid ${editing?'#3b82f6':C.bd}`,transition:'border-color .2s' }}>
+    <div style={{ display:'flex', alignItems:'flex-start', marginBottom:20 }}>
+    <div style={{ flex:1, minWidth:0, borderRadius:12, overflow:'clip', border:`2px solid ${editing?'#3b82f6':C.bd}`, transition:'border-color .2s' }}>
 
       {/* ── 툴바 ── */}
       <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 14px',background:editing?'#EFF6FF':C.alt,borderBottom:`1px solid ${editing?'#BFDBFE':C.bd}`,flexWrap:'wrap',gap:6 }}>
@@ -411,11 +412,12 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete, onAddSecti
           </div>
         )}
 
-        {editing && onAddSection && (
-          <AddSectBtn onAdd={onAddSection} addLoading={addLoading} />
-        )}
-
       </div>
+    </div>
+
+    {editing && onAddSection && (
+      <AddSectBtn onAdd={onAddSection} addLoading={addLoading} />
+    )}
     </div>
   )
 }
