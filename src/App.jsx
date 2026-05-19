@@ -408,7 +408,21 @@ export default function App() {
 
   const taRef = useRef(null)
   const resRef = useRef(null)
+  const imgUploadRef = useRef(null)
   const [titleHover, setTitleHover] = useState(false)
+
+  // 제품 사진 업로드 (detail 탭용, 최대 5장)
+  const [productImgs, setProductImgs] = useState([])
+  const handleProductImgs = e => {
+    const files = Array.from(e.target.files)
+    const remaining = 5 - productImgs.length
+    files.slice(0, remaining).forEach(f => {
+      const fr = new FileReader()
+      fr.onload = ev => setProductImgs(prev => prev.length < 5 ? [...prev, ev.target.result] : prev)
+      fr.readAsDataURL(f)
+    })
+    e.target.value = ''
+  }
 
   // 전체 리셋 (히스토리는 유지)
   const resetAll = () => {
@@ -424,6 +438,7 @@ export default function App() {
     setTask(TASKS[0])
     setError('')
     setKeywordContext('')
+    setProductImgs([])
   }
 
   // textarea 자동 높이
@@ -455,10 +470,14 @@ export default function App() {
       const userPrompt = (tid === 'blog' && keywordContext)
         ? `다음 키워드를 자연스럽게 포함하고, 아래 내용을 참고해서 블로그 글을 작성해줘.\n키워드: ${keywordContext}\n참고 내용: ${curInput.trim()}`
         : curInput.trim()
+      const hasImgs = tid === 'detail' && productImgs.length > 0
+      const systemPrompt = hasImgs
+        ? getSys(tid, tone) + '\n\n업로드된 제품 사진을 분석해서 제품의 외형·색상·패키지 디자인을 파악하고, 각 섹션 AI프롬프트에 실제 제품의 시각적 특성(색상, 형태, 질감, 소재감)을 구체적으로 반영해줘.'
+        : getSys(tid, tone)
       const text = await generateContent({
-        systemPrompt: getSys(tid, tone),
+        systemPrompt,
         userPrompt,
-        images: [],
+        images: hasImgs ? productImgs : [],
         model: 'gpt-4o',
         maxTokens: tid === 'detail' ? 4000 : 2000,
       })
@@ -617,6 +636,32 @@ export default function App() {
               placeholder={'마케팅을 시작하세요. 제품 특징이나 원하는 내용을 자유롭게 입력해보세요.\n\n예) 듀라론 냉감패드 상세페이지 만들어줘'}
               style={{ width: '100%', minHeight: 150, padding: '18px 20px', border: 'none', outline: 'none', resize: 'none', fontSize: 14.5, lineHeight: 1.85, color: C.tx, background: 'transparent', fontFamily: 'inherit' }}
             />
+
+            {/* 제품 사진 업로드 (detail 탭 전용) */}
+            {task.id === 'detail' && (
+              <div style={{ padding: '12px 16px 14px', borderTop: `1px solid ${C.bd}`, background: C.alt }}>
+                <input ref={imgUploadRef} type="file" accept="image/*" multiple onChange={handleProductImgs} style={{ display: 'none' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: productImgs.length ? 10 : 0, flexWrap: 'wrap' }}>
+                  <button onClick={() => imgUploadRef.current?.click()} disabled={productImgs.length >= 5}
+                    style={{ padding: '5px 12px', fontSize: 11, borderRadius: 7, border: `1px solid ${C.bd}`, background: C.sur, color: productImgs.length >= 5 ? C.fa : C.mu, cursor: productImgs.length >= 5 ? 'not-allowed' : 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+                    📷 프롬프트용 제품 사진 업로드 ({productImgs.length}/5)
+                  </button>
+                  <span style={{ fontSize: 11, color: C.fa, lineHeight: 1.5 }}>사진을 올리면 더 정확한 AI 이미지 프롬프트를 만들 수 있어요</span>
+                </div>
+                {productImgs.length > 0 && (
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {productImgs.map((img, i) => (
+                      <div key={i} style={{ position: 'relative', width: 72, height: 72, flexShrink: 0 }}>
+                        <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8, border: `1px solid ${C.bd}`, display: 'block' }} />
+                        <button onClick={() => setProductImgs(p => p.filter((_, j) => j !== i))}
+                          style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: '#ef4444', color: '#fff', border: '2px solid #fff', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, lineHeight: 1, padding: 0 }}>×</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div style={{ padding: '10px 14px', borderTop: `1px solid ${C.bd}`, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 9 }}>
               <span style={{ fontSize: 11, color: C.fa }}>⌘ Enter</span>
               <button onClick={run} disabled={loading || !input.trim()} style={{ padding: '9px 22px', borderRadius: 9, border: 'none', background: (!input.trim() || loading) ? '#ECEAE5' : C.tx, color: (!input.trim() || loading) ? C.fa : '#fff', fontSize: 13, fontWeight: 700, cursor: (!input.trim() || loading) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
