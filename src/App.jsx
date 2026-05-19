@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { C, TASKS, BLOG_TONES, getSys, EXTRA_SECTIONS, getExtraSectSys, mkSec } from './constants'
 import { parseBlocks, parseSections, capturePNG, downloadURL } from './utils'
-import { generateContent } from './api/generate'
+import { generateContent, generateImage } from './api/generate'
 import SectionEditor from './components/SectionEditor'
 import CardNewsView from './components/CardNewsEditor'
 import BlogKeywords from './components/BlogKeywords'
@@ -85,6 +85,8 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
   const [deleteConfirm, setDeleteConfirm] = useState(null) // null | sectionIdx
   const [savedMap,   setSavedMap]   = useState({})
   const [dlWarnModal, setDlWarnModal] = useState(false)
+  const [imgLoading, setImgLoading] = useState({})   // { [sectionIdx]: boolean }
+  const [genImgs,    setGenImgs]    = useState({})   // { [sectionIdx]: imageUrl }
 
   const sectsInit    = useRef(false)
 
@@ -95,6 +97,33 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
 
   const upd = useCallback((i, v) => setSects(p => p.map((s, j) => j === i ? v : s)), [])
   const handleSavedChange = useCallback((i, isSaved) => setSavedMap(prev => ({ ...prev, [i]: isSaved })), [])
+
+  const generateImg = async (i, prompt) => {
+    setImgLoading(p => ({ ...p, [i]: true }))
+    try {
+      const url = await generateImage(prompt)
+      setGenImgs(p => ({ ...p, [i]: url }))
+    } catch (e) {
+      alert('이미지 생성 오류: ' + e.message)
+    } finally {
+      setImgLoading(p => ({ ...p, [i]: false }))
+    }
+  }
+
+  const dlGenImg = async (url, idx) => {
+    try {
+      const r = await fetch(url)
+      const blob = await r.blob()
+      const bUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = bUrl; a.download = `section_${idx + 1}_ai.png`
+      document.body.appendChild(a); a.click()
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(bUrl), 1000)
+    } catch {
+      window.open(url, '_blank')
+    }
+  }
 
   const deleteSection = useCallback(i => {
     setSects(p => p.filter((_, j) => j !== i))
@@ -225,10 +254,31 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
                       </div>
                     )}
                     {s.imagePrompt && (
-                      <div style={{ background: '#111', borderRadius: 7, padding: '9px 12px', display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                        <code style={{ fontSize: 11, color: '#D4D4D4', fontFamily: "'Courier New',monospace", lineHeight: 1.7, flex: 1, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{s.imagePrompt}</code>
-                        <CopyBtn text={s.imagePrompt} />
-                      </div>
+                      <>
+                        <div style={{ background: '#111', borderRadius: 7, padding: '9px 12px', display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                          <code style={{ fontSize: 11, color: '#D4D4D4', fontFamily: "'Courier New',monospace", lineHeight: 1.7, flex: 1, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{s.imagePrompt}</code>
+                          <CopyBtn text={s.imagePrompt} />
+                        </div>
+                        <div style={{ marginTop: 8 }}>
+                          <button onClick={() => generateImg(i, s.imagePrompt)} disabled={imgLoading[i]}
+                            style={{ padding: '7px 16px', fontSize: 11, borderRadius: 7, border: 'none', background: imgLoading[i] ? '#6b7280' : '#6366f1', color: '#fff', cursor: imgLoading[i] ? 'not-allowed' : 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            {imgLoading[i] ? <><Spin /> 이미지 생성 중…</> : '✦ AI 이미지 생성 (DALL-E 3)'}
+                          </button>
+                          {genImgs[i] && (
+                            <div style={{ marginTop: 10 }}>
+                              <img src={genImgs[i]} alt={`S${i+1} AI 이미지`} style={{ width: '100%', borderRadius: 8, display: 'block', border: `1px solid ${C.bd}` }} />
+                              <button onClick={() => dlGenImg(genImgs[i], i)}
+                                style={{ marginTop: 8, padding: '6px 16px', fontSize: 11, borderRadius: 7, border: `1px solid ${C.bd}`, background: C.sur, color: C.tx, cursor: 'pointer', fontWeight: 600 }}>
+                                ↓ 다운로드
+                              </button>
+                              <button onClick={() => generateImg(i, s.imagePrompt)} disabled={imgLoading[i]}
+                                style={{ marginTop: 8, marginLeft: 6, padding: '6px 14px', fontSize: 11, borderRadius: 7, border: `1px solid #6366f1`, background: '#f0f0ff', color: '#6366f1', cursor: 'pointer', fontWeight: 600 }}>
+                                ↻ 재생성
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </>
                     )}
                   </div>
                 )}

@@ -1,5 +1,5 @@
 // src/api/generate.js
-// 클라이언트에서 Vercel API Route를 통해 GPT 호출
+// 클라이언트에서 Vercel API Route를 통해 GPT / DALL-E 호출
 
 export async function generateContent({ systemPrompt, userPrompt, images = [], model = 'gpt-4o', maxTokens = 4000 }) {
   // 메시지 구성
@@ -35,4 +35,20 @@ export async function generateContent({ systemPrompt, userPrompt, images = [], m
 
   const data = await res.json();
   return data.text;
+}
+
+export async function generateImage(prompt) {
+  const res = await fetch('/api/dalle', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || `HTTP ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data.url;
 }
