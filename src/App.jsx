@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { C, TASKS, BLOG_TONES, getSys, EXTRA_SECTIONS, getExtraSectSys, mkSec } from './constants'
 import { parseBlocks, parseSections, capturePNG, downloadURL } from './utils'
-import { generateContent, generateImage } from './api/generate'
+import { generateContent } from './api/generate'
 import SectionEditor from './components/SectionEditor'
 import CardNewsView from './components/CardNewsEditor'
 import BlogKeywords from './components/BlogKeywords'
@@ -68,28 +68,7 @@ function parseExtraSection(text, typeInfo) {
 }
 
 /* ── 상세페이지 결과 뷰 ─────────────────────────────── */
-const IMG_PREFIX = 'Realistic commercial product photography for Korean e-commerce detail page. If people appear, they must be Korean or East Asian appearance. Natural, authentic lifestyle feel, not overly dramatic or staged. Suitable for professional online shopping product page advertisement. Soft natural lighting, clean composition.'
-
-const IMG_NEGATIVE = '--no illustration, cartoon, CGI, Western appearance, blonde hair, blue eyes, oversaturated, plastic look, stock photo, ai generated look, dramatic, extreme emotion'
-
-const SECTION_TONE = {
-  'HERO': 'Product as the main subject, bright and clean background, premium studio feel.',
-  '문제 공감': 'Slightly inconvenient everyday situation, relatable minor daily frustration. No extreme or dramatic expressions.',
-  '해결 제안': 'Positive and hopeful scene, relief and satisfaction moment, warm and uplifting atmosphere.',
-  '사용 상황': 'Natural real-life usage, authentic candid lifestyle moment, not posed.',
-  '추천 대상': 'Target customer naturally appears in their everyday environment, genuine and relatable.',
-  '특징 강조': 'Extreme close-up detail shot, highlighting product craftsmanship and quality.',
-  '비교': 'Clean comparison scene, before and after or side-by-side, neutral background.',
-  'CTA': 'Most attractive product angle, aspirational and desirable feel, premium aesthetic.',
-}
-
-function buildImgPrompt(rawPrompt, sectionType) {
-  const base = rawPrompt.replace(/--no\s+[\s\S]*$/i, '').trim()
-  const tone = SECTION_TONE[sectionType] || ''
-  return `${IMG_PREFIX}${tone ? ' ' + tone : ''} ${base} ${IMG_NEGATIVE}`
-}
-
-function DetailView({ result, savedSects, onSectsChange, productInput, productImgs = [] }) {
+function DetailView({ result, savedSects, onSectsChange, productInput }) {
   const top    = parseBlocks(result)
   const rep    = top.find(b => b.title === '기획 보고서')
   const ptMeta = top.find(b => b.title.includes('Page Title'))
@@ -106,8 +85,6 @@ function DetailView({ result, savedSects, onSectsChange, productInput, productIm
   const [deleteConfirm, setDeleteConfirm] = useState(null) // null | sectionIdx
   const [savedMap,   setSavedMap]   = useState({})
   const [dlWarnModal, setDlWarnModal] = useState(false)
-  const [imgLoading, setImgLoading] = useState({})   // { [sectionIdx]: boolean }
-  const [genImgs,    setGenImgs]    = useState({})   // { [sectionIdx]: imageUrl }
 
   const sectsInit    = useRef(false)
 
@@ -118,34 +95,6 @@ function DetailView({ result, savedSects, onSectsChange, productInput, productIm
 
   const upd = useCallback((i, v) => setSects(p => p.map((s, j) => j === i ? v : s)), [])
   const handleSavedChange = useCallback((i, isSaved) => setSavedMap(prev => ({ ...prev, [i]: isSaved })), [])
-
-  const generateImg = async (i, prompt, sectionType = '') => {
-    setImgLoading(p => ({ ...p, [i]: true }))
-    try {
-      const enhanced = buildImgPrompt(prompt, sectionType)
-      const url = await generateImage(enhanced, productImgs)
-      setGenImgs(p => ({ ...p, [i]: url }))
-    } catch (e) {
-      alert('이미지 생성 오류: ' + e.message)
-    } finally {
-      setImgLoading(p => ({ ...p, [i]: false }))
-    }
-  }
-
-  const dlGenImg = async (url, idx) => {
-    try {
-      const r = await fetch(url)
-      const blob = await r.blob()
-      const bUrl = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = bUrl; a.download = `section_${idx + 1}_ai.png`
-      document.body.appendChild(a); a.click()
-      document.body.removeChild(a)
-      setTimeout(() => URL.revokeObjectURL(bUrl), 1000)
-    } catch {
-      window.open(url, '_blank')
-    }
-  }
 
   const deleteSection = useCallback(i => {
     setSects(p => p.filter((_, j) => j !== i))
@@ -281,25 +230,9 @@ function DetailView({ result, savedSects, onSectsChange, productInput, productIm
                           <code style={{ fontSize: 11, color: '#D4D4D4', fontFamily: "'Courier New',monospace", lineHeight: 1.7, flex: 1, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{s.imagePrompt}</code>
                           <CopyBtn text={s.imagePrompt} />
                         </div>
-                        <div style={{ marginTop: 8 }}>
-                          <button onClick={() => generateImg(i, s.imagePrompt, s.sectionType)} disabled={imgLoading[i]}
-                            style={{ padding: '7px 16px', fontSize: 11, borderRadius: 7, border: 'none', background: imgLoading[i] ? '#6b7280' : '#6366f1', color: '#fff', cursor: imgLoading[i] ? 'not-allowed' : 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
-                            {imgLoading[i] ? <><Spin /> 이미지 생성 중…</> : `✦ AI 이미지 생성${productImgs.length > 0 ? ' (제품사진 참조)' : ''}`}
-                          </button>
-                          {genImgs[i] && (
-                            <div style={{ marginTop: 10 }}>
-                              <img src={genImgs[i]} alt={`S${i+1} AI 이미지`} style={{ width: '100%', borderRadius: 8, display: 'block', border: `1px solid ${C.bd}` }} />
-                              <button onClick={() => dlGenImg(genImgs[i], i)}
-                                style={{ marginTop: 8, padding: '6px 16px', fontSize: 11, borderRadius: 7, border: `1px solid ${C.bd}`, background: C.sur, color: C.tx, cursor: 'pointer', fontWeight: 600 }}>
-                                ↓ 다운로드
-                              </button>
-                              <button onClick={() => generateImg(i, s.imagePrompt, s.sectionType)} disabled={imgLoading[i]}
-                                style={{ marginTop: 8, marginLeft: 6, padding: '6px 14px', fontSize: 11, borderRadius: 7, border: `1px solid #6366f1`, background: '#f0f0ff', color: '#6366f1', cursor: 'pointer', fontWeight: 600 }}>
-                                ↻ 재생성
-                              </button>
-                            </div>
-                          )}
-                        </div>
+                        <p style={{ margin: '8px 0 0', fontSize: 11, color: C.mu, lineHeight: 1.6 }}>
+                          💡 이 프롬프트를 복사해서 미드저니(Midjourney) 또는 ChatGPT 이미지 생성에 붙여넣으세요.
+                        </p>
                       </>
                     )}
                   </div>
@@ -763,7 +696,7 @@ export default function App() {
             </div>
             <div style={{ padding: '16px 20px' }}>
               {task.id === 'detail'
-                ? <DetailView key={detailGenKey} result={result} savedSects={detailData} onSectsChange={saveDetailData} productInput={sharedInput} productImgs={productImgs} />
+                ? <DetailView key={detailGenKey} result={result} savedSects={detailData} onSectsChange={saveDetailData} productInput={sharedInput} />
                 : task.id === 'card'
                   ? <CardNewsView key={cardGenKey} result={result} savedCards={cardData} onCardsChange={saveCardData} />
                   : <>
