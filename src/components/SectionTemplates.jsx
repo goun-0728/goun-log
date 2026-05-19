@@ -102,7 +102,7 @@ export function ImageAdjust({ url, editing, imgMeta, onMetaChange, fixedH, fitMo
 }
 
 /* ── ImgBox ── */
-export function ImgBox({ url, t, label, editing = false, onImgChange, minH = 320, imgMeta, onMetaChange, fixedH, fitMode }) {
+export function ImgBox({ url, t, label, editing = false, onImgChange, minH = 320, imgMeta, onMetaChange, fixedH, fitMode, fill }) {
   const ref = useRef(null)
   const handleFile = e => {
     const f = e.target.files[0]; if (!f || !onImgChange) return
@@ -113,14 +113,14 @@ export function ImgBox({ url, t, label, editing = false, onImgChange, minH = 320
   if (!url) return null
   if (url === 'slot') return (
     <div onClick={() => ref.current?.click()}
-      style={{ ...(fixedH ? { height: fixedH } : { minHeight: minH }), background: t.sub, border: `2px dashed ${t.bd}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, cursor: 'pointer' }}>
+      style={{ ...(fill ? { height: '100%' } : fixedH ? { height: fixedH } : { minHeight: minH }), background: t.sub, border: `2px dashed ${t.bd}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, cursor: 'pointer' }}>
       <input ref={ref} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
       <span style={{ fontSize: 40, opacity: 0.3 }}>📷</span>
       <span style={{ fontSize: 14, color: '#222222', fontWeight: 600, background: '#e0e0e0', padding: '6px 18px', borderRadius: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>클릭해서 사진 업로드</span>
     </div>
   )
   return (
-    <div style={{ position: 'relative' }}>
+    <div style={{ position: 'relative', ...(fill ? { height: '100%' } : {}) }}>
       <input ref={ref} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
       {editing && (
         <button onClick={() => ref.current?.click()}
@@ -128,7 +128,7 @@ export function ImgBox({ url, t, label, editing = false, onImgChange, minH = 320
           📷 교체
         </button>
       )}
-      <ImageAdjust url={url} editing={editing} imgMeta={imgMeta} onMetaChange={onMetaChange || (() => {})} fixedH={fixedH} fitMode={fitMode} />
+      <ImageAdjust url={url} editing={editing} imgMeta={imgMeta} onMetaChange={onMetaChange || (() => {})} fixedH={fill ? '100%' : fixedH} fitMode={fitMode} />
       {editing && <div style={{ position: 'absolute', inset: 0, border: `2px dashed ${t?.bd || '#ccc'}`, pointerEvents: 'none', zIndex: 5 }} />}
     </div>
   )
@@ -404,39 +404,39 @@ export function TplDetail2col({ s, img, t, editing, onChange, secMeta, onSecMeta
         {/* 왼쪽: 이미지 2장 세로 쌓기 */}
         <div style={{ display: 'flex', flexDirection: 'column', background: t.ac }}>
 
-          {/* 이미지 1 (위) — 정사각형 크롭 */}
-          <div style={{ height: imgH, position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+          {/* 이미지 1 (위) */}
+          <div style={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 200 }}>
             {img
               ? <>
                   <ImgBox url={img} t={t} label="이미지 1" editing={editing} onImgChange={v => onChange('secImg', v)}
-                    imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} minH={imgH} fixedH={imgH} fitMode='contain' />
+                    imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} minH={imgH} fitMode='contain' fill />
                   <div style={{ position: 'absolute', inset: 0, background: `${t.ac}22`, pointerEvents: 'none' }} />
                 </>
               : editing
                 ? <ImgBox url="slot" t={t} label="이미지 1 업로드" editing={editing} onImgChange={v => onChange('secImg', v)}
-                    imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} minH={imgH} fixedH={imgH} fitMode='contain' />
-                : <div style={{ height: imgH, background: `linear-gradient(160deg, ${t.ac} 0%, ${t.ac}cc 100%)`,
+                    imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} minH={imgH} fitMode='contain' fill />
+                : <div style={{ height: '100%', minHeight: 200, background: `linear-gradient(160deg, ${t.ac} 0%, ${t.ac}cc 100%)`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <span style={{ fontSize: 60, opacity: 0.15 }}>📷</span>
                   </div>
             }
           </div>
 
-          {/* 구분선 */}
-          <div style={{ height: 3, background: `${t.bg}55`, flexShrink: 0 }} />
+          {/* 구분선 — 사진 사이 간격 */}
+          <div style={{ height: 20, background: `${t.bg}55`, flexShrink: 0 }} />
 
-          {/* 이미지 2 (아래) — 정사각형 크롭 */}
-          <div style={{ height: imgH, position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+          {/* 이미지 2 (아래) */}
+          <div style={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 200 }}>
             {img2
               ? <>
                   <ImgBox url={img2} t={t} label="이미지 2" editing={editing} onImgChange={v => onChange('secImg2', v)}
-                    imgMeta={secMeta?.img2} onMetaChange={m => onSecMeta?.('img2', m)} minH={imgH} fixedH={imgH} fitMode='contain' />
+                    imgMeta={secMeta?.img2} onMetaChange={m => onSecMeta?.('img2', m)} minH={imgH} fitMode='contain' fill />
                   <div style={{ position: 'absolute', inset: 0, background: `${t.ac}22`, pointerEvents: 'none' }} />
                 </>
               : editing
                 ? <ImgBox url="slot" t={t} label="이미지 2 업로드" editing={editing} onImgChange={v => onChange('secImg2', v)}
-                    imgMeta={secMeta?.img2} onMetaChange={m => onSecMeta?.('img2', m)} minH={imgH} fixedH={imgH} fitMode='contain' />
-                : <div style={{ height: imgH, background: `linear-gradient(160deg, ${t.ac}cc 0%, ${t.ac}88 100%)`,
+                    imgMeta={secMeta?.img2} onMetaChange={m => onSecMeta?.('img2', m)} minH={imgH} fitMode='contain' fill />
+                : <div style={{ height: '100%', minHeight: 200, background: `linear-gradient(160deg, ${t.ac}cc 0%, ${t.ac}88 100%)`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <span style={{ fontSize: 60, opacity: 0.10 }}>📷</span>
                   </div>
