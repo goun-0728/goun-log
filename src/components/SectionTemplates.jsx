@@ -247,7 +247,7 @@ export function TplHero({ s, img, t, editing, onChange, secMeta, onSecMeta }) {
         <div style={{ position: 'relative', padding: '80px 60px 88px' }}>
           {/* 라벨 */}
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <span style={{ fontSize: 14, fontWeight: 800, letterSpacing: '0.32em', color: t.ac,
+            <span style={{ fontSize: 19, fontWeight: 800, letterSpacing: '0.32em', color: t.ac,
               textTransform: 'uppercase', borderBottom: `3px solid ${t.ac}`, paddingBottom: 7 }}>KEY POINT</span>
             <div style={{ marginTop: 18, fontSize: 40, fontWeight: 900, color: '#111', fontFamily: SERIF, letterSpacing: '-0.02em' }}>
               이 제품이 특별한 이유
@@ -338,7 +338,7 @@ export function TplMaterial({ s, img, t, editing, onChange, secMeta, onSecMeta }
 
       {/* 하단 포인트 리스트 */}
       <div style={{ padding: '60px 60px 72px', background: '#fff' }}>
-        <div style={{ fontSize: 14, fontWeight: 800, letterSpacing: '0.3em', color: t.ac, textTransform: 'uppercase', marginBottom: 32 }}>MATERIAL DETAIL</div>
+        <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: '0.3em', color: t.ac, textTransform: 'uppercase', marginBottom: 32 }}>MATERIAL DETAIL</div>
 
         {/* 2번째 이미지 (소재 클로즈업) */}
         {s.secImg2 && (
@@ -710,7 +710,7 @@ export function TplTarget({ s, img, t, editing, onChange, secMeta, onSecMeta }) 
 
       {/* 상단 배경색 헤더 */}
       <div style={{ background: t.ac, padding: '64px 64px 60px', textAlign: 'center' }}>
-        <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: '0.3em', color: 'rgba(255,255,255,0.65)', textTransform: 'uppercase', marginBottom: 18 }}>RECOMMENDED FOR</div>
+        <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '0.3em', color: 'rgba(255,255,255,0.65)', textTransform: 'uppercase', marginBottom: 18 }}>RECOMMENDED FOR</div>
         <EditText editing={editing} value={s.mainCopy} onChange={v => onChange('mainCopy', v)}
           style={{ fontSize: 68, fontWeight: 900, color: '#fff', lineHeight: 1.28, letterSpacing: '-0.025em', marginBottom: 14, wordBreak: 'keep-all', fontFamily: SERIF }} />
         <EditText editing={editing} value={s.subCopy} onChange={v => onChange('subCopy', v)}
@@ -779,8 +779,8 @@ export function TplCTA({ s, img, t, editing, onChange, secMeta, onSecMeta }) {
 }
 
 /* ── 공통 버튼 스타일 상수 ── */
-const delBtnAbsolute = { position: 'absolute', top: 10, right: 10, width: 22, height: 22, borderRadius: '50%', border: '1px solid #fca5a5', background: '#fef2f2', color: '#ef4444', fontSize: 12, cursor: 'pointer', fontWeight: 700, lineHeight: 1, zIndex: 2 }
-const delBtnInline   = { width: 26, height: 26, borderRadius: 6, border: '1px solid #fca5a5', background: '#fef2f2', color: '#ef4444', fontSize: 14, cursor: 'pointer', flexShrink: 0, fontWeight: 700, lineHeight: 1 }
+const delBtnAbsolute = { position: 'absolute', top: 8, right: 8, width: 32, height: 32, borderRadius: 8, border: '1px solid #fca5a5', background: '#fef2f2', color: '#ef4444', fontSize: 18, cursor: 'pointer', fontWeight: 800, lineHeight: 1, zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }
+const delBtnInline   = { width: 32, height: 32, borderRadius: 8, border: '1px solid #fca5a5', background: '#fef2f2', color: '#ef4444', fontSize: 18, cursor: 'pointer', flexShrink: 0, fontWeight: 800, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }
 const addBtnStyle    = { padding: '14px 36px', fontSize: 15, fontWeight: 700, border: '1.5px dashed #ccc', borderRadius: 8, background: 'transparent', color: '#888', cursor: 'pointer' }
 const overlayInput   = { display: 'block', width: '100%', background: 'rgba(255,255,255,0.92)', border: '2px solid #3b82f6', borderRadius: 8, padding: '8px 14px', outline: 'none', fontFamily: 'inherit', color: '#111', boxSizing: 'border-box', fontWeight: 700 }
 const cmpInput       = { width: '100%', fontSize: 24, border: '1px solid #3b82f6', borderRadius: 6, padding: '7px 10px', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }

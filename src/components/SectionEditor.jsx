@@ -43,7 +43,7 @@ function FreeBlock({ block, t, editing, onUpdate, onRemove, onMoveUp, onMoveDn, 
             </select>
             {!isFirst && <button onClick={onMoveUp} style={{ width:24,height:24,borderRadius:4,border:`1px solid ${C.bd}`,background:C.sur,fontSize:10,cursor:'pointer' }}>↑</button>}
             {!isLast  && <button onClick={onMoveDn} style={{ width:24,height:24,borderRadius:4,border:`1px solid ${C.bd}`,background:C.sur,fontSize:10,cursor:'pointer' }}>↓</button>}
-            <button onClick={onRemove} style={{ width:24,height:24,borderRadius:4,border:'1px solid #fca5a5',background:'#fef2f2',color:'#ef4444',fontSize:11,cursor:'pointer',fontWeight:700 }}>×</button>
+            <button onClick={onRemove} style={{ width:32,height:32,borderRadius:6,border:'1px solid #fca5a5',background:'#fef2f2',color:'#ef4444',fontSize:18,cursor:'pointer',fontWeight:800,lineHeight:1,display:'flex',alignItems:'center',justifyContent:'center' }}>×</button>
           </div>
         )}
         <div style={{ padding:`28px ${pad}px` }}>
@@ -82,7 +82,7 @@ function FreeBlock({ block, t, editing, onUpdate, onRemove, onMoveUp, onMoveDn, 
                     style={{ padding:'8px 18px',fontSize:13,fontWeight:700,background:'rgba(0,0,0,0.65)',color:'#fff',border:'none',borderRadius:8,cursor:'pointer' }}>📷 교체</button>
                   {!isFirst && <button onClick={onMoveUp} style={{ width:28,height:28,borderRadius:4,border:'none',background:'rgba(0,0,0,0.5)',color:'#fff',fontSize:12,cursor:'pointer' }}>↑</button>}
                   {!isLast  && <button onClick={onMoveDn} style={{ width:28,height:28,borderRadius:4,border:'none',background:'rgba(0,0,0,0.5)',color:'#fff',fontSize:12,cursor:'pointer' }}>↓</button>}
-                  <button onClick={onRemove} style={{ width:28,height:28,borderRadius:4,border:'none',background:'rgba(220,38,38,0.8)',color:'#fff',fontSize:14,cursor:'pointer',fontWeight:700 }}>×</button>
+                  <button onClick={onRemove} style={{ width:36,height:36,borderRadius:6,border:'none',background:'rgba(220,38,38,0.85)',color:'#fff',fontSize:20,cursor:'pointer',fontWeight:800,lineHeight:1,display:'flex',alignItems:'center',justifyContent:'center' }}>×</button>
                 </div>
               )}
             </>
@@ -92,7 +92,7 @@ function FreeBlock({ block, t, editing, onUpdate, onRemove, onMoveUp, onMoveDn, 
                 <div style={{ position:'absolute',top:8,right:8,display:'flex',gap:4 }}>
                   {!isFirst && <button onClick={onMoveUp} style={{ width:24,height:24,borderRadius:4,border:`1px solid ${C.bd}`,background:C.sur,fontSize:10,cursor:'pointer' }}>↑</button>}
                   {!isLast  && <button onClick={onMoveDn} style={{ width:24,height:24,borderRadius:4,border:`1px solid ${C.bd}`,background:C.sur,fontSize:10,cursor:'pointer' }}>↓</button>}
-                  <button onClick={onRemove} style={{ width:24,height:24,borderRadius:4,border:'1px solid #fca5a5',background:'#fef2f2',color:'#ef4444',fontSize:11,cursor:'pointer',fontWeight:700 }}>×</button>
+                  <button onClick={onRemove} style={{ width:32,height:32,borderRadius:6,border:'1px solid #fca5a5',background:'#fef2f2',color:'#ef4444',fontSize:18,cursor:'pointer',fontWeight:800,lineHeight:1,display:'flex',alignItems:'center',justifyContent:'center' }}>×</button>
                 </div>
               )}
               <span style={{ fontSize:32,opacity:0.3 }}>📷</span>
@@ -143,8 +143,6 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete, onSavedCha
   const [scale, setScale]     = useState(1)
   const [secMeta, setSecMeta] = useState({})
   const [blocks, setBlocks]   = useState([])
-  const [delHover, setDelHover] = useState(false)
-
   useEffect(() => { onSavedChange?.(idx, saved) }, [idx, saved])
 
   const ref     = useRef(null)
@@ -185,7 +183,8 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete, onSavedCha
   const cancel = () => { setDr(prev=>({...sec, secImg:prev.secImg})); setSaved(true); setEditing(false) }
 
   const dlPNG = async () => {
-    if (!ref.current || !saved) return
+    if (!ref.current) return
+    if (!saved) { alert('먼저 저장 후 다운로드해주세요.'); return }
     setDl(true)
     try { await capturePNG(ref.current, `section_${idx+1}_${sec.sectionType}.png`) }
     catch(e) { alert('저장 오류: '+e.message) }
@@ -218,8 +217,8 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete, onSavedCha
 
   const Tpl = TPL[dr.template] || TPL.material
   const img = dr.secImg || (editing ? 'slot' : null)
-  const dlDisabled = dl || !saved
-  const dlLabel = dl ? '변환 중' : (!saved ? '저장 후 다운로드' : '↓ PNG')
+  const dlDisabled = dl
+  const dlLabel = dl ? '변환 중' : '↓ PNG'
 
   return (
     <div style={{ display:'flex', alignItems:'flex-start', marginBottom:20 }}>
@@ -256,10 +255,8 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete, onSavedCha
           {onDelete && (
             <button onClick={onDelete}
               title="이 섹션 삭제"
-              onMouseEnter={() => setDelHover(true)}
-              onMouseLeave={() => setDelHover(false)}
-              style={{ width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,fontWeight:900,borderRadius:8,border:'none',background:delHover?'#b91c1c':'#ef4444',color:'#fff',cursor:'pointer',flexShrink:0,transition:'background .15s' }}>
-              ×
+              style={{ padding:'5px 10px',fontSize:11,borderRadius:7,border:'1px solid #fca5a5',background:'#fef2f2',color:'#ef4444',cursor:'pointer',fontWeight:700 }}>
+              × 삭제
             </button>
           )}
         </div>
