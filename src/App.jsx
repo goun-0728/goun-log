@@ -230,8 +230,10 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
                           <code style={{ fontSize: 11, color: '#D4D4D4', fontFamily: "'Courier New',monospace", lineHeight: 1.7, flex: 1, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{s.imagePrompt}</code>
                           <CopyBtn text={s.imagePrompt} />
                         </div>
-                        <p style={{ margin: '8px 0 0', fontSize: 11, color: C.mu, lineHeight: 1.6 }}>
-                          💡 이 프롬프트를 복사해서 미드저니(Midjourney) 또는 ChatGPT 이미지 생성에 붙여넣으세요.
+                        <p style={{ margin: '8px 0 0', fontSize: 11, color: C.mu, lineHeight: 1.8 }}>
+                          💡 프롬프트를 복사하고, ChatGPT 또는 미드저니에서<br />
+                          여기 업로드한 제품 사진과 함께 사용하세요.<br />
+                          사진을 같이 올리면 더 정확한 이미지가 생성됩니다.
                         </p>
                       </>
                     )}
