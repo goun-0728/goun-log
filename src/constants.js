@@ -177,6 +177,18 @@ export function getSys(id, tone = '생활형') {
 제품 정보를 바탕으로 기획안을 작성합니다.
 과장·허위 표현 금지. AI 느낌 제거. 실무형으로 작성.
 
+━━━ AI이미지 프롬프트 생성 규칙 ━━━
+각 섹션의 AI프롬프트는 반드시 아래 규칙을 모두 지켜 영어로만 출력한다.
+구조: [촬영스타일], [피사체 상세묘사], [배경/환경], [조명 방향과 종류], [카메라설정: 렌즈·심도], [색감/분위기], --no [제외키워드]
+- "product photography" 또는 "lifestyle photography" 로 시작
+- "shot on Sony A7" 또는 "shot on Canon 5D Mark IV" 포함
+- "natural lighting" 또는 "soft studio lighting" 포함
+- "shallow depth of field" 반드시 포함
+- 마지막은 항상: --no illustration, cartoon, CGI, oversaturated, plastic look, stock photo, ai generated
+- 한국 식품·생활용품 상세페이지에 어울리는 사실적이고 구체적인 장면
+- 각 섹션 주제(HERO=제품 단독 메인샷, 문제공감=불편 상황, 해결제안=해결 순간, 특징강조=클로즈업 디테일, 사용상황=라이프스타일, 비교=before/after, 추천대상=타겟 라이프스타일, CTA=구매욕구 자극 감성샷)에 맞게 생성
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 반드시 아래 형식만 출력:
 
 ▼ 기획 보고서
@@ -214,7 +226,7 @@ Meta Description: (80~160자, 구매 전환 유도 문장으로)
   - 장면: (어떤 장면)
   - 분위기: (조명·배경)
   - 구도: (카메라 앵글)
-AI프롬프트: (Midjourney용 영문)
+AI프롬프트: (제품 단독 메인샷 — product photography, [제품] on [배경], [조명], shot on Sony A7 35mm lens, shallow depth of field, [색감/분위기], --no illustration, cartoon, CGI, oversaturated, plastic look, stock photo, ai generated)
 
 [SECTION 2 - 문제 공감]
 메인카피:
@@ -227,7 +239,7 @@ AI프롬프트: (Midjourney용 영문)
   - 장면:
   - 분위기:
   - 구도:
-AI프롬프트:
+AI프롬프트: (불편함·문제 상황 장면 — lifestyle photography, [불편한 상황 묘사], [배경/환경], natural lighting from [방향], shot on Canon 5D Mark IV 50mm lens, shallow depth of field, [색감/분위기], --no illustration, cartoon, CGI, oversaturated, plastic look, stock photo, ai generated)
 
 [SECTION 3 - 해결 제안]
 메인카피:
@@ -240,7 +252,7 @@ AI프롬프트:
   - 장면:
   - 분위기:
   - 구도:
-AI프롬프트:
+AI프롬프트: (제품 사용으로 해결되는 순간 — lifestyle photography, [해결 장면 묘사], [배경/환경], soft studio lighting, shot on Sony A7 85mm lens, shallow depth of field, [색감/분위기], --no illustration, cartoon, CGI, oversaturated, plastic look, stock photo, ai generated)
 
 [SECTION 4 - 특징 강조]
 메인카피:
@@ -254,7 +266,7 @@ AI프롬프트:
   - 장면:
   - 분위기:
   - 구도:
-AI프롬프트:
+AI프롬프트: (제품 디테일 클로즈업 — product photography, extreme close-up of [제품 특징 부위], [배경/소재], soft studio lighting diffused from top, shot on Sony A7 100mm macro lens, shallow depth of field, [색감/분위기], --no illustration, cartoon, CGI, oversaturated, plastic look, stock photo, ai generated)
 
 [SECTION 5 - 사용 상황]
 메인카피:
@@ -266,7 +278,7 @@ AI프롬프트:
   - 장면:
   - 분위기:
   - 구도:
-AI프롬프트:
+AI프롬프트: (실제 사용 라이프스타일 장면 — lifestyle photography, [사용 중인 구체적 장면], [생활공간 배경], natural lighting from [방향], shot on Canon 5D Mark IV 35mm lens, shallow depth of field, [색감/분위기], --no illustration, cartoon, CGI, oversaturated, plastic look, stock photo, ai generated)
 
 [SECTION 6 - 비교]
 메인카피:
@@ -275,7 +287,7 @@ AI프롬프트:
 • 일반제품: / 이제품:
 • 일반제품: / 이제품:
 • 일반제품: / 이제품:
-AI프롬프트:
+AI프롬프트: (비교 또는 before/after 장면 — lifestyle photography, [before/after 또는 나란히 비교 장면], [깔끔한 중성 배경], soft studio lighting, shot on Sony A7 50mm lens, shallow depth of field, [색감/분위기], --no illustration, cartoon, CGI, oversaturated, plastic look, stock photo, ai generated)
 
 [SECTION 7 - 추천 대상]
 메인카피:
@@ -285,13 +297,13 @@ AI프롬프트:
 •
 •
 •
-AI프롬프트:
+AI프롬프트: (타겟 고객 라이프스타일 장면 — lifestyle photography, [타겟이 제품을 쓰는 구체적 상황], [타겟 생활환경 배경], natural lighting, shot on Canon 5D Mark IV 35mm lens, shallow depth of field, [색감/분위기], --no illustration, cartoon, CGI, oversaturated, plastic look, stock photo, ai generated)
 
 [SECTION 8 - CTA]
 메인카피:
 서브카피:
 버튼문구: (5자)
-AI프롬프트:
+AI프롬프트: (구매욕구 자극 감성샷 — product photography, [제품을 가장 매력적으로 보여주는 구도], [고급스러운 배경/소품], soft studio lighting with [빛의 방향], shot on Sony A7 50mm lens, shallow depth of field, [색감/분위기], --no illustration, cartoon, CGI, oversaturated, plastic look, stock photo, ai generated)
 
 ▼ SEO 키워드
 메인: (3개)
