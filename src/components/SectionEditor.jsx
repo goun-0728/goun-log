@@ -1,7 +1,7 @@
 // src/components/SectionEditor.jsx
 import React, { useState, useRef, useEffect } from 'react'
 import { C, DS, DS_KEYS, TPL_LABELS } from '../constants'
-import { TPL, ImageAdjust } from './SectionTemplates'
+import { TPL, ImageAdjust, ICON_SETS } from './SectionTemplates'
 import { capturePNG, readFileAsDataURL } from '../utils'
 
 function Spin() {
@@ -134,7 +134,7 @@ function AddBlockBtn({ onAddText, onAddImg, editing }) {
 /* ══════════════════════════════════════════════════
    SectionEditor 메인
 ══════════════════════════════════════════════════ */
-export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
+export default function SectionEditor({ sec, idx, onUpdate, onDelete, onSavedChange }) {
   const [editing, setEditing] = useState(true)
   const [dr, setDr]           = useState(sec)
   const [saved, setSaved]     = useState(true)
@@ -144,6 +144,8 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
   const [secMeta, setSecMeta] = useState({})
   const [blocks, setBlocks]   = useState([])
   const [delHover, setDelHover] = useState(false)
+
+  useEffect(() => { onSavedChange?.(idx, saved) }, [idx, saved])
 
   const ref     = useRef(null)
   const wrapRef = useRef(null)
@@ -329,6 +331,14 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
                   </button>
                 );})}
               </div>
+
+              {/* 아이콘 세트 */}
+              <p style={{ fontSize:10,fontWeight:700,color:C.fa,letterSpacing:'0.07em',textTransform:'uppercase',marginBottom:7 }}>아이콘 세트</p>
+              <select value={dr.iconSet||''} onChange={e=>{const nx={...dr,iconSet:e.target.value||undefined};setDr(nx);onUpdate(idx,nx)}}
+                style={{ width:'100%',fontSize:11,border:`1px solid ${C.bd}`,borderRadius:7,padding:'7px 9px',marginBottom:14,cursor:'pointer',background:C.sur,color:C.tx,outline:'none' }}>
+                <option value="">자동 (섹션마다 다름)</option>
+                {ICON_SETS.map(({k,l})=><option key={k} value={k}>{l}</option>)}
+              </select>
 
               {/* 사진 슬롯 */}
               {editing && (

@@ -83,6 +83,8 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
   const [addLoading, setAddLoading] = useState(null)
   const [addModal,   setAddModal]   = useState(null)   // null | insertAfterIdx
   const [deleteConfirm, setDeleteConfirm] = useState(null) // null | sectionIdx
+  const [savedMap,   setSavedMap]   = useState({})
+  const [dlWarnModal, setDlWarnModal] = useState(false)
 
   const sectsInit    = useRef(false)
 
@@ -92,6 +94,7 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
   }, [sects])
 
   const upd = useCallback((i, v) => setSects(p => p.map((s, j) => j === i ? v : s)), [])
+  const handleSavedChange = useCallback((i, isSaved) => setSavedMap(prev => ({ ...prev, [i]: isSaved })), [])
 
   const deleteSection = useCallback(i => {
     setSects(p => p.filter((_, j) => j !== i))
@@ -121,6 +124,10 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
   }, [productInput])
 
   const dlAllPNG = async () => {
+    if (Object.values(savedMap).some(v => v === false)) {
+      setDlWarnModal(true)
+      return
+    }
     setDlAll(true)
     const els = document.querySelectorAll('[data-sect-card]')
     for (let i = 0; i < els.length; i++) {
@@ -246,7 +253,7 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
           {sects.map((s, i) => (
             <React.Fragment key={s._id || i}>
               <div data-sect>
-                <SectionEditor sec={s} idx={i} onUpdate={upd} onDelete={() => setDeleteConfirm(i)} />
+                <SectionEditor sec={s} idx={i} onUpdate={upd} onDelete={() => setDeleteConfirm(i)} onSavedChange={handleSavedChange} />
               </div>
               <AddBetweenBtn onClick={() => setAddModal(i)} loading={addLoading !== null} />
             </React.Fragment>
@@ -283,6 +290,19 @@ function DetailView({ result, savedSects, onSectsChange, productInput }) {
                 </button>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 전체 PNG 다운로드 미저장 경고 모달 ── */}
+      {dlWarnModal && (
+        <div style={{ position:'fixed', inset:0, zIndex:300, background:'rgba(0,0,0,0.55)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <div style={{ background:'#fff', borderRadius:16, padding:'32px 36px', maxWidth:400, width:'90%', boxShadow:'0 20px 60px rgba(0,0,0,0.3)', textAlign:'center' }}>
+            <div style={{ fontSize:48, marginBottom:14 }}>⚠️</div>
+            <p style={{ fontSize:17, fontWeight:700, color:'#18170F', margin:'0 0 10px' }}>저장되지 않은 섹션이 있습니다</p>
+            <p style={{ fontSize:13, color:'#B0ADA5', margin:'0 0 28px', lineHeight:1.7 }}>모든 섹션을 저장한 후 다운로드해주세요.</p>
+            <button onClick={() => setDlWarnModal(false)}
+              style={{ padding:'11px 40px', borderRadius:9, border:'none', background:'#3b82f6', color:'#fff', cursor:'pointer', fontWeight:700, fontSize:14 }}>확인</button>
           </div>
         </div>
       )}

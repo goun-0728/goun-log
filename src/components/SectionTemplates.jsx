@@ -9,6 +9,31 @@ const ICON_FONTS = ["'Georgia', serif","'Palatino Linotype', serif","'Times New 
 export const sectionRoman = i => ROMAN[i % ROMAN.length]
 export const sectionFont  = i => ICON_FONTS[i % ICON_FONTS.length]
 
+export const ICON_SETS = [
+  { k: 'roman',    l: 'Ⅰ 로마자',     fn: i => ['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ','Ⅶ','Ⅷ','Ⅸ','Ⅹ'][i%10] },
+  { k: 'check',    l: '✓ 체크',        fn: _ => '✓' },
+  { k: 'star',     l: '★ 별',          fn: _ => '★' },
+  { k: 'circnum',  l: '① 원형숫자',    fn: i => ['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩'][i%10] },
+  { k: 'arrow',    l: '→ 화살표',      fn: _ => '→' },
+  { k: 'diamond',  l: '◆ 다이아몬드',  fn: _ => '◆' },
+  { k: 'crown',    l: '👑 왕관',        fn: _ => '👑' },
+  { k: 'heart',    l: '♥ 하트',        fn: _ => '♥' },
+  { k: 'bolt',     l: '⚡ 번개',        fn: _ => '⚡' },
+  { k: 'fire',     l: '🔥 불꽃',        fn: _ => '🔥' },
+  { k: 'leaf',     l: '🌿 리프',        fn: _ => '🌿' },
+  { k: 'drop',     l: '💧 물방울',      fn: _ => '💧' },
+  { k: 'sun',      l: '☀ 태양',         fn: _ => '☀' },
+  { k: 'moon',     l: '◐ 달',           fn: i => ['◐','◑','◒','◓'][i%4] },
+  { k: 'plus',     l: '✚ 플러스',       fn: _ => '✚' },
+  { k: 'negnum',   l: '❶ 굵은숫자',     fn: i => ['❶','❷','❸','❹','❺','❻','❼','❽','❾','❿'][i%10] },
+  { k: 'sqnum',    l: '⑴ 괄호숫자',     fn: i => ['⑴','⑵','⑶','⑷','⑸','⑹','⑺','⑻','⑼','⑽'][i%10] },
+  { k: 'alpha',    l: 'Ⓐ 알파벳',       fn: i => ['Ⓐ','Ⓑ','Ⓒ','Ⓓ','Ⓔ','Ⓕ','Ⓖ','Ⓗ','Ⓘ','Ⓙ'][i%10] },
+  { k: 'triangle', l: '▲ 삼각형',       fn: _ => '▲' },
+  { k: 'square',   l: '■ 큐브',         fn: _ => '■' },
+]
+const _iconHash = s => { const str = String(s._id || s.sectionType || ''); return str.split('').reduce((n, c) => n + c.charCodeAt(0), 0) }
+export const getSecIcon = (s, pointIdx) => { const set = s.iconSet ? ICON_SETS.find(x => x.k === s.iconSet) : ICON_SETS[_iconHash(s) % ICON_SETS.length]; return (set || ICON_SETS[0]).fn(pointIdx) }
+
 /* ── CardWrapper ── */
 export function CardWrapper({ children, bg = '#fff' }) {
   return (
@@ -115,7 +140,7 @@ function PointInput({ value, onChange, placeholder }) {
     <textarea value={value} onChange={e => onChange(e.target.value)}
       placeholder={placeholder || '텍스트 입력 (엔터로 줄바꿈)'}
       rows={Math.max(2, (value || '').split('\n').length)}
-      style={{ flex: 1, fontSize: 17, border: '1px solid #3b82f6', borderRadius: 6, padding: '8px 10px', outline: 'none', resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.65, width: '100%' }}
+      style={{ flex: 1, fontSize: 21, border: '1px solid #3b82f6', borderRadius: 6, padding: '8px 10px', outline: 'none', resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.65, width: '100%' }}
     />
   )
 }
@@ -184,7 +209,7 @@ export function TplHero({ s, img, t, editing, onChange, secMeta, onSecMeta }) {
             }
             {!s.logoImg && (
               <EditText editing={editing} value={s.logoText || ''} onChange={v => onChange('logoText', v)}
-                style={{ fontSize: 13, fontWeight: 700, color: t.ac, letterSpacing: '0.28em', textTransform: 'uppercase', minWidth: 60 }} />
+                style={{ fontSize: 16, fontWeight: 700, color: t.ac, letterSpacing: '0.28em', textTransform: 'uppercase', minWidth: 60 }} />
             )}
           </div>
         )}
@@ -192,16 +217,16 @@ export function TplHero({ s, img, t, editing, onChange, secMeta, onSecMeta }) {
         {(s.description || editing) && (
           <div style={{ marginBottom: 26 }}>
             <EditText editing={editing} value={s.description} onChange={v => onChange('description', v)}
-              style={{ display: 'inline-block', fontSize: 11, fontWeight: 800, color: t.ac,
+              style={{ display: 'inline-block', fontSize: 14, fontWeight: 800, color: t.ac,
                 letterSpacing: '0.32em', textTransform: 'uppercase',
                 border: `1.5px solid ${t.ac}`, padding: '6px 24px', borderRadius: 40 }} />
           </div>
         )}
         <EditText editing={editing} value={s.mainCopy} onChange={v => onChange('mainCopy', v)}
-          style={{ fontSize: 72, fontWeight: 900, color: t.fg, lineHeight: 1.18,
+          style={{ fontSize: 90, fontWeight: 900, color: t.fg, lineHeight: 1.18,
             letterSpacing: '-0.03em', marginBottom: 20, wordBreak: 'keep-all', fontFamily: SERIF }} />
         <EditText editing={editing} value={s.subCopy} onChange={v => onChange('subCopy', v)}
-          style={{ fontSize: 25, color: t.fg, opacity: 0.68, lineHeight: 1.82, wordBreak: 'keep-all', maxWidth: 540 }} />
+          style={{ fontSize: 31, color: t.fg, opacity: 0.68, lineHeight: 1.82, wordBreak: 'keep-all', maxWidth: 540 }} />
       </div>
 
       {/* 풀블리드 제품 이미지 (최소 500px) */}
@@ -222,9 +247,9 @@ export function TplHero({ s, img, t, editing, onChange, secMeta, onSecMeta }) {
         <div style={{ position: 'relative', padding: '80px 60px 88px' }}>
           {/* 라벨 */}
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.32em', color: t.ac,
+            <span style={{ fontSize: 14, fontWeight: 800, letterSpacing: '0.32em', color: t.ac,
               textTransform: 'uppercase', borderBottom: `3px solid ${t.ac}`, paddingBottom: 7 }}>KEY POINT</span>
-            <div style={{ marginTop: 18, fontSize: 32, fontWeight: 900, color: '#111', fontFamily: SERIF, letterSpacing: '-0.02em' }}>
+            <div style={{ marginTop: 18, fontSize: 40, fontWeight: 900, color: '#111', fontFamily: SERIF, letterSpacing: '-0.02em' }}>
               이 제품이 특별한 이유
             </div>
           </div>
@@ -244,13 +269,13 @@ export function TplHero({ s, img, t, editing, onChange, secMeta, onSecMeta }) {
                   <div style={{ width: 92, height: 92, borderRadius: '50%', background: t.ac,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     boxShadow: `0 14px 36px ${t.ac}44`, flexShrink: 0 }}>
-                    <span style={{ fontSize: 36, fontWeight: 700, color: '#fff', fontFamily: SERIF, lineHeight: 1 }}>{sectionRoman(i)}</span>
+                    <span style={{ fontSize: 36, fontWeight: 700, color: '#fff', fontFamily: SERIF, lineHeight: 1 }}>{getSecIcon(s, i)}</span>
                   </div>
                   {editing
                     ? <PointInput value={raw} onChange={v => { const n = [...pts]; n[i] = v; onChange('points', n) }} placeholder={'제목\n설명(엔터로 구분)'} />
                     : <>
-                        <p style={{ fontSize: 24, fontWeight: 800, color: '#111', margin: 0, lineHeight: 1.3, wordBreak: 'keep-all', fontFamily: SERIF }}>{title}</p>
-                        {desc && <p style={{ fontSize: 18, color: '#777', margin: 0, lineHeight: 1.72, wordBreak: 'keep-all', whiteSpace: 'pre-wrap' }}>{desc}</p>}
+                        <p style={{ fontSize: 30, fontWeight: 800, color: '#111', margin: 0, lineHeight: 1.3, wordBreak: 'keep-all', fontFamily: SERIF }}>{title}</p>
+                        {desc && <p style={{ fontSize: 22, color: '#777', margin: 0, lineHeight: 1.72, wordBreak: 'keep-all', whiteSpace: 'pre-wrap' }}>{desc}</p>}
                       </>
                   }
                 </div>
@@ -298,14 +323,14 @@ export function TplMaterial({ s, img, t, editing, onChange, secMeta, onSecMeta }
             ? <>
                 <input value={s.mainCopy || ''} onChange={e => onChange('mainCopy', e.target.value)}
                   placeholder="소재명 / 헤드라인"
-                  style={{ ...overlayInput, fontSize: 50, fontFamily: SERIF, marginBottom: 10 }} />
+                  style={{ ...overlayInput, fontSize: 62, fontFamily: SERIF, marginBottom: 10 }} />
                 <input value={s.subCopy || ''} onChange={e => onChange('subCopy', e.target.value)}
                   placeholder="소재 설명 (짧게)"
-                  style={{ ...overlayInput, fontSize: 21 }} />
+                  style={{ ...overlayInput, fontSize: 26 }} />
               </>
             : <>
-                <div style={{ fontSize: 58, fontWeight: 900, color: '#fff', lineHeight: 1.24, wordBreak: 'keep-all', fontFamily: SERIF, textShadow: '0 3px 18px rgba(0,0,0,0.55)', marginBottom: 10 }}>{s.mainCopy}</div>
-                <div style={{ fontSize: 24, color: 'rgba(255,255,255,0.86)', lineHeight: 1.68, wordBreak: 'keep-all' }}>{s.subCopy}</div>
+                <div style={{ fontSize: 72, fontWeight: 900, color: '#fff', lineHeight: 1.24, wordBreak: 'keep-all', fontFamily: SERIF, textShadow: '0 3px 18px rgba(0,0,0,0.55)', marginBottom: 10 }}>{s.mainCopy}</div>
+                <div style={{ fontSize: 30, color: 'rgba(255,255,255,0.86)', lineHeight: 1.68, wordBreak: 'keep-all' }}>{s.subCopy}</div>
               </>
           }
         </div>
@@ -313,7 +338,7 @@ export function TplMaterial({ s, img, t, editing, onChange, secMeta, onSecMeta }
 
       {/* 하단 포인트 리스트 */}
       <div style={{ padding: '60px 60px 72px', background: '#fff' }}>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.3em', color: t.ac, textTransform: 'uppercase', marginBottom: 32 }}>MATERIAL DETAIL</div>
+        <div style={{ fontSize: 14, fontWeight: 800, letterSpacing: '0.3em', color: t.ac, textTransform: 'uppercase', marginBottom: 32 }}>MATERIAL DETAIL</div>
 
         {/* 2번째 이미지 (소재 클로즈업) */}
         {s.secImg2 && (
@@ -330,14 +355,14 @@ export function TplMaterial({ s, img, t, editing, onChange, secMeta, onSecMeta }
               <div key={i} style={{ display: 'flex', gap: 22, alignItems: 'flex-start', padding: '24px 0', borderBottom: `1px solid ${t.bd}` }}>
                 {/* 아이콘 배지 */}
                 <div style={{ width: 52, height: 52, borderRadius: 14, background: t.ac, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <span style={{ fontSize: 22, fontWeight: 700, color: '#fff', fontFamily: SERIF, lineHeight: 1 }}>{sectionRoman(i)}</span>
+                  <span style={{ fontSize: 22, fontWeight: 700, color: '#fff', fontFamily: SERIF, lineHeight: 1 }}>{getSecIcon(s, i)}</span>
                 </div>
                 <div style={{ flex: 1 }}>
                   {editing
                     ? <PointInput value={p} onChange={v => { const n = [...pts]; n[i] = v; onChange('points', n) }} placeholder={'특징 제목\n상세 설명'} />
                     : <>
-                        <div style={{ fontSize: 21, fontWeight: 700, color: t.fg, lineHeight: 1.4, marginBottom: 5, fontFamily: SERIF }}>{lines[0]}</div>
-                        {lines.slice(1).join('\n') && <div style={{ fontSize: 19, color: t.fg, opacity: 0.62, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{lines.slice(1).join('\n')}</div>}
+                        <div style={{ fontSize: 26, fontWeight: 700, color: t.fg, lineHeight: 1.4, marginBottom: 5, fontFamily: SERIF }}>{lines[0]}</div>
+                        {lines.slice(1).join('\n') && <div style={{ fontSize: 24, color: t.fg, opacity: 0.62, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{lines.slice(1).join('\n')}</div>}
                       </>
                   }
                 </div>
@@ -423,12 +448,12 @@ export function TplDetail2col({ s, img, t, editing, onChange, secMeta, onSecMeta
         <div style={{ padding: '68px 52px', display: 'flex', flexDirection: 'column', justifyContent: 'center', background: '#fff' }}>
           {(s.description || editing) && (
             <EditText editing={editing} value={s.description} onChange={v => onChange('description', v)}
-              style={{ fontSize: 11, fontWeight: 800, color: t.ac, letterSpacing: '0.3em', textTransform: 'uppercase', marginBottom: 20 }} />
+              style={{ fontSize: 14, fontWeight: 800, color: t.ac, letterSpacing: '0.3em', textTransform: 'uppercase', marginBottom: 20 }} />
           )}
           <EditText editing={editing} value={s.mainCopy} onChange={v => onChange('mainCopy', v)}
-            style={{ fontSize: 42, fontWeight: 900, color: '#111', lineHeight: 1.3, letterSpacing: '-0.02em', marginBottom: 16, wordBreak: 'keep-all', fontFamily: SERIF }} />
+            style={{ fontSize: 52, fontWeight: 900, color: '#111', lineHeight: 1.3, letterSpacing: '-0.02em', marginBottom: 16, wordBreak: 'keep-all', fontFamily: SERIF }} />
           <EditText editing={editing} value={s.subCopy} onChange={v => onChange('subCopy', v)}
-            style={{ fontSize: 19, color: '#666', lineHeight: 1.82, marginBottom: 36, wordBreak: 'keep-all' }} />
+            style={{ fontSize: 24, color: '#666', lineHeight: 1.82, marginBottom: 36, wordBreak: 'keep-all' }} />
 
           {/* 체크 아이콘 포인트 */}
           <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -439,7 +464,7 @@ export function TplDetail2col({ s, img, t, editing, onChange, secMeta, onSecMeta
                 </div>
                 {editing
                   ? <PointInput value={p} onChange={v => { const n = [...pts]; n[i] = v; onChange('points', n) }} />
-                  : <span style={{ fontSize: 20, color: '#333', lineHeight: 1.74, whiteSpace: 'pre-wrap' }}>{p}</span>
+                  : <span style={{ fontSize: 25, color: '#333', lineHeight: 1.74, whiteSpace: 'pre-wrap' }}>{p}</span>
                 }
                 {editing && <button onClick={() => delPt(i)} style={delBtnInline}>×</button>}
               </div>
@@ -491,14 +516,14 @@ export function TplScene({ s, img, t, editing, onChange, secMeta, onSecMeta }) {
             ? <>
                 <input value={s.mainCopy || ''} onChange={e => onChange('mainCopy', e.target.value)}
                   placeholder="메인 카피"
-                  style={{ ...overlayInput, fontSize: 48, fontFamily: SERIF, marginBottom: 10 }} />
+                  style={{ ...overlayInput, fontSize: 60, fontFamily: SERIF, marginBottom: 10 }} />
                 <input value={s.subCopy || ''} onChange={e => onChange('subCopy', e.target.value)}
                   placeholder="서브 카피"
-                  style={{ ...overlayInput, fontSize: 21 }} />
+                  style={{ ...overlayInput, fontSize: 26 }} />
               </>
             : <>
-                <div style={{ fontSize: 55, fontWeight: 900, color: '#fff', lineHeight: 1.26, wordBreak: 'keep-all', fontFamily: SERIF, textShadow: '0 4px 24px rgba(0,0,0,0.65)', marginBottom: 12 }}>{s.mainCopy}</div>
-                <div style={{ fontSize: 24, color: 'rgba(255,255,255,0.84)', lineHeight: 1.68, wordBreak: 'keep-all' }}>{s.subCopy}</div>
+                <div style={{ fontSize: 68, fontWeight: 900, color: '#fff', lineHeight: 1.26, wordBreak: 'keep-all', fontFamily: SERIF, textShadow: '0 4px 24px rgba(0,0,0,0.65)', marginBottom: 12 }}>{s.mainCopy}</div>
+                <div style={{ fontSize: 30, color: 'rgba(255,255,255,0.84)', lineHeight: 1.68, wordBreak: 'keep-all' }}>{s.subCopy}</div>
               </>
           }
         </div>
@@ -531,9 +556,9 @@ export function TplCompare({ s, img, t, editing, onChange, secMeta, onSecMeta })
       {/* 배경 꽉 채운 타이틀 */}
       <div style={{ background: t.ac, padding: '64px 64px 60px', textAlign: 'center' }}>
         <EditText editing={editing} value={s.mainCopy} onChange={v => onChange('mainCopy', v)}
-          style={{ fontSize: 60, fontWeight: 900, color: '#fff', lineHeight: 1.24, letterSpacing: '-0.028em', marginBottom: 14, wordBreak: 'keep-all', fontFamily: SERIF }} />
+          style={{ fontSize: 75, fontWeight: 900, color: '#fff', lineHeight: 1.24, letterSpacing: '-0.028em', marginBottom: 14, wordBreak: 'keep-all', fontFamily: SERIF }} />
         <EditText editing={editing} value={s.subCopy} onChange={v => onChange('subCopy', v)}
-          style={{ fontSize: 24, color: 'rgba(255,255,255,0.8)', lineHeight: 1.68 }} />
+          style={{ fontSize: 30, color: 'rgba(255,255,255,0.8)', lineHeight: 1.68 }} />
       </div>
 
       {/* 비교 표 */}
@@ -544,11 +569,11 @@ export function TplCompare({ s, img, t, editing, onChange, secMeta, onSecMeta })
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
             <div style={{ padding: '22px 28px', borderRight: `2.5px solid ${t.ac}`, background: '#f5f5f7', textAlign: 'center' }}>
               <EditText editing={editing} value={s.compareLeft || '일반 제품'} onChange={v => onChange('compareLeft', v)}
-                style={{ fontSize: 20, fontWeight: 700, color: '#999' }} />
+                style={{ fontSize: 25, fontWeight: 700, color: '#999' }} />
             </div>
             <div style={{ padding: '22px 28px', background: t.ac, textAlign: 'center' }}>
               <EditText editing={editing} value={s.compareRight || ''} onChange={v => onChange('compareRight', v)}
-                style={{ fontSize: 20, fontWeight: 800, color: '#fff' }} />
+                style={{ fontSize: 25, fontWeight: 800, color: '#fff' }} />
             </div>
           </div>
 
@@ -573,8 +598,8 @@ export function TplCompare({ s, img, t, editing, onChange, secMeta, onSecMeta })
               </div>
             ) : (
               <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderTop: `1px solid ${t.bd}`, background: i % 2 === 0 ? '#fafafa' : '#fff' }}>
-                <div style={{ padding: '22px 28px', fontSize: 20, color: '#bbb', textAlign: 'center', borderRight: `2.5px solid ${t.ac}`, textDecoration: 'line-through' }}>{a.replace(/일반제품:/i, '').trim()}</div>
-                <div style={{ padding: '22px 28px', fontSize: 20, color: t.ac, fontWeight: 700, textAlign: 'center' }}>{b || '—'}</div>
+                <div style={{ padding: '22px 28px', fontSize: 25, color: '#bbb', textAlign: 'center', borderRight: `2.5px solid ${t.ac}`, textDecoration: 'line-through' }}>{a.replace(/일반제품:/i, '').trim()}</div>
+                <div style={{ padding: '22px 28px', fontSize: 25, color: t.ac, fontWeight: 700, textAlign: 'center' }}>{b || '—'}</div>
               </div>
             )
           })}
@@ -618,9 +643,9 @@ export function TplPoints3({ s, img, t, editing, onChange, secMeta, onSecMeta })
       {/* 타이틀 영역 */}
       <div style={{ padding: '68px 64px 0', textAlign: 'center' }}>
         <EditText editing={editing} value={s.mainCopy} onChange={v => onChange('mainCopy', v)}
-          style={{ fontSize: 55, fontWeight: 900, color: t.fg, lineHeight: 1.28, letterSpacing: '-0.025em', marginBottom: 14, wordBreak: 'keep-all', fontFamily: SERIF }} />
+          style={{ fontSize: 68, fontWeight: 900, color: t.fg, lineHeight: 1.28, letterSpacing: '-0.025em', marginBottom: 14, wordBreak: 'keep-all', fontFamily: SERIF }} />
         <EditText editing={editing} value={s.subCopy} onChange={v => onChange('subCopy', v)}
-          style={{ fontSize: 24, color: t.fg, opacity: 0.62, lineHeight: 1.75 }} />
+          style={{ fontSize: 30, color: t.fg, opacity: 0.62, lineHeight: 1.75 }} />
       </div>
 
       {/* 하단 3단 카드 */}
@@ -642,13 +667,13 @@ export function TplPoints3({ s, img, t, editing, onChange, secMeta, onSecMeta })
                   border: isDark ? '2px solid rgba(255,255,255,0.45)' : 'none',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 26px',
                   boxShadow: isDark ? 'none' : `0 6px 20px ${t.ac}44` }}>
-                  <span style={{ fontSize: 30, fontWeight: 800, color: '#fff', fontFamily: SERIF, lineHeight: 1 }}>{sectionRoman(i)}</span>
+                  <span style={{ fontSize: 30, fontWeight: 800, color: '#fff', fontFamily: SERIF, lineHeight: 1 }}>{getSecIcon(s, i)}</span>
                 </div>
                 {editing
                   ? <PointInput value={p} onChange={v => { const n = [...pts]; n[i] = v; onChange('points', n) }} placeholder={'제목\n설명'} />
                   : <>
-                      <p style={{ fontSize: 24, fontWeight: 800, color: isDark ? '#fff' : t.fg, margin: '0 0 10px', lineHeight: 1.3, fontFamily: SERIF }}>{title}</p>
-                      {desc && <p style={{ fontSize: 18, color: isDark ? 'rgba(255,255,255,0.78)' : t.fg, margin: 0, lineHeight: 1.68, opacity: isDark ? 1 : 0.65, whiteSpace: 'pre-wrap' }}>{desc}</p>}
+                      <p style={{ fontSize: 30, fontWeight: 800, color: isDark ? '#fff' : t.fg, margin: '0 0 10px', lineHeight: 1.3, fontFamily: SERIF }}>{title}</p>
+                      {desc && <p style={{ fontSize: 22, color: isDark ? 'rgba(255,255,255,0.78)' : t.fg, margin: 0, lineHeight: 1.68, opacity: isDark ? 1 : 0.65, whiteSpace: 'pre-wrap' }}>{desc}</p>}
                     </>
                 }
               </div>
@@ -685,11 +710,11 @@ export function TplTarget({ s, img, t, editing, onChange, secMeta, onSecMeta }) 
 
       {/* 상단 배경색 헤더 */}
       <div style={{ background: t.ac, padding: '64px 64px 60px', textAlign: 'center' }}>
-        <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.3em', color: 'rgba(255,255,255,0.65)', textTransform: 'uppercase', marginBottom: 18 }}>RECOMMENDED FOR</div>
+        <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: '0.3em', color: 'rgba(255,255,255,0.65)', textTransform: 'uppercase', marginBottom: 18 }}>RECOMMENDED FOR</div>
         <EditText editing={editing} value={s.mainCopy} onChange={v => onChange('mainCopy', v)}
-          style={{ fontSize: 55, fontWeight: 900, color: '#fff', lineHeight: 1.28, letterSpacing: '-0.025em', marginBottom: 14, wordBreak: 'keep-all', fontFamily: SERIF }} />
+          style={{ fontSize: 68, fontWeight: 900, color: '#fff', lineHeight: 1.28, letterSpacing: '-0.025em', marginBottom: 14, wordBreak: 'keep-all', fontFamily: SERIF }} />
         <EditText editing={editing} value={s.subCopy} onChange={v => onChange('subCopy', v)}
-          style={{ fontSize: 24, color: 'rgba(255,255,255,0.78)', lineHeight: 1.65 }} />
+          style={{ fontSize: 30, color: 'rgba(255,255,255,0.78)', lineHeight: 1.65 }} />
       </div>
 
       {/* 교차 배경 체크리스트 */}
@@ -701,7 +726,7 @@ export function TplTarget({ s, img, t, editing, onChange, secMeta, onSecMeta }) 
             </div>
             {editing
               ? <PointInput value={p} onChange={v => { const n = [...pts]; n[i] = v; onChange('points', n) }} />
-              : <span style={{ fontSize: 25, color: '#1a1a1a', lineHeight: 1.68, fontWeight: 500, whiteSpace: 'pre-wrap' }}>{p.replace(/이런 분께 추천\d*:/i, '').trim()}</span>
+              : <span style={{ fontSize: 31, color: '#1a1a1a', lineHeight: 1.68, fontWeight: 500, whiteSpace: 'pre-wrap' }}>{p.replace(/이런 분께 추천\d*:/i, '').trim()}</span>
             }
             {editing && <button onClick={() => delPt(i)} style={delBtnInline}>×</button>}
           </div>
@@ -744,9 +769,9 @@ export function TplCTA({ s, img, t, editing, onChange, secMeta, onSecMeta }) {
       {/* 텍스트 영역 */}
       <div style={{ padding: '76px 80px 96px', textAlign: 'center', background: t.ac }}>
         <EditText editing={editing} value={s.mainCopy} onChange={v => onChange('mainCopy', v)}
-          style={{ fontSize: 65, fontWeight: 900, color: '#fff', lineHeight: 1.24, letterSpacing: '-0.03em', marginBottom: 24, wordBreak: 'keep-all', fontFamily: SERIF }} />
+          style={{ fontSize: 80, fontWeight: 900, color: '#fff', lineHeight: 1.24, letterSpacing: '-0.03em', marginBottom: 24, wordBreak: 'keep-all', fontFamily: SERIF }} />
         <EditText editing={editing} value={s.subCopy} onChange={v => onChange('subCopy', v)}
-          style={{ fontSize: 26, color: 'rgba(255,255,255,0.8)', lineHeight: 1.78, wordBreak: 'keep-all' }} />
+          style={{ fontSize: 32, color: 'rgba(255,255,255,0.8)', lineHeight: 1.78, wordBreak: 'keep-all' }} />
       </div>
 
     </CardWrapper>
@@ -758,7 +783,7 @@ const delBtnAbsolute = { position: 'absolute', top: 10, right: 10, width: 22, he
 const delBtnInline   = { width: 26, height: 26, borderRadius: 6, border: '1px solid #fca5a5', background: '#fef2f2', color: '#ef4444', fontSize: 14, cursor: 'pointer', flexShrink: 0, fontWeight: 700, lineHeight: 1 }
 const addBtnStyle    = { padding: '14px 36px', fontSize: 15, fontWeight: 700, border: '1.5px dashed #ccc', borderRadius: 8, background: 'transparent', color: '#888', cursor: 'pointer' }
 const overlayInput   = { display: 'block', width: '100%', background: 'rgba(255,255,255,0.92)', border: '2px solid #3b82f6', borderRadius: 8, padding: '8px 14px', outline: 'none', fontFamily: 'inherit', color: '#111', boxSizing: 'border-box', fontWeight: 700 }
-const cmpInput       = { width: '100%', fontSize: 19, border: '1px solid #3b82f6', borderRadius: 6, padding: '7px 10px', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }
+const cmpInput       = { width: '100%', fontSize: 24, border: '1px solid #3b82f6', borderRadius: 6, padding: '7px 10px', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }
 
 /* ── 9. SpecTable (제품상세표시) ────────────────────────
    항목::값 형식의 points 배열을 표로 렌더링
@@ -781,10 +806,10 @@ export function TplSpecTable({ s, img, t, editing, onChange }) {
       {/* 헤더 */}
       <div style={{ padding: '52px 64px 36px', textAlign: 'center', borderBottom: '2.5px solid #111' }}>
         <EditText editing={editing} value={s.mainCopy || '제품 상세 정보'} onChange={v => onChange('mainCopy', v)}
-          style={{ fontSize: 40, fontWeight: 900, color: '#111', letterSpacing: '-0.025em', marginBottom: 10, fontFamily: SERIF }} />
+          style={{ fontSize: 50, fontWeight: 900, color: '#111', letterSpacing: '-0.025em', marginBottom: 10, fontFamily: SERIF }} />
         {(s.subCopy || editing) && (
           <EditText editing={editing} value={s.subCopy} onChange={v => onChange('subCopy', v)}
-            style={{ fontSize: 19, color: '#888', lineHeight: 1.65 }} />
+            style={{ fontSize: 24, color: '#888', lineHeight: 1.65 }} />
         )}
       </div>
 
@@ -793,8 +818,8 @@ export function TplSpecTable({ s, img, t, editing, onChange }) {
         <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 36 }}>
           <thead>
             <tr style={{ background: '#f5f4f0', borderBottom: '2px solid #333' }}>
-              <th style={{ padding: '14px 20px', fontSize: 13, fontWeight: 700, color: '#333', textAlign: 'left', width: '28%', borderRight: '1px solid #e4e2dc' }}>항목</th>
-              <th style={{ padding: '14px 20px', fontSize: 13, fontWeight: 700, color: '#333', textAlign: 'left' }}>내용</th>
+              <th style={{ padding: '14px 20px', fontSize: 16, fontWeight: 700, color: '#333', textAlign: 'left', width: '28%', borderRight: '1px solid #e4e2dc' }}>항목</th>
+              <th style={{ padding: '14px 20px', fontSize: 16, fontWeight: 700, color: '#333', textAlign: 'left' }}>내용</th>
               {editing && <th style={{ width: 44 }} />}
             </tr>
           </thead>
@@ -805,14 +830,14 @@ export function TplSpecTable({ s, img, t, editing, onChange }) {
               const val = sep >= 0 ? p.slice(sep + 2) : ''
               return (
                 <tr key={i} style={{ borderBottom: '1px solid #e4e2dc', background: i % 2 === 0 ? '#fff' : '#fafaf8' }}>
-                  <td style={{ padding: '14px 20px', fontSize: 14, fontWeight: 600, color: '#555', borderRight: '1px solid #e4e2dc', verticalAlign: 'middle' }}>
+                  <td style={{ padding: '14px 20px', fontSize: 17, fontWeight: 600, color: '#555', borderRight: '1px solid #e4e2dc', verticalAlign: 'middle' }}>
                     {editing
                       ? <input value={key} onChange={e => { const n=[...pts]; n[i]=e.target.value+'::'+val; onChange('points',n) }}
                           style={{ width:'100%', border:'1px solid #3b82f6', borderRadius:5, padding:'5px 8px', fontSize:13, fontFamily:'inherit', outline:'none', boxSizing:'border-box' }} />
                       : key
                     }
                   </td>
-                  <td style={{ padding: '14px 20px', fontSize: 14, color: '#222', verticalAlign: 'middle' }}>
+                  <td style={{ padding: '14px 20px', fontSize: 17, color: '#222', verticalAlign: 'middle' }}>
                     {editing
                       ? <input value={val} onChange={e => { const n=[...pts]; n[i]=key+'::'+e.target.value; onChange('points',n) }}
                           style={{ width:'100%', border:'1px solid #3b82f6', borderRadius:5, padding:'5px 8px', fontSize:13, fontFamily:'inherit', outline:'none', boxSizing:'border-box' }} />
