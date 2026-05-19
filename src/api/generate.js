@@ -37,11 +37,16 @@ export async function generateContent({ systemPrompt, userPrompt, images = [], m
   return data.text;
 }
 
-export async function generateImage(prompt) {
+export async function generateImage(prompt, productImages = []) {
+  const body = { prompt };
+  if (productImages.length > 0) {
+    body.imageBase64 = productImages[0];
+  }
+
   const res = await fetch('/api/dalle', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt }),
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) {

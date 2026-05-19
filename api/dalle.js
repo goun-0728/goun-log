@@ -1,14 +1,14 @@
 // api/dalle.js
-// Vercel Serverless Function — gpt-image-1 이미지 생성 (openai SDK v4)
+// Vercel Serverless Function — gpt-image-1 이미지 생성/편집 (openai SDK v4)
 
-import OpenAI from 'openai';
+import OpenAI, { toFile } from 'openai';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { prompt } = req.body;
+  const { prompt, imageBase64 } = req.body;
   if (!prompt) {
     return res.status(400).json({ error: 'prompt 필드가 필요합니다' });
   }
@@ -16,13 +16,31 @@ export default async function handler(req, res) {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   try {
-    const response = await openai.images.generate({
-      model: 'gpt-image-1',
-      prompt: prompt,
-      n: 1,
-      size: '1024x1024',
-      quality: 'medium',
-    });
+    let response;
+
+    if (imageBase64) {
+      // 제품 사진이 있으면 images.edit() — 제품 외형 참조
+      const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
+      const buffer = Buffer.from(base64Data, 'base64');
+      const imageFile = await toFile(buffer, 'product.png', { type: 'image/png' });
+
+      response = await openai.images.edit({
+        model: 'gpt-image-1',
+        image: imageFile,
+        prompt: prompt,
+        n: 1,
+        size: '1024x1024',
+        quality: 'medium',
+      });
+    } else {
+      response = await openai.images.generate({
+        model: 'gpt-image-1',
+        prompt: prompt,
+        n: 1,
+        size: '1024x1024',
+        quality: 'medium',
+      });
+    }
 
     const item = response.data[0];
 
