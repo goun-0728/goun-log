@@ -1,5 +1,5 @@
 // api/dalle.js
-// Vercel Serverless Function — DALL-E 3 이미지 생성 (OpenAI SDK v4+)
+// Vercel Serverless Function — DALL-E 3 이미지 생성 (openai SDK v4)
 
 import OpenAI from 'openai';
 
@@ -18,16 +18,18 @@ export default async function handler(req, res) {
   try {
     const response = await openai.images.generate({
       model: 'dall-e-3',
-      prompt,
+      prompt: prompt,
       n: 1,
       size: '1024x1024',
-      quality: 'standard',
     });
 
-    const url = response.data[0]?.url;
-    return res.status(200).json({ url });
+    const imageUrl = response.data[0].url;
+    return res.status(200).json({ url: imageUrl });
   } catch (e) {
+    // 상세 에러 정보 반환 (디버깅용)
+    const status = e?.status || 500;
     const msg = e?.error?.message || e?.message || 'DALL-E API 오류';
-    return res.status(500).json({ error: msg });
+    const code = e?.error?.code || e?.code || null;
+    return res.status(status).json({ error: msg, code });
   }
 }
