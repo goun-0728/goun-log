@@ -75,6 +75,7 @@ function FreeBlock({ block, t, editing, onUpdate, onRemove, onMoveUp, onMoveDn, 
                 onMetaChange={m => onUpdate({ ...block, imgMeta: m })}
                 t={t}
               />
+              {editing && <div style={{ position:'absolute', inset:0, border:`2px dashed ${t.bd}`, pointerEvents:'none', zIndex:5 }} />}
               {editing && (
                 <div style={{ position:'absolute', top:8, left:8, display:'flex', gap:4, zIndex:20 }}>
                   <button onClick={()=>fileRef.current?.click()}
@@ -86,7 +87,7 @@ function FreeBlock({ block, t, editing, onUpdate, onRemove, onMoveUp, onMoveDn, 
               )}
             </>
           : <div onClick={()=>editing&&fileRef.current?.click()}
-              style={{ minHeight:280,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:10,cursor:editing?'pointer':'default',border:`2px dashed ${t.bd}`, position:'relative' }}>
+              style={{ minHeight:280,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:10,cursor:editing?'pointer':'default',border:editing?`2px dashed ${t.bd}`:'none', position:'relative' }}>
               {editing && (
                 <div style={{ position:'absolute',top:8,right:8,display:'flex',gap:4 }}>
                   {!isFirst && <button onClick={onMoveUp} style={{ width:24,height:24,borderRadius:4,border:`1px solid ${C.bd}`,background:C.sur,fontSize:10,cursor:'pointer' }}>↑</button>}
@@ -142,6 +143,7 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
   const [scale, setScale]     = useState(1)
   const [secMeta, setSecMeta] = useState({})
   const [blocks, setBlocks]   = useState([])
+  const [delHover, setDelHover] = useState(false)
 
   const ref     = useRef(null)
   const wrapRef = useRef(null)
@@ -252,8 +254,10 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete }) {
           {onDelete && (
             <button onClick={onDelete}
               title="이 섹션 삭제"
-              style={{ padding:'5px 10px',fontSize:11,borderRadius:7,border:'1px solid #fca5a5',background:'#fef2f2',color:'#ef4444',cursor:'pointer',fontWeight:700 }}>
-              × 삭제
+              onMouseEnter={() => setDelHover(true)}
+              onMouseLeave={() => setDelHover(false)}
+              style={{ width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,fontWeight:900,borderRadius:8,border:'none',background:delHover?'#b91c1c':'#ef4444',color:'#fff',cursor:'pointer',flexShrink:0,transition:'background .15s' }}>
+              ×
             </button>
           )}
         </div>
