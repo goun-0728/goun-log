@@ -4,6 +4,16 @@ import React, { useRef, useState, useEffect } from 'react'
 const CARD_W = 860
 const SERIF  = "'Noto Serif KR', 'Noto Serif', Georgia, serif"
 
+// 그라데이션 CSS 생성 헬퍼
+export function mkGrad(dir, alpha) {
+  const a = (alpha ?? 70) / 100
+  if (!dir || dir === 'none') return null
+  if (dir === 'bottom') return `linear-gradient(to top, rgba(0,0,0,${a}) 0%, transparent 60%)`
+  if (dir === 'top')    return `linear-gradient(to bottom, rgba(0,0,0,${a}) 0%, transparent 60%)`
+  if (dir === 'full')   return `rgba(0,0,0,${(a * 0.55).toFixed(2)})`
+  return null
+}
+
 const ROMAN = ['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ','Ⅶ','Ⅷ','Ⅸ','Ⅹ']
 const ICON_FONTS = ["'Georgia', serif","'Palatino Linotype', serif","'Times New Roman', serif","'Garamond', serif"]
 export const sectionRoman = i => ROMAN[i % ROMAN.length]
@@ -231,8 +241,11 @@ export function TplHero({ s, img, t, editing, onChange, secMeta, onSecMeta }) {
 
       {/* 풀블리드 제품 이미지 (최소 500px) */}
       {img
-        ? <ImgBox url={img} t={t} label="메인 제품 이미지" editing={editing} onImgChange={v => onChange('secImg', v)}
-            imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} minH={500} />
+        ? <div style={{ position: 'relative' }}>
+            <ImgBox url={img} t={t} label="메인 제품 이미지" editing={editing} onImgChange={v => onChange('secImg', v)}
+              imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} minH={500} />
+            {s.gradDir && (() => { const g = mkGrad(s.gradDir, s.gradAlpha); return g && <div style={{ position: 'absolute', inset: 0, background: g, pointerEvents: 'none' }} /> })()}
+          </div>
         : <NoBg t={t} minH={500} />
       }
 
@@ -315,8 +328,8 @@ export function TplMaterial({ s, img, t, editing, onChange, secMeta, onSecMeta }
               imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} minH={480} />
           : <NoBg t={t} minH={480} />
         }
-        {/* 강한 하단 그라데이션 */}
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.32) 52%, transparent 100%)', pointerEvents: 'none' }} />
+        {/* 하단 그라데이션 */}
+        {(() => { const g = s.gradDir ? mkGrad(s.gradDir, s.gradAlpha) : 'linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.32) 52%, transparent 100%)'; return g && <div style={{ position: 'absolute', inset: 0, background: g, pointerEvents: 'none' }} /> })()}
         {/* 오버레이 텍스트 */}
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '36px 60px 52px', pointerEvents: editing ? 'auto' : 'none' }}>
           {editing
@@ -507,8 +520,8 @@ export function TplScene({ s, img, t, editing, onChange, secMeta, onSecMeta }) {
           : <NoBg t={t} minH={640} />
         }
 
-        {/* 강한 하단 그라데이션 */}
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.5) 35%, rgba(0,0,0,0.1) 65%, transparent 100%)', pointerEvents: 'none' }} />
+        {/* 하단 그라데이션 */}
+        {(() => { const g = s.gradDir ? mkGrad(s.gradDir, s.gradAlpha) : 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.5) 35%, rgba(0,0,0,0.1) 65%, transparent 100%)'; return g && <div style={{ position: 'absolute', inset: 0, background: g, pointerEvents: 'none' }} /> })()}
 
         {/* 하단 텍스트 오버레이 */}
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '36px 60px 56px', pointerEvents: editing ? 'auto' : 'none' }}>
@@ -760,7 +773,7 @@ export function TplCTA({ s, img, t, editing, onChange, secMeta, onSecMeta }) {
         <div style={{ position: 'relative' }}>
           <ImgBox url={img} t={t} label="CTA 이미지" editing={editing} onImgChange={v => onChange('secImg', v)}
             imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} minH={440} />
-          <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(to bottom, transparent 35%, ${t.ac} 100%)`, pointerEvents: 'none' }} />
+          {(() => { const g = s.gradDir ? mkGrad(s.gradDir, s.gradAlpha) : `linear-gradient(to bottom, transparent 60%, ${t.ac} 100%)`; return g && <div style={{ position: 'absolute', inset: 0, background: g, pointerEvents: 'none' }} /> })()}
         </div>
       )}
 

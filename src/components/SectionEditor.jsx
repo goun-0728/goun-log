@@ -337,6 +337,35 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete, onSavedCha
                 {ICON_SETS.map(({k,l})=><option key={k} value={k}>{l}</option>)}
               </select>
 
+              {/* 그라데이션 */}
+              <p style={{ fontSize:10,fontWeight:700,color:C.fa,letterSpacing:'0.07em',textTransform:'uppercase',marginBottom:7 }}>그라데이션</p>
+              <div style={{ display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:2,marginBottom:6 }}>
+                {[['none','없음'],['bottom','하단'],['top','상단'],['full','전체']].map(([v,l])=>{
+                  const on = dr.gradDir === v
+                  return (
+                    <button key={v} onClick={()=>{const nx={...dr,gradDir:v};setDr(nx);onUpdate(idx,nx)}}
+                      style={{ padding:'5px 2px',fontSize:10,borderRadius:6,border:`1.5px solid ${on?'#3b82f6':C.bd}`,background:on?'#EFF6FF':C.sur,color:on?'#1d4ed8':C.mu,cursor:'pointer',fontWeight:on?700:400,textAlign:'center' }}>{l}</button>
+                  )
+                })}
+              </div>
+              {dr.gradDir && dr.gradDir !== 'none' && (
+                <div style={{ marginBottom:4 }}>
+                  <div style={{ display:'flex',justifyContent:'space-between',marginBottom:2 }}>
+                    <span style={{ fontSize:10,color:C.mu }}>강도</span>
+                    <span style={{ fontSize:10,color:C.tx,fontWeight:600 }}>{dr.gradAlpha??70}%</span>
+                  </div>
+                  <input type="range" min={0} max={100} step={5} value={dr.gradAlpha??70}
+                    onChange={e=>{const nx={...dr,gradAlpha:+e.target.value};setDr(nx);onUpdate(idx,nx)}}
+                    style={{ width:'100%' }} />
+                </div>
+              )}
+              {dr.gradDir != null && (
+                <button onClick={()=>{const nx={...dr};delete nx.gradDir;delete nx.gradAlpha;setDr(nx);onUpdate(idx,nx)}}
+                  style={{ fontSize:10,color:C.mu,background:'none',border:'none',cursor:'pointer',padding:'0 0 12px',textDecoration:'underline',display:'block' }}>
+                  ↩ 초기화 (기본값)
+                </button>
+              )}
+
               {/* 사진 슬롯 */}
               {editing && (
                 <>
