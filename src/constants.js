@@ -35,22 +35,28 @@ export const AUTO_DS = {
 }
 
 export const AUTO_TPL = {
-  HERO: 'hero', '문제 공감': 'material', '해결 제안': 'points3',
-  '특징 강조': 'detail2col', '사용 상황': 'scene', '비교': 'compare',
-  '추천 대상': 'target', CTA: 'cta',
+  HERO: 'fullHero', '문제 공감': 'story', '해결 제안': 'points3icon',
+  '특징 강조': 'leftRight', '사용 상황': 'topBottom', '비교': 'compare',
+  '추천 대상': 'howTo', CTA: 'fullHero',
 }
 
 export const TPL_LABELS = [
-  { k: 'hero',       l: 'Hero형' },
-  { k: 'material',   l: '소재설명형' },
-  { k: 'detail2col', l: '디테일형' },
-  { k: 'scene',      l: '사용장면형' },
-  { k: 'compare',    l: '비교형' },
-  { k: 'points3',    l: '포인트3단형' },
-  { k: 'target',     l: '추천대상형' },
-  { k: 'cta',        l: 'CTA형' },
-  { k: 'specTable',  l: '제품상세표시' },
+  { k: 'fullHero',    l: '풀이미지형' },
+  { k: 'topBottom',   l: '상하분할형' },
+  { k: 'leftRight',   l: '좌우분할형' },
+  { k: 'points3icon', l: '포인트3단형' },
+  { k: 'story',       l: '스토리형' },
+  { k: 'howTo',       l: '활용법형' },
+  { k: 'compare',     l: '비교형' },
+  { k: 'specTable',   l: '제품상세표시' },
 ]
+
+// 구버전 template 키 → 신버전 호환 매핑
+export const TPL_COMPAT = {
+  hero: 'fullHero', material: 'topBottom', detail2col: 'leftRight',
+  scene: 'fullHero', target: 'howTo', cta: 'topBottom',
+  points3: 'points3icon',
+}
 
 // 추가 가능한 섹션 목록
 export const EXTRA_SECTIONS = [
@@ -102,8 +108,9 @@ export const mkSec = (o = {}) => ({
   _id: Math.random().toString(36).slice(2, 9),
   sectionType: '', title: '', mainCopy: '', subCopy: '',
   points: [], description: '', designStyle: '크림',
-  template: 'material', photoDir: '{}', imagePrompt: '', cta: '',
+  template: 'topBottom', photoDir: '{}', imagePrompt: '', cta: '',
   secImg: null, secImg2: null, secImg3: null, secImg4: null,
+  textStyles: {}, customColors: {},
   ...o,
 })
 
