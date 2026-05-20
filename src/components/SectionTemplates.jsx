@@ -105,7 +105,7 @@ export function ImgBox({ url, t, editing, onImgChange, minH = 320, imgMeta, onMe
     </div>
   )
   return (
-    <div style={{ position: 'relative', ...(fill ? { height: '100%' } : {}) }}>
+    <div style={{ position: 'relative' }}>
       <input ref={ref} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
       {editing && (
         <button onClick={() => ref.current?.click()}
@@ -113,7 +113,7 @@ export function ImgBox({ url, t, editing, onImgChange, minH = 320, imgMeta, onMe
           📷 교체
         </button>
       )}
-      <ImageAdjust url={url} editing={editing} imgMeta={imgMeta} onMetaChange={onMetaChange || (() => {})} fixedH={fill ? '100%' : fixedH} fitMode={fitMode} />
+      <ImageAdjust url={url} editing={editing} imgMeta={imgMeta} onMetaChange={onMetaChange || (() => {})} fixedH={fixedH} fitMode={fitMode} />
       {editing && <div style={{ position: 'absolute', inset: 0, border: `2px dashed ${t?.bd || '#ccc'}`, pointerEvents: 'none', zIndex: 5 }} />}
     </div>
   )
