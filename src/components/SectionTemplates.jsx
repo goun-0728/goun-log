@@ -27,6 +27,16 @@ function shapeCSS(k) {
   return { borderRadius: '50%' }
 }
 
+// 그라데이션 CSS 생성 헬퍼
+export function mkGrad(dir, alpha) {
+  const a = (alpha ?? 70) / 100
+  if (!dir || dir === 'none') return null
+  if (dir === 'bottom') return `linear-gradient(to top, rgba(0,0,0,${a}) 0%, transparent 60%)`
+  if (dir === 'top')    return `linear-gradient(to bottom, rgba(0,0,0,${a}) 0%, transparent 60%)`
+  if (dir === 'full')   return `rgba(0,0,0,${(a * 0.55).toFixed(2)})`
+  return null
+}
+
 const ROMAN = ['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ','Ⅶ','Ⅷ','Ⅸ','Ⅹ']
 
 /* ── ImageAdjust: 이미지 드래그+휠 조작 ── */
@@ -95,7 +105,7 @@ export function ImgBox({ url, t, editing, onImgChange, minH = 320, imgMeta, onMe
     </div>
   )
   return (
-    <div style={{ position: 'relative' }}>
+    <div style={{ position: 'relative', ...(fill ? { height: '100%' } : {}) }}>
       <input ref={ref} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
       {editing && (
         <button onClick={() => ref.current?.click()}
@@ -103,7 +113,8 @@ export function ImgBox({ url, t, editing, onImgChange, minH = 320, imgMeta, onMe
           📷 교체
         </button>
       )}
-      <ImageAdjust url={url} editing={editing} imgMeta={imgMeta} onMetaChange={onMetaChange || (() => {})} fixedH={fixedH} fitMode={fitMode} />
+      <ImageAdjust url={url} editing={editing} imgMeta={imgMeta} onMetaChange={onMetaChange || (() => {})} fixedH={fill ? '100%' : fixedH} fitMode={fitMode} />
+      {editing && <div style={{ position: 'absolute', inset: 0, border: `2px dashed ${t?.bd || '#ccc'}`, pointerEvents: 'none', zIndex: 5 }} />}
     </div>
   )
 }
