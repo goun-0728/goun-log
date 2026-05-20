@@ -31,13 +31,13 @@ export const DS_KEYS = Object.keys(DS)
 export const AUTO_DS = {
   HERO: '웜베이지', '문제 공감': '크림', '해결 제안': '포레스트그린',
   '특징 강조': '딥네이비', '사용 상황': '올리브', '비교': '슬레이트',
-  '추천 대상': '웜베이지', CTA: '버건디',
+  '추천 대상': '웜베이지', CTA: '버건디', '브랜드 스토리': '웜베이지',
 }
 
 export const AUTO_TPL = {
   HERO: 'hero', '문제 공감': 'material', '해결 제안': 'points3',
   '특징 강조': 'detail2col', '사용 상황': 'scene', '비교': 'compare',
-  '추천 대상': 'target', CTA: 'cta',
+  '추천 대상': 'target', CTA: 'cta', '브랜드 스토리': 'scene',
 }
 
 export const TPL_LABELS = [
@@ -107,8 +107,166 @@ export const mkSec = (o = {}) => ({
   ...o,
 })
 
+// ── 상세페이지 섹션 템플릿 빌더 ────────────────────────
+const _NO = '--no illustration, cartoon, CGI, Western appearance, blonde hair, blue eyes, oversaturated, plastic look, stock photo, ai generated look, dramatic, extreme emotion'
+
+const _S = {
+  HERO: n => `[SECTION ${n} - HERO]
+메인카피: (15자 이내)
+서브카피: (1줄)
+포인트:
+•
+•
+•
+촬영기획:
+  - 장면: (어떤 장면)
+  - 분위기: (조명·배경)
+  - 구도: (카메라 앵글)
+AI프롬프트: (제품 단독 메인샷 — product photography, [제품] on [배경], [조명], shot on Sony A7 35mm lens, shallow depth of field, [색감/분위기], ${_NO})`,
+
+  '문제 공감': n => `[SECTION ${n} - 문제 공감]
+메인카피:
+서브카피:
+포인트:
+•
+•
+•
+촬영기획:
+  - 장면:
+  - 분위기:
+  - 구도:
+AI프롬프트: (불편함·문제 상황 장면 — lifestyle photography, [불편한 상황 묘사], [배경/환경], natural lighting from [방향], shot on Canon 5D Mark IV 50mm lens, shallow depth of field, [색감/분위기], ${_NO})`,
+
+  '해결 제안': n => `[SECTION ${n} - 해결 제안]
+메인카피:
+서브카피:
+포인트:
+•
+•
+•
+촬영기획:
+  - 장면:
+  - 분위기:
+  - 구도:
+AI프롬프트: (제품 사용으로 해결되는 순간 — lifestyle photography, [해결 장면 묘사], [배경/환경], soft studio lighting, shot on Sony A7 85mm lens, shallow depth of field, [색감/분위기], ${_NO})`,
+
+  '특징 강조': n => `[SECTION ${n} - 특징 강조]
+메인카피:
+서브카피:
+포인트:
+•
+•
+•
+•
+촬영기획:
+  - 장면:
+  - 분위기:
+  - 구도:
+AI프롬프트: (제품 디테일 클로즈업 — product photography, extreme close-up of [제품 특징 부위], [배경/소재], soft studio lighting diffused from top, shot on Sony A7 100mm macro lens, shallow depth of field, [색감/분위기], ${_NO})`,
+
+  '사용 상황': n => `[SECTION ${n} - 사용 상황]
+메인카피:
+서브카피:
+포인트:
+•
+•
+촬영기획:
+  - 장면:
+  - 분위기:
+  - 구도:
+AI프롬프트: (실제 사용 라이프스타일 장면 — lifestyle photography, [사용 중인 구체적 장면], [생활공간 배경], natural lighting from [방향], shot on Canon 5D Mark IV 35mm lens, shallow depth of field, [색감/분위기], ${_NO})`,
+
+  '비교': n => `[SECTION ${n} - 비교]
+메인카피:
+서브카피:
+포인트:
+• 일반제품: / 이제품:
+• 일반제품: / 이제품:
+• 일반제품: / 이제품:
+AI프롬프트: (비교 또는 before/after 장면 — lifestyle photography, [before/after 또는 나란히 비교 장면], [깔끔한 중성 배경], soft studio lighting, shot on Sony A7 50mm lens, shallow depth of field, [색감/분위기], ${_NO})`,
+
+  '추천 대상': n => `[SECTION ${n} - 추천 대상]
+메인카피:
+서브카피:
+포인트:
+•
+•
+•
+•
+AI프롬프트: (타겟 고객 라이프스타일 장면 — lifestyle photography, [타겟이 제품을 쓰는 구체적 상황], [타겟 생활환경 배경], natural lighting, shot on Canon 5D Mark IV 35mm lens, shallow depth of field, [색감/분위기], ${_NO})`,
+
+  '브랜드 스토리': n => `[SECTION ${n} - 브랜드 스토리]
+메인카피:
+서브카피:
+포인트:
+•
+•
+•
+촬영기획:
+  - 장면:
+  - 분위기:
+  - 구도:
+AI프롬프트: (브랜드 철학·스토리 감성 장면 — lifestyle photography, [브랜드 가치와 진정성을 담은 장면], [자연스럽고 따뜻한 배경], natural lighting from side, shot on Canon 5D Mark IV 35mm lens, shallow depth of field, warm authentic tones, ${_NO})`,
+
+  CTA: n => `[SECTION ${n} - CTA]
+메인카피:
+서브카피:
+버튼문구: (5자)
+AI프롬프트: (구매욕구 자극 감성샷 — product photography, [제품을 가장 매력적으로 보여주는 구도], [고급스러운 배경/소품], soft studio lighting with [빛의 방향], shot on Sony A7 50mm lens, shallow depth of field, [색감/분위기], ${_NO})`,
+}
+
+function _buildSections(emphasis = [], style = []) {
+  let order
+  if (emphasis.includes('문제 해결')) {
+    order = ['HERO', '문제 공감', '해결 제안', '특징 강조', '비교', '추천 대상', 'CTA']
+  } else if (emphasis.includes('브랜드 스토리') || style.includes('스토리텔링')) {
+    order = ['HERO', '브랜드 스토리', '사용 상황', '추천 대상', 'CTA']
+  } else if (emphasis.includes('라이프스타일')) {
+    order = ['HERO', '사용 상황', '특징 강조', '추천 대상', '비교', 'CTA']
+  } else {
+    order = ['HERO', '문제 공감', '해결 제안', '특징 강조', '사용 상황', '비교', '추천 대상', 'CTA']
+  }
+  return order.map((name, i) => _S[name](i + 1)).join('\n\n')
+}
+
+function _buildCustomBlock(target = [], style = [], emphasis = []) {
+  if (!target.length && !style.length && !emphasis.length) return ''
+  const styleMap = {
+    '신뢰/전문성 강조': '전문적·신뢰감 있는 문체, 근거·수치 중심, 권위 있는 어조',
+    '따뜻한 감성': '따뜻하고 감성적인 문체, 공감과 위로 중심, 부드러운 어휘',
+    '힙하고 트렌디': 'MZ세대 감성, 짧고 임팩트 있는 카피, 세련되고 현대적인 표현',
+    '레트로/빈티지': '레트로·빈티지 감성, 향수와 정서를 자극하는 클래식한 어휘',
+    'B급/유머': 'B급 감성과 유머, 재치 있는 표현, 예상치 못한 웃음 포인트',
+    '스토리텔링': '서사 중심 구성, 브랜드·제품의 이야기를 스토리 형식으로 전개',
+  }
+  const emphasisMap = {
+    '원산지/성분/소재': '원산지·성분·소재의 품질과 안전성을 섹션 전반에 구체적으로 강조',
+    '맛/향/품질': '맛·향·품질의 차별점을 감각적이고 생생한 묘사로 표현',
+    '가격 대비 가치': '가격 대비 우수한 가치·실용성을 명확한 근거로 제시',
+    '브랜드 스토리': '브랜드의 철학·역사·스토리를 중심으로 신뢰와 감성 구축',
+    '문제 해결': '고객 불편함→문제→해결 흐름을 극적으로 구성',
+    '라이프스타일': '제품을 사용하는 일상 장면과 라이프스타일 이미지를 중심으로',
+  }
+  const lines = ['━━━ 맞춤 기획 설정 ━━━']
+  if (target.length) {
+    lines.push(`■ 타겟 고객: ${target.join(', ')}`)
+    lines.push(`  → 이 타겟의 구매 동기·관심사·언어에 맞게 카피와 섹션 내용 작성`)
+  }
+  if (style.length) {
+    lines.push(`■ 페이지 톤&매너: ${style.join(', ')}`)
+    lines.push(`  → ${style.map(s => styleMap[s] || s).join(' / ')}`)
+  }
+  if (emphasis.length) {
+    lines.push(`■ 핵심 강조점: ${emphasis.join(', ')}`)
+    lines.push(`  → ${emphasis.map(e => emphasisMap[e] || e).join(' / ')}`)
+    lines.push(`  → 섹션 구성·카피·AI프롬프트 전반에 이 강조점을 최우선 반영`)
+  }
+  lines.push('━━━━━━━━━━━━━━━━━━')
+  return lines.join('\n')
+}
+
 // 시스템 프롬프트
-export function getSys(id, tone = '생활형') {
+export function getSys(id, tone = '생활형', opts = {}) {
   if (id === 'blog') return `당신은 네이버 블로그 마케팅 전문가입니다.
 말투: ${tone}. 최소 1500자. AI티 완전 제거. 실제 사람이 쓴 느낌. 광고 문체 금지.
 
@@ -173,10 +331,14 @@ export function getSys(id, tone = '생활형') {
 (15개)`
 
   // 상세페이지
+  const { target = [], style = [], emphasis = [] } = opts
+  const customBlock = _buildCustomBlock(target, style, emphasis)
+  const sectionsBlock = _buildSections(emphasis, style)
+
   return `당신은 스마트스토어 상세페이지 전문 기획자 겸 카피라이터입니다.
 제품 정보를 바탕으로 기획안을 작성합니다.
 과장·허위 표현 금지. AI 느낌 제거. 실무형으로 작성.
-
+${customBlock ? '\n' + customBlock : ''}
 ━━━ AI이미지 프롬프트 생성 규칙 ━━━
 각 섹션의 AI프롬프트는 반드시 아래 규칙을 모두 지켜 영어로만 출력한다.
 구조: [촬영스타일], [피사체 상세묘사], [배경/환경], [조명 방향과 종류], [카메라설정: 렌즈·심도], [색감/분위기], --no [제외키워드]
@@ -186,7 +348,6 @@ export function getSys(id, tone = '생활형') {
 - "shallow depth of field" 반드시 포함
 - 마지막은 항상: --no illustration, cartoon, CGI, Western appearance, blonde hair, blue eyes, oversaturated, plastic look, stock photo, ai generated look, dramatic, extreme emotion
 - 한국 식품·생활용품 상세페이지에 어울리는 사실적이고 구체적인 장면
-- 각 섹션 주제(HERO=제품 단독 메인샷, 문제공감=불편 상황, 해결제안=해결 순간, 특징강조=클로즈업 디테일, 사용상황=라이프스타일, 비교=before/after, 추천대상=타겟 라이프스타일, CTA=구매욕구 자극 감성샷)에 맞게 생성
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 반드시 아래 형식만 출력:
@@ -215,95 +376,7 @@ Meta Description: (80~160자, 구매 전환 유도 문장으로)
 
 ▼ 섹션 구성
 
-[SECTION 1 - HERO]
-메인카피: (15자 이내)
-서브카피: (1줄)
-포인트:
-•
-•
-•
-촬영기획:
-  - 장면: (어떤 장면)
-  - 분위기: (조명·배경)
-  - 구도: (카메라 앵글)
-AI프롬프트: (제품 단독 메인샷 — product photography, [제품] on [배경], [조명], shot on Sony A7 35mm lens, shallow depth of field, [색감/분위기], --no illustration, cartoon, CGI, Western appearance, blonde hair, blue eyes, oversaturated, plastic look, stock photo, ai generated look, dramatic, extreme emotion)
-
-[SECTION 2 - 문제 공감]
-메인카피:
-서브카피:
-포인트:
-•
-•
-•
-촬영기획:
-  - 장면:
-  - 분위기:
-  - 구도:
-AI프롬프트: (불편함·문제 상황 장면 — lifestyle photography, [불편한 상황 묘사], [배경/환경], natural lighting from [방향], shot on Canon 5D Mark IV 50mm lens, shallow depth of field, [색감/분위기], --no illustration, cartoon, CGI, Western appearance, blonde hair, blue eyes, oversaturated, plastic look, stock photo, ai generated look, dramatic, extreme emotion)
-
-[SECTION 3 - 해결 제안]
-메인카피:
-서브카피:
-포인트:
-•
-•
-•
-촬영기획:
-  - 장면:
-  - 분위기:
-  - 구도:
-AI프롬프트: (제품 사용으로 해결되는 순간 — lifestyle photography, [해결 장면 묘사], [배경/환경], soft studio lighting, shot on Sony A7 85mm lens, shallow depth of field, [색감/분위기], --no illustration, cartoon, CGI, Western appearance, blonde hair, blue eyes, oversaturated, plastic look, stock photo, ai generated look, dramatic, extreme emotion)
-
-[SECTION 4 - 특징 강조]
-메인카피:
-서브카피:
-포인트:
-•
-•
-•
-•
-촬영기획:
-  - 장면:
-  - 분위기:
-  - 구도:
-AI프롬프트: (제품 디테일 클로즈업 — product photography, extreme close-up of [제품 특징 부위], [배경/소재], soft studio lighting diffused from top, shot on Sony A7 100mm macro lens, shallow depth of field, [색감/분위기], --no illustration, cartoon, CGI, Western appearance, blonde hair, blue eyes, oversaturated, plastic look, stock photo, ai generated look, dramatic, extreme emotion)
-
-[SECTION 5 - 사용 상황]
-메인카피:
-서브카피:
-포인트:
-•
-•
-촬영기획:
-  - 장면:
-  - 분위기:
-  - 구도:
-AI프롬프트: (실제 사용 라이프스타일 장면 — lifestyle photography, [사용 중인 구체적 장면], [생활공간 배경], natural lighting from [방향], shot on Canon 5D Mark IV 35mm lens, shallow depth of field, [색감/분위기], --no illustration, cartoon, CGI, Western appearance, blonde hair, blue eyes, oversaturated, plastic look, stock photo, ai generated look, dramatic, extreme emotion)
-
-[SECTION 6 - 비교]
-메인카피:
-서브카피:
-포인트:
-• 일반제품: / 이제품:
-• 일반제품: / 이제품:
-• 일반제품: / 이제품:
-AI프롬프트: (비교 또는 before/after 장면 — lifestyle photography, [before/after 또는 나란히 비교 장면], [깔끔한 중성 배경], soft studio lighting, shot on Sony A7 50mm lens, shallow depth of field, [색감/분위기], --no illustration, cartoon, CGI, Western appearance, blonde hair, blue eyes, oversaturated, plastic look, stock photo, ai generated look, dramatic, extreme emotion)
-
-[SECTION 7 - 추천 대상]
-메인카피:
-서브카피:
-포인트:
-•
-•
-•
-•
-AI프롬프트: (타겟 고객 라이프스타일 장면 — lifestyle photography, [타겟이 제품을 쓰는 구체적 상황], [타겟 생활환경 배경], natural lighting, shot on Canon 5D Mark IV 35mm lens, shallow depth of field, [색감/분위기], --no illustration, cartoon, CGI, Western appearance, blonde hair, blue eyes, oversaturated, plastic look, stock photo, ai generated look, dramatic, extreme emotion)
-
-[SECTION 8 - CTA]
-메인카피:
-서브카피:
-버튼문구: (5자)
-AI프롬프트: (구매욕구 자극 감성샷 — product photography, [제품을 가장 매력적으로 보여주는 구도], [고급스러운 배경/소품], soft studio lighting with [빛의 방향], shot on Sony A7 50mm lens, shallow depth of field, [색감/분위기], --no illustration, cartoon, CGI, Western appearance, blonde hair, blue eyes, oversaturated, plastic look, stock photo, ai generated look, dramatic, extreme emotion)
+${sectionsBlock}
 
 ▼ SEO 키워드
 메인: (3개)

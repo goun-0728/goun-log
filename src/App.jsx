@@ -8,6 +8,25 @@ import CardNewsView from './components/CardNewsEditor'
 import BlogKeywords from './components/BlogKeywords'
 import BlogThumbnail from './components/BlogThumbnail'
 
+/* ── 상세페이지 AI 질문 정의 ────────────────────────── */
+const DETAIL_QUESTIONS = [
+  {
+    key: 'q1',
+    label: '어떤 분들께 주로 팔고 싶으세요?',
+    options: ['건강 챙기는 주부', '요리 좋아하는 직장인', '선물용 구매자', '전문 요리사/셰프', '직접 입력'],
+  },
+  {
+    key: 'q2',
+    label: '어떤 느낌의 상세페이지를 원하세요?',
+    options: ['신뢰/전문성 강조', '따뜻한 감성', '힙하고 트렌디', '레트로/빈티지', 'B급/유머', '스토리텔링'],
+  },
+  {
+    key: 'q3',
+    label: '가장 강조하고 싶은 게 뭔가요?',
+    options: ['원산지/성분/소재', '맛/향/품질', '가격 대비 가치', '브랜드 스토리', '문제 해결', '라이프스타일'],
+  },
+]
+
 /* ── 미니 컴포넌트 ─────────────────────────────────── */
 function Spin() {
   return <span style={{ display: 'inline-block', width: 14, height: 14, borderRadius: '50%', border: '2px solid #ddd', borderTopColor: '#555', animation: 'sp .6s linear infinite', flexShrink: 0 }} />
@@ -341,6 +360,25 @@ export default function App() {
   const [tabLoading, setTabLoading] = useState({})
   const [error, setError] = useState('')
 
+  // 상세페이지 AI 질문 단계
+  const [detailStep, setDetailStep] = useState('input') // 'input' | 'questions'
+  const [detailAnswers, setDetailAnswers] = useState({ q1: [], q2: [], q3: [] })
+  const [customTarget, setCustomTarget] = useState('')
+
+  const detailAllAnswered = detailAnswers.q1.length > 0 && detailAnswers.q2.length > 0 && detailAnswers.q3.length > 0
+
+  const toggleDetailAnswer = (qKey, option) => {
+    setDetailAnswers(prev => {
+      const cur = prev[qKey]
+      return { ...prev, [qKey]: cur.includes(option) ? cur.filter(o => o !== option) : [...cur, option] }
+    })
+  }
+
+  const advanceToQuestions = () => {
+    if (!sharedInput.trim()) return
+    setDetailStep('questions')
+  }
+
   // 모든 탭이 같은 입력값 공유
   const input   = sharedInput
   const loading = tabLoading[task.id] || false
@@ -446,6 +484,9 @@ export default function App() {
     setError('')
     setKeywordContext('')
     setProductImgs([])
+    setDetailStep('input')
+    setDetailAnswers({ q1: [], q2: [], q3: [] })
+    setCustomTarget('')
   }
 
   // textarea 자동 높이
@@ -470,6 +511,7 @@ export default function App() {
     const curInput = sharedInput
     if (!curInput.trim() || tabLoading[task.id]) return
     const tid = task.id
+    if (tid === 'detail' && (detailStep !== 'questions' || !detailAllAnswered)) return
     setTabLoading(prev => ({ ...prev, [tid]: true }))
     saveResult(tid, '')
     setError('')
@@ -478,9 +520,15 @@ export default function App() {
         ? `다음 키워드를 자연스럽게 포함하고, 아래 내용을 참고해서 블로그 글을 작성해줘.\n키워드: ${keywordContext}\n참고 내용: ${curInput.trim()}`
         : curInput.trim()
       const hasImgs = tid === 'detail' && productImgs.length > 0
+      const detailOpts = tid === 'detail' ? {
+        target: detailAnswers.q1.map(a => a === '직접 입력' ? (customTarget.trim() || '직접 입력') : a),
+        style: detailAnswers.q2,
+        emphasis: detailAnswers.q3,
+      } : {}
+      const sysBase = getSys(tid, tone, detailOpts)
       const systemPrompt = hasImgs
-        ? getSys(tid, tone) + '\n\n업로드된 제품 사진을 분석해서 제품의 외형·색상·패키지 디자인을 파악하고, 각 섹션 AI프롬프트에 실제 제품의 시각적 특성(색상, 형태, 질감, 소재감)을 구체적으로 반영해줘.'
-        : getSys(tid, tone)
+        ? sysBase + '\n\n업로드된 제품 사진을 분석해서 제품의 외형·색상·패키지 디자인을 파악하고, 각 섹션 AI프롬프트에 실제 제품의 시각적 특성(색상, 형태, 질감, 소재감)을 구체적으로 반영해줘.'
+        : sysBase
       const text = await generateContent({
         systemPrompt,
         userPrompt,
@@ -639,7 +687,17 @@ export default function App() {
               <span style={{ color: task.col }}>{task.icon}</span>
               <span style={{ fontSize: 12, fontWeight: 700, color: task.col }}>{task.label} — {task.sub}</span>
             </div>
-            <textarea ref={taRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) run() }}
+            <textarea ref={taRef} value={input} onChange={e => setInput(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                  if (task.id === 'detail') {
+                    if (detailStep === 'input') advanceToQuestions()
+                    else if (detailAllAnswered) run()
+                  } else {
+                    run()
+                  }
+                }
+              }}
               placeholder={'마케팅을 시작하세요. 제품 특징이나 원하는 내용을 자유롭게 입력해보세요.\n\n예) 듀라론 냉감패드 상세페이지 만들어줘'}
               style={{ width: '100%', minHeight: 150, padding: '18px 20px', border: 'none', outline: 'none', resize: 'none', fontSize: 14.5, lineHeight: 1.85, color: C.tx, background: 'transparent', fontFamily: 'inherit' }}
             />
@@ -671,7 +729,73 @@ export default function App() {
 
             <div style={{ padding: '10px 14px', borderTop: `1px solid ${C.bd}`, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 9 }}>
               <span style={{ fontSize: 11, color: C.fa }}>⌘ Enter</span>
-              <button onClick={run} disabled={loading || !input.trim()} style={{ padding: '9px 22px', borderRadius: 9, border: 'none', background: (!input.trim() || loading) ? '#ECEAE5' : C.tx, color: (!input.trim() || loading) ? C.fa : '#fff', fontSize: 13, fontWeight: 700, cursor: (!input.trim() || loading) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
+              {task.id === 'detail' ? (
+                detailStep === 'input' ? (
+                  <button onClick={advanceToQuestions} disabled={!input.trim()}
+                    style={{ padding: '9px 22px', borderRadius: 9, border: 'none', background: !input.trim() ? '#ECEAE5' : C.tx, color: !input.trim() ? C.fa : '#fff', fontSize: 13, fontWeight: 700, cursor: !input.trim() ? 'not-allowed' : 'pointer' }}>
+                    다음 →
+                  </button>
+                ) : (
+                  <span style={{ fontSize: 11, color: '#1D6B45', fontWeight: 600 }}>▼ 아래에서 설정 후 생성</span>
+                )
+              ) : (
+                <button onClick={run} disabled={loading || !input.trim()} style={{ padding: '9px 22px', borderRadius: 9, border: 'none', background: (!input.trim() || loading) ? '#ECEAE5' : C.tx, color: (!input.trim() || loading) ? C.fa : '#fff', fontSize: 13, fontWeight: 700, cursor: (!input.trim() || loading) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
+                  {loading ? <><Spin />생성 중…</> : '✦ 생성하기'}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── 상세페이지 AI 질문 카드 ── */}
+        {task.id === 'detail' && detailStep === 'questions' && (
+          <div style={{ background: C.sur, borderRadius: 16, border: `1.5px solid #1D6B45`, boxShadow: '0 2px 24px rgba(0,0,0,0.06)', overflow: 'hidden', marginBottom: 12 }}>
+            <div style={{ padding: '12px 18px', background: '#E9F7F0', borderBottom: `1px solid #A7D7C0`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 13, fontWeight: 800, color: '#1D6B45' }}>맞춤 설정</span>
+                <span style={{ fontSize: 11, color: '#2D8A5E' }}>— 선택 내용이 섹션 구성과 카피에 반영됩니다</span>
+              </div>
+              <button onClick={() => setDetailStep('input')}
+                style={{ fontSize: 11, color: '#2D8A5E', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 600, padding: '3px 8px', borderRadius: 6 }}>
+                ← 입력 수정
+              </button>
+            </div>
+            <div style={{ padding: '20px 18px 4px' }}>
+              {DETAIL_QUESTIONS.map((q, qi) => (
+                <div key={q.key} style={{ marginBottom: 24 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                    <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#1D6B45', color: '#fff', fontSize: 11, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{qi + 1}</span>
+                    <span style={{ fontSize: 13.5, fontWeight: 700, color: C.tx }}>{q.label}</span>
+                    {detailAnswers[q.key].length > 0 && (
+                      <span style={{ fontSize: 10, background: '#E9F7F0', color: '#1D6B45', borderRadius: 20, padding: '1px 7px', fontWeight: 700 }}>✓ {detailAnswers[q.key].length}개 선택</span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+                    {q.options.map(opt => {
+                      const sel = detailAnswers[q.key].includes(opt)
+                      return (
+                        <button key={opt} onClick={() => toggleDetailAnswer(q.key, opt)}
+                          style={{ padding: '8px 14px', borderRadius: 10, border: sel ? '2px solid #1D6B45' : `1.5px solid ${C.bd}`, background: sel ? '#E9F7F0' : C.sur, color: sel ? '#1D6B45' : C.tx, fontSize: 12.5, fontWeight: sel ? 700 : 500, cursor: 'pointer', transition: 'all .12s', lineHeight: 1.4 }}>
+                          {opt}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {q.key === 'q1' && detailAnswers.q1.includes('직접 입력') && (
+                    <input type="text" value={customTarget} onChange={e => setCustomTarget(e.target.value)}
+                      placeholder="타겟 고객을 직접 입력해주세요 (예: 반려동물 키우는 30대)"
+                      style={{ marginTop: 8, width: '100%', padding: '9px 13px', borderRadius: 9, border: `1.5px solid #A7D7C0`, fontSize: 13, color: C.tx, background: C.alt, boxSizing: 'border-box', outline: 'none', fontFamily: 'inherit' }}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+            <div style={{ padding: '12px 18px 16px', borderTop: `1px solid ${C.bd}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 11, color: detailAllAnswered ? '#1D6B45' : C.fa, fontWeight: 600 }}>
+                {detailAllAnswered ? '✓ 3개 항목 모두 선택됨' : `${[detailAnswers.q1, detailAnswers.q2, detailAnswers.q3].filter(a => a.length > 0).length}/3 선택 완료`}
+              </span>
+              <button onClick={run} disabled={!detailAllAnswered || loading}
+                style={{ padding: '10px 26px', borderRadius: 9, border: 'none', background: (!detailAllAnswered || loading) ? '#ECEAE5' : '#1D6B45', color: (!detailAllAnswered || loading) ? C.fa : '#fff', fontSize: 13, fontWeight: 700, cursor: (!detailAllAnswered || loading) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7, transition: 'background .12s' }}>
                 {loading ? <><Spin />생성 중…</> : '✦ 생성하기'}
               </button>
             </div>
@@ -682,7 +806,7 @@ export default function App() {
 
         {loading && (
           <div style={{ background: C.sur, borderRadius: 14, border: `1.5px solid ${C.bd}`, padding: '28px 24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 22, color: C.mu, fontSize: 13 }}><Spin />{task.id === 'detail' ? '상세페이지 8개 섹션 생성 중…' : task.id === 'card' ? '카드뉴스 5장 생성 중…' : task.id === 'blog' ? '블로그 포스팅 생성 중…' : '콘텐츠 생성 중…'}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 22, color: C.mu, fontSize: 13 }}><Spin />{task.id === 'detail' ? '상세페이지 섹션 생성 중…' : task.id === 'card' ? '카드뉴스 5장 생성 중…' : task.id === 'blog' ? '블로그 포스팅 생성 중…' : '콘텐츠 생성 중…'}</div>
             {[95, 75, 85, 60, 90, 50].map((w, i) => <div key={i} style={{ height: 10, background: C.alt, borderRadius: 5, width: `${w}%`, marginBottom: 9, animation: `pl 1.5s ease ${i * .12}s infinite` }} />)}
           </div>
         )}
