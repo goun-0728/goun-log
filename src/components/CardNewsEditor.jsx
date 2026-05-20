@@ -13,8 +13,8 @@ const FONT_SIZES = {
   xl: { main: 112, sub: 48, title: 88, body: 44 },
 }
 
-// 추가 텍스트 블록 fontSizeKey → px
-const EXTRA_FS = { sm: 36, md: 48, lg: 64, xl: 80 }
+// 추가 텍스트 블록 fontSizeKey → 카드 실제 px
+const EXTRA_FS = { sm: 36, md: 48, lg: 64, xl: 88 }
 
 const LAYOUTS = [
   { k: 'gradient', l: '그라데이션형' },
@@ -264,94 +264,161 @@ function LayoutBg({ card }) {
 }
 
 /* ── 추가 텍스트 블록 ────────────────────────────────────── */
-function ExtraTextBlock({ block, editing, selected, cardRef, onSelect, onDrag, onTextChange, onDelete }) {
-  const [dragging, setDragging] = useState(false)
-  const didDrag   = useRef(false)
+// 싱글클릭: 선택 / 더블클릭(300ms 내 재클릭): 텍스트 편집 모드
+function ExtraTextBlock({ block, editing, selected, textEditing, cardRef, onSelect, onStartTextEdit, onEndTextEdit, onDrag, onDelete }) {
+  const [dragging, setDragging]   = useState(false)
+  const didDragRef                = useRef(false)
+  const lastClickTimeRef          = useRef(0)
+  const textRef                   = useRef(null)
+
+  // 텍스트 편집 모드 진입 시 contentEditable 자동 포커스 + 커서 끝으로
+  useEffect(() => {
+    if (textEditing && textRef.current) {
+      textRef.current.focus()
+      try {
+        const sel = window.getSelection()
+        const range = document.createRange()
+        range.selectNodeContents(textRef.current)
+        range.collapse(false)
+        sel.removeAllRanges()
+        sel.addRange(range)
+      } catch {}
+    }
+  }, [textEditing])
 
   const handleMouseDown = (e) => {
     if (!editing) return
+    // 텍스트 편집 중이면 contentEditable이 직접 처리
+    if (textEditing) return
     e.stopPropagation()
-    e.preventDefault()
-    didDrag.current = false
-    setDragging(true)
+    e.preventDefault()   // click 이벤트 억제 — onUp에서 직접 처리
+    didDragRef.current = false
+    setDragging(false)
+
     const sx = e.clientX, sy = e.clientY
     const bx = block.x,   by = block.y
 
     const onMove = (ev) => {
-      didDrag.current = true
+      // 4px 이상 이동 시 드래그로 확정
+      if (!didDragRef.current && (Math.abs(ev.clientX - sx) > 4 || Math.abs(ev.clientY - sy) > 4)) {
+        didDragRef.current = true
+        setDragging(true)
+      }
+      if (!didDragRef.current) return
       const rect = cardRef.current?.getBoundingClientRect()
       if (!rect) return
       const sc = rect.width / CARD_W
-      onDrag(block.id,
-        Math.max(0, Math.min(CARD_W - 100, bx + (ev.clientX - sx) / sc)),
+      onDrag(
+        block.id,
+        Math.max(0, Math.min(CARD_W - 120, bx + (ev.clientX - sx) / sc)),
         Math.max(0, Math.min(CARD_H - 60,  by + (ev.clientY - sy) / sc)),
       )
     }
+
     const onUp = () => {
       setDragging(false)
-      // 드래그가 아닌 클릭이면 선택
-      if (!didDrag.current) onSelect(block.id)
       document.removeEventListener('mousemove', onMove)
       document.removeEventListener('mouseup',   onUp)
+      if (!didDragRef.current) {
+        // 클릭 — 싱글 vs 더블 판별 (시간 기반, 렌더링 타이밍 무관)
+        const now = Date.now()
+        if (now - lastClickTimeRef.current < 300) {
+          // 300ms 내 재클릭 → 더블클릭: 텍스트 편집 모드
+          lastClickTimeRef.current = 0
+          onStartTextEdit(block.id)
+        } else {
+          // 싱글클릭: 선택
+          lastClickTimeRef.current = now
+          onSelect(block.id)
+        }
+      }
     }
+
     document.addEventListener('mousemove', onMove)
     document.addEventListener('mouseup',   onUp)
   }
 
-  // 선택 상태에 따른 테두리 스타일
+  const textStyle = {
+    fontSize:   block.fontSize || 48,
+    color:      block.color    || '#ffffff',
+    fontWeight: 700,
+    textShadow: '0 2px 10px rgba(0,0,0,0.75)',
+    minWidth:   60,
+    whiteSpace: 'pre-wrap',
+    wordBreak:  'keep-all',
+    fontFamily: "'Noto Sans KR','Apple SD Gothic Neo',sans-serif",
+    lineHeight: 1.3,
+  }
+
   const borderStyle = !editing ? 'none'
     : selected
-      ? '2px solid rgba(59,130,246,0.95)'      // 선택됨: 실선 파란색
-      : '1.5px dashed rgba(148,163,184,0.5)'   // 미선택: 흐린 점선
+      ? '2px solid rgba(59,130,246,0.95)'
+      : '1.5px dashed rgba(148,163,184,0.4)'
 
   return (
     <div
-      onMouseDown={editing ? handleMouseDown : undefined}
+      onMouseDown={handleMouseDown}
       onClick={editing ? e => e.stopPropagation() : undefined}
-      style={{ position: 'absolute', left: block.x, top: block.y, zIndex: 8, userSelect: 'none', cursor: editing ? (dragging ? 'grabbing' : 'grab') : 'default' }}>
-
-      {/* 테두리 표시 */}
+      style={{
+        position:   'absolute',
+        left:       block.x,
+        top:        block.y,
+        zIndex:     8,
+        userSelect: 'none',
+        cursor:     !editing ? 'default' : textEditing ? 'text' : dragging ? 'grabbing' : 'grab',
+      }}
+    >
+      {/* 선택/미선택 테두리 */}
       {editing && (
-        <div style={{ position: 'absolute', inset: -8, border: borderStyle, borderRadius: 4, pointerEvents: 'none',
-          boxShadow: selected ? '0 0 0 3px rgba(59,130,246,0.15)' : 'none' }} />
+        <div style={{
+          position:  'absolute', inset: -8,
+          border:    borderStyle,
+          borderRadius: 4,
+          pointerEvents: 'none',
+          boxShadow: selected ? '0 0 0 3px rgba(59,130,246,0.12)' : 'none',
+          transition: 'border .1s, box-shadow .1s',
+        }} />
       )}
 
-      {/* 삭제 버튼 (선택된 상태에서만 표시) */}
+      {/* 삭제 버튼 — 선택 상태에서만 표시 */}
       {editing && selected && (
         <button
           onMouseDown={e => e.stopPropagation()}
           onClick={e => { e.stopPropagation(); onDelete(block.id) }}
-          style={{ position: 'absolute', top: -16, right: -16, width: 24, height: 24, borderRadius: '50%', background: '#ef4444', color: '#fff', border: '2px solid #fff', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, padding: 0, fontWeight: 900, lineHeight: 1 }}>
-          ×
-        </button>
+          style={{
+            position: 'absolute', top: -16, right: -16,
+            width: 24, height: 24, borderRadius: '50%',
+            background: '#ef4444', color: '#fff',
+            border: '2px solid #fff', fontSize: 13,
+            cursor: 'pointer', padding: 0, fontWeight: 900,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 10, lineHeight: 1,
+          }}
+        >×</button>
       )}
 
-      {/* 텍스트 */}
-      <div
-        contentEditable={editing} suppressContentEditableWarning
-        onMouseDown={e => e.stopPropagation()}
-        onClick={e => e.stopPropagation()}
-        onBlur={e => onTextChange(block.id, e.currentTarget.innerText)}
-        dangerouslySetInnerHTML={{ __html: block.text }}
-        style={{
-          fontSize: block.fontSize || 48,
-          color: block.color || '#ffffff',
-          fontWeight: 700,
-          textShadow: '0 2px 10px rgba(0,0,0,0.75)',
-          outline: 'none',
-          borderBottom: editing ? '2px solid rgba(96,165,250,0.5)' : 'none',
-          minWidth: 60, whiteSpace: 'pre-wrap', wordBreak: 'keep-all',
-          cursor: 'text',
-          fontFamily: "'Noto Sans KR','Apple SD Gothic Neo',sans-serif",
-        }}
-      />
+      {/* 텍스트: 편집 모드면 contentEditable, 아니면 일반 div */}
+      {textEditing ? (
+        <div
+          ref={textRef}
+          contentEditable suppressContentEditableWarning
+          onMouseDown={e => e.stopPropagation()}
+          onClick={e => e.stopPropagation()}
+          onBlur={e => onEndTextEdit(block.id, e.currentTarget.innerText)}
+          onKeyDown={e => { if (e.key === 'Escape') { e.preventDefault(); e.currentTarget.blur() } }}
+          dangerouslySetInnerHTML={{ __html: block.text }}
+          style={{ ...textStyle, outline: 'none', borderBottom: '2px solid rgba(96,165,250,0.7)', cursor: 'text', userSelect: 'text' }}
+        />
+      ) : (
+        <div style={textStyle}>{block.text || '텍스트'}</div>
+      )}
     </div>
   )
 }
 
 /* ── 카드 렌더러 ─────────────────────────────────────────── */
 function CardContent({ card, editing, textBlockRef, onDragStart, isDragging, onChangeText,
-  onDragExtra, onTextExtra, onDeleteExtra, onSelectExtra, selectedExtraId, cardRef }) {
+  onDragExtra, onDeleteExtra, onSelectExtra, onStartTextEdit, onEndTextEdit, selectedExtraId, editingExtraId, cardRef }) {
   const def  = getDefaultPos(card.cardLayout, card.textPosition)
   const tx   = card.textPosX ?? def.x
   const ty   = card.textPosY ?? def.y
@@ -374,13 +441,16 @@ function CardContent({ card, editing, textBlockRef, onDragStart, isDragging, onC
 
       {(card.extraTexts || []).map(block => (
         <ExtraTextBlock
-          key={block.id} block={block}
+          key={block.id}
+          block={block}
           editing={editing}
           selected={selectedExtraId === block.id}
+          textEditing={editingExtraId === block.id}
           cardRef={cardRef}
           onSelect={onSelectExtra}
+          onStartTextEdit={onStartTextEdit}
+          onEndTextEdit={onEndTextEdit}
           onDrag={onDragExtra}
-          onTextChange={onTextExtra}
           onDelete={onDeleteExtra}
         />
       ))}
@@ -392,15 +462,16 @@ function CardContent({ card, editing, textBlockRef, onDragStart, isDragging, onC
 
 /* ── 개별 카드 에디터 ────────────────────────────────────── */
 function CardEditor({ card, idx, onUpdate }) {
-  const [editing,        setEditing]       = useState(true)
-  const [dr,             setDr]            = useState({ ...card })
-  const [saved,          setSaved]         = useState(true)
-  const [dl,             setDl]            = useState(false)
-  const [showPanel,      setShowPanel]     = useState(true)
-  const [scale,          setScale]         = useState(0.5)
-  const [isDragging,     setIsDragging]    = useState(false)
-  const [isImgDrag,      setIsImgDrag]     = useState(false)
-  const [selectedExtraId, setSelectedExtraId] = useState(null)   // 선택된 추가 텍스트 블록 ID
+  const [editing,         setEditing]        = useState(true)
+  const [dr,              setDr]             = useState({ ...card })
+  const [saved,           setSaved]          = useState(true)
+  const [dl,              setDl]             = useState(false)
+  const [showPanel,       setShowPanel]      = useState(true)
+  const [scale,           setScale]          = useState(0.5)
+  const [isDragging,      setIsDragging]     = useState(false)
+  const [isImgDrag,       setIsImgDrag]      = useState(false)
+  const [selectedExtraId, setSelectedExtraId] = useState(null)  // 선택된 추가 텍스트 블록 ID
+  const [editingExtraId,  setEditingExtraId]  = useState(null)  // 텍스트 편집 중인 블록 ID
 
   const ref          = useRef(null)
   const wrapRef      = useRef(null)
@@ -439,8 +510,10 @@ function CardEditor({ card, idx, onUpdate }) {
   const changeMulti = useCallback((updates) => { setDr(d => ({ ...d, ...updates })); setSaved(false) }, [])
   const change      = useCallback((key, val) => changeMulti({ [key]: val }), [changeMulti])
 
-  const save   = () => { onUpdate(idx, { ...dr }); setEditing(false); setSaved(true); setSelectedExtraId(null) }
-  const cancel = () => { setDr({ ...card });        setEditing(false); setSaved(true); setSelectedExtraId(null) }
+  const clearExtraSelection = () => { setSelectedExtraId(null); setEditingExtraId(null) }
+
+  const save   = () => { onUpdate(idx, { ...dr }); setEditing(false); setSaved(true); clearExtraSelection() }
+  const cancel = () => { setDr({ ...card });        setEditing(false); setSaved(true); clearExtraSelection() }
 
   const dlPNG = async () => {
     if (!ref.current || !saved) return
@@ -528,19 +601,19 @@ function CardEditor({ card, idx, onUpdate }) {
     document.addEventListener('mouseup',   onEnd)
   }, [editing])
 
-  /* 추가 텍스트 블록 관리 */
+  /* 추가 텍스트 블록 CRUD */
   const addExtraText = () => {
-    const fsk = dr.fontSize || 'md'
     const block = {
-      id: Math.random().toString(36).slice(2, 9),
-      text: '텍스트',
-      x: 100, y: 180,
-      fontSizeKey: fsk,
-      fontSize: EXTRA_FS[fsk] || 48,
-      color: dr.textColor || dr.fgColor || '#ffffff',
+      id:          Math.random().toString(36).slice(2, 9),
+      text:        '텍스트',
+      x: 100, y:   180,
+      fontSizeKey: 'md',
+      fontSize:    EXTRA_FS.md,
+      color:       dr.textColor || dr.fgColor || '#ffffff',
     }
     setDr(d => ({ ...d, extraTexts: [...(d.extraTexts || []), block] }))
-    setSelectedExtraId(block.id)   // 추가 즉시 선택
+    setSelectedExtraId(block.id)
+    setEditingExtraId(block.id)  // 추가 즉시 텍스트 편집 모드
     setSaved(false)
   }
 
@@ -549,18 +622,25 @@ function CardEditor({ card, idx, onUpdate }) {
     setSaved(false)
   }, [])
 
-  const textExtra = useCallback((id, text) => {
-    setDr(d => ({ ...d, extraTexts: (d.extraTexts || []).map(b => b.id === id ? { ...b, text } : b) }))
-    setSaved(false)
-  }, [])
-
   const deleteExtra = useCallback((id) => {
     setDr(d => ({ ...d, extraTexts: (d.extraTexts || []).filter(b => b.id !== id) }))
     setSelectedExtraId(prev => prev === id ? null : prev)
+    setEditingExtraId(prev => prev === id ? null : prev)
     setSaved(false)
   }, [])
 
-  /* 추가 텍스트 블록 스타일 변경 */
+  const startTextEdit = useCallback((id) => {
+    setSelectedExtraId(id)
+    setEditingExtraId(id)
+  }, [])
+
+  const endTextEdit = useCallback((id, text) => {
+    setDr(d => ({ ...d, extraTexts: (d.extraTexts || []).map(b => b.id === id ? { ...b, text } : b) }))
+    setEditingExtraId(null)
+    setSaved(false)
+  }, [])
+
+  /* 추가 텍스트 블록 스타일 즉시 적용 */
   const updateExtraStyle = useCallback((id, key, val) => {
     setDr(d => ({
       ...d,
@@ -573,7 +653,7 @@ function CardEditor({ card, idx, onUpdate }) {
     setSaved(false)
   }, [])
 
-  // 선택된 블록 데이터
+  // 선택된 블록 데이터 (패널 표시용)
   const selectedBlock = selectedExtraId ? (dr.extraTexts || []).find(b => b.id === selectedExtraId) : null
 
   const dlDisabled  = dl || !saved
@@ -616,7 +696,7 @@ function CardEditor({ card, idx, onUpdate }) {
         <div
           ref={wrapRef}
           onMouseDown={editing ? handleImgDragStart : undefined}
-          onClick={editing ? () => setSelectedExtraId(null) : undefined}
+          onClick={editing ? clearExtraSelection : undefined}
           style={{ flex: 1, minWidth: 0, position: 'relative', background: '#e0ddd8', overflow: 'hidden', cursor: wrapCursor }}>
           <div style={{ paddingTop: '125%', position: 'relative' }}>
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden' }}>
@@ -629,10 +709,12 @@ function CardEditor({ card, idx, onUpdate }) {
                     isDragging={isDragging}
                     onChangeText={(key, val) => change(key, val)}
                     onDragExtra={dragExtra}
-                    onTextExtra={textExtra}
                     onDeleteExtra={deleteExtra}
                     onSelectExtra={setSelectedExtraId}
+                    onStartTextEdit={startTextEdit}
+                    onEndTextEdit={endTextEdit}
                     selectedExtraId={selectedExtraId}
+                    editingExtraId={editingExtraId}
                     cardRef={ref}
                   />
                 </div>
@@ -678,22 +760,24 @@ function CardEditor({ card, idx, onUpdate }) {
               {selectedBlock ? (
                 <div style={{ background: '#EFF6FF', border: '1.5px solid #93C5FD', borderRadius: 10, padding: '12px 12px 14px', marginBottom: 14 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: '#1D4ED8' }}>✎ 추가 텍스트 스타일</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#1D4ED8' }}>
+                      {editingExtraId === selectedBlock.id ? '✎ 텍스트 편집 중' : '✎ 추가 텍스트 스타일'}
+                    </span>
                     <button
-                      onClick={() => setSelectedExtraId(null)}
-                      style={{ fontSize: 11, color: C.fa, background: 'none', border: 'none', cursor: 'pointer', padding: '2px 5px' }}>
-                      선택 해제
+                      onClick={() => clearExtraSelection()}
+                      style={{ fontSize: 10, color: C.fa, background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px' }}>
+                      ✕
                     </button>
                   </div>
 
                   {/* 글자 크기 */}
                   <p style={{ fontSize: 10, fontWeight: 700, color: '#3B82F6', margin: '0 0 5px', letterSpacing: '0.05em' }}>글자 크기</p>
                   <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
-                    {[['sm', '작게'], ['md', '보통'], ['lg', '크게'], ['xl', '아주']].map(([v, l]) => {
+                    {[['sm', '작게'], ['md', '보통'], ['lg', '크게'], ['xl', '아주크게']].map(([v, l]) => {
                       const on = (selectedBlock.fontSizeKey || 'md') === v
                       return (
                         <button key={v} onClick={() => updateExtraStyle(selectedExtraId, 'fontSizeKey', v)}
-                          style={{ flex: 1, padding: '6px 2px', fontSize: 10, borderRadius: 6, border: `1.5px solid ${on ? '#3b82f6' : C.bd}`, background: on ? '#DBEAFE' : C.sur, color: on ? '#1d4ed8' : C.mu, cursor: 'pointer', fontWeight: on ? 700 : 400 }}>
+                          style={{ flex: 1, padding: '6px 1px', fontSize: 9, borderRadius: 6, border: `1.5px solid ${on ? '#3b82f6' : C.bd}`, background: on ? '#DBEAFE' : C.sur, color: on ? '#1d4ed8' : C.mu, cursor: 'pointer', fontWeight: on ? 700 : 400 }}>
                           {l}
                         </button>
                       )
@@ -703,11 +787,11 @@ function CardEditor({ card, idx, onUpdate }) {
                   {/* 글자색 */}
                   <p style={{ fontSize: 10, fontWeight: 700, color: '#3B82F6', margin: '0 0 5px', letterSpacing: '0.05em' }}>글자색</p>
                   <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
-                    {[['#ffffff', '흰색', '#bbb'], ['#1a1a1a', '검정', '#1a1a1a'], ['#ffd700', '노랑', '#ffd700'], ['#ff4444', '빨강', '#ff4444']].map(([v, l, border]) => {
+                    {[['#ffffff', '흰색', '#bbb'], ['#1a1a1a', '검정', '#1a1a1a'], ['#ffd700', '노랑', '#b8960c']].map(([v, l, border]) => {
                       const on = selectedBlock.color === v
                       return (
                         <button key={v} onClick={() => updateExtraStyle(selectedExtraId, 'color', v)}
-                          style={{ padding: '5px 7px', fontSize: 10, borderRadius: 6, border: `2px solid ${on ? '#3b82f6' : border}`, background: v, color: v === '#ffffff' ? '#333' : '#fff', cursor: 'pointer', fontWeight: on ? 700 : 400 }}>
+                          style={{ padding: '5px 7px', fontSize: 10, borderRadius: 6, border: `2px solid ${on ? '#3b82f6' : border}`, background: v, color: v === '#ffffff' ? '#333' : '#fff', cursor: 'pointer', fontWeight: on ? 700 : 400, minWidth: 38 }}>
                           {l}
                         </button>
                       )
@@ -719,11 +803,19 @@ function CardEditor({ card, idx, onUpdate }) {
                       <span style={{ fontSize: 10, color: C.fa }}>직접</span>
                     </label>
                   </div>
+
+                  {editingExtraId !== selectedBlock.id && (
+                    <p style={{ fontSize: 10, color: '#6B7280', margin: '10px 0 0', lineHeight: 1.5 }}>
+                      블록을 더블클릭하면 텍스트를 수정할 수 있어요
+                    </p>
+                  )}
                 </div>
               ) : (
-                <p style={{ fontSize: 10, color: C.fa, margin: '0 0 12px', padding: '8px 10px', background: C.alt, borderRadius: 7, border: `1px dashed ${C.bd}`, lineHeight: 1.5 }}>
-                  카드 위 추가 텍스트를 클릭하면<br />여기서 스타일을 설정할 수 있어요
-                </p>
+                editing && (dr.extraTexts || []).length > 0 && (
+                  <p style={{ fontSize: 10, color: C.fa, margin: '0 0 12px', padding: '8px 10px', background: C.alt, borderRadius: 7, border: `1px dashed ${C.bd}`, lineHeight: 1.6 }}>
+                    추가된 텍스트를 클릭하면<br />여기서 스타일을 설정할 수 있어요
+                  </p>
+                )
               )}
 
               {/* ── 레이아웃 */}
@@ -774,7 +866,7 @@ function CardEditor({ card, idx, onUpdate }) {
                   const on = dr.fontSize === v
                   return (
                     <button key={v} onClick={() => change('fontSize', v)}
-                      style={{ flex: 1, padding: '6px 2px', fontSize: 10, borderRadius: 6, border: `1.5px solid ${on ? '#3b82f6' : C.bd}`, background: on ? '#EFF6FF' : C.sur, color: on ? '#1d4ed8' : C.mu, cursor: 'pointer', fontWeight: on ? 700 : 400 }}>
+                      style={{ flex: 1, padding: '6px 1px', fontSize: 9, borderRadius: 6, border: `1.5px solid ${on ? '#3b82f6' : C.bd}`, background: on ? '#EFF6FF' : C.sur, color: on ? '#1d4ed8' : C.mu, cursor: 'pointer', fontWeight: on ? 700 : 400 }}>
                       {l}
                     </button>
                   )
@@ -784,7 +876,7 @@ function CardEditor({ card, idx, onUpdate }) {
               {/* ── 글자색 (카드 전체) */}
               <SL>카드 글자색</SL>
               <div style={{ display: 'flex', gap: 5, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
-                {[['#ffffff', '흰색', '#bbb'], ['#1a1a1a', '검정', '#1a1a1a'], ['#ffd700', '노랑', '#ffd700']].map(([v, l, border]) => {
+                {[['#ffffff', '흰색', '#bbb'], ['#1a1a1a', '검정', '#1a1a1a'], ['#ffd700', '노랑', '#b8960c']].map(([v, l, border]) => {
                   const on = dr.textColor === v
                   return (
                     <button key={v} onClick={() => change('textColor', v)}
@@ -821,10 +913,11 @@ function CardEditor({ card, idx, onUpdate }) {
                 </button>
                 {(dr.extraTexts || []).length > 0 && (
                   <p style={{ fontSize: 10, color: C.fa, margin: '7px 0 0', textAlign: 'center', lineHeight: 1.6 }}>
-                    클릭: 선택 · 드래그: 이동 · ×: 삭제
+                    클릭: 선택  ·  더블클릭: 수정  ·  드래그: 이동
                   </p>
                 )}
               </div>
+
             </div>
           </div>
         )}
