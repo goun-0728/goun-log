@@ -13,7 +13,7 @@ const FONT_SIZES = {
   xl: { main: 112, sub: 48, title: 88, body: 44 },
 }
 
-// 추가 텍스트 블록 기본 크기 (카드 fontSize → px)
+// 추가 텍스트 블록 fontSizeKey → px
 const EXTRA_FS = { sm: 36, md: 48, lg: 64, xl: 80 }
 
 const LAYOUTS = [
@@ -32,17 +32,17 @@ function getDefaultPos(layout, pos) {
     case 'gradient':
       return { x: PAD, y: pos === 'top' ? 760 : pos === 'center' ? 870 : 1000 }
     case 'overlay':
-      return { x: PAD, y: pos === 'top' ? 80  : pos === 'center' ? 460 : 860  }
+      return { x: PAD, y: pos === 'top' ? 80  : pos === 'center' ? 460 : 860 }
     case 'textbox': {
       const zoneTop = Math.round(CARD_H * 0.65)
       return { x: PAD, y: pos === 'top' ? zoneTop + 36 : pos === 'center' ? zoneTop + 120 : zoneTop + 210 }
     }
     case 'border':
-      return { x: 96, y: pos === 'top' ? 80  : pos === 'center' ? 180 : 340 }
+      return { x: 96, y: pos === 'top' ? 80 : pos === 'center' ? 180 : 340 }
     case 'simple':
       return { x: PAD, y: pos === 'top' ? 200 : pos === 'center' ? 460 : 720 }
     case 'toptext':
-      return { x: PAD, y: pos === 'top' ? 56  : pos === 'center' ? 120 : 240 }
+      return { x: PAD, y: pos === 'top' ? 56 : pos === 'center' ? 120 : 240 }
     default:
       return { x: PAD, y: 800 }
   }
@@ -55,13 +55,11 @@ function parseCardResult(text) {
     mainText: '', subText: '', title: '', content: '', highlight: '', buttonText: '',
     bgColor, fgColor, accentColor,
     image: null,
-    imgX: 50, imgY: 50, imgScale: 1,       // 사진 위치/크기
-    cardLayout: layout,
-    textPosition,
-    fontSize: 'md',
-    textColor: null,
+    imgX: 50, imgY: 50, imgScale: 1,
+    cardLayout: layout, textPosition,
+    fontSize: 'md', textColor: null,
     textPosX: null, textPosY: null,
-    extraTexts: [],                          // 추가 텍스트 블록
+    extraTexts: [],
   })
   const DEFS = [
     mkCard(0, '훅',    'gradient', 'bottom', '#1a1a2e', '#ffffff', '#e94560'),
@@ -82,12 +80,9 @@ function parseCardResult(text) {
       const gf = k => { const f = body.match(new RegExp(k + ':\\s*([^\\n]+)')); return f ? f[1].trim() : '' }
       result[i] = {
         ...result[i],
-        mainText:    gf('메인문구'),
-        subText:     gf('서브문구'),
-        title:       gf('제목'),
-        content:     gf('내용'),
-        highlight:   gf('강조단어'),
-        buttonText:  gf('버튼문구'),
+        mainText:    gf('메인문구'),   subText:     gf('서브문구'),
+        title:       gf('제목'),       content:     gf('내용'),
+        highlight:   gf('강조단어'),   buttonText:  gf('버튼문구'),
         bgColor:     gf('배경색')   || result[i].bgColor,
         fgColor:     gf('글자색')   || result[i].fgColor,
         accentColor: gf('포인트색') || result[i].accentColor,
@@ -97,7 +92,7 @@ function parseCardResult(text) {
   } catch { return DEFS }
 }
 
-/* ── 사진 objectFit + drag/zoom 스타일 헬퍼 ─────────────── */
+/* ── 사진 drag/zoom 스타일 헬퍼 ──────────────────────────── */
 function imgSt(card) {
   return {
     position: 'absolute', inset: 0,
@@ -135,18 +130,16 @@ function Blk({ title, lines }) {
   )
 }
 
-function SectionLabel({ children }) {
-  return <p style={{ fontSize: 10, fontWeight: 700, color: C.fa, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 7 }}>{children}</p>
+function SL({ children }) {
+  return <p style={{ fontSize: 10, fontWeight: 700, color: C.fa, letterSpacing: '0.07em', textTransform: 'uppercase', margin: '0 0 7px' }}>{children}</p>
 }
 
-/* ── 사진 업로드 버튼 (정중앙, 반투명 흰색 원형) ─────────── */
+/* ── 업로드 버튼 (정중앙, 반투명) ────────────────────────── */
 function UploadButton({ onClick }) {
   const [hover, setHover] = useState(false)
   return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+    <button onClick={onClick}
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
         background: hover ? 'rgba(255,255,255,0.30)' : 'rgba(255,255,255,0.14)',
@@ -158,7 +151,7 @@ function UploadButton({ onClick }) {
         outline: 'none',
       }}>
       <span style={{ fontSize: 44, lineHeight: 1, filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.55))' }}>📷</span>
-      <span style={{ fontSize: 14, color: '#ffffff', fontWeight: 700, textShadow: '0 1px 8px rgba(0,0,0,0.65)', letterSpacing: '-0.01em', whiteSpace: 'nowrap' }}>사진 업로드</span>
+      <span style={{ fontSize: 14, color: '#ffffff', fontWeight: 700, textShadow: '0 1px 8px rgba(0,0,0,0.65)', whiteSpace: 'nowrap' }}>사진 업로드</span>
     </button>
   )
 }
@@ -169,15 +162,12 @@ function TextContent({ card, editing, onChangeText }) {
   const tc = card.textColor || card.fgColor || '#ffffff'
   const ts = card.cardLayout === 'overlay'
     ? '0 2px 20px rgba(0,0,0,0.95), 0 0 50px rgba(0,0,0,0.8)'
-    : card.cardLayout === 'gradient'
-    ? '0 2px 16px rgba(0,0,0,0.85)'
-    : 'none'
+    : card.cardLayout === 'gradient' ? '0 2px 16px rgba(0,0,0,0.85)' : 'none'
 
   const E = ({ value, fieldKey, tag: Tag = 'div', style }) => {
     if (!editing) return <Tag style={style}>{value || ''}</Tag>
     return (
-      <Tag
-        contentEditable suppressContentEditableWarning
+      <Tag contentEditable suppressContentEditableWarning
         onMouseDown={e => e.stopPropagation()}
         onClick={e => e.stopPropagation()}
         onBlur={e => onChangeText?.(fieldKey, e.currentTarget.innerText)}
@@ -221,11 +211,11 @@ function TextContent({ card, editing, onChangeText }) {
   )
 }
 
-/* ── 레이아웃 배경 레이어 (사진 drag/zoom 반영) ─────────── */
+/* ── 레이아웃 배경 레이어 ──────────────────────────────── */
 function LayoutBg({ card }) {
   const { cardLayout, image, bgColor, accentColor } = card
-  const PHOTO_H_TEXTBOX = Math.round(CARD_H * 0.65)
-  const PHOTO_Y_TOPTEXT = Math.round(CARD_H * 0.38)
+  const PH = Math.round(CARD_H * 0.65)
+  const PT = Math.round(CARD_H * 0.38)
 
   if (cardLayout === 'gradient') return (
     <>
@@ -234,7 +224,6 @@ function LayoutBg({ card }) {
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.88) 20%, rgba(0,0,0,0.55) 42%, rgba(0,0,0,0.18) 65%, transparent 100%)' }} />
     </>
   )
-
   if (cardLayout === 'overlay') return (
     <>
       <div style={{ position: 'absolute', inset: 0, background: bgColor }} />
@@ -242,16 +231,14 @@ function LayoutBg({ card }) {
       {image && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.18)' }} />}
     </>
   )
-
   if (cardLayout === 'textbox') return (
     <>
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: PHOTO_H_TEXTBOX, background: '#1a1a1a', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: PH, background: '#1a1a1a', overflow: 'hidden' }}>
         {image && <img src={image} alt="" style={imgSt(card)} />}
       </div>
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: CARD_H - PHOTO_H_TEXTBOX, background: bgColor }} />
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: CARD_H - PH, background: bgColor }} />
     </>
   )
-
   if (cardLayout === 'border') return (
     <>
       <div style={{ position: 'absolute', inset: 0, background: bgColor }} />
@@ -263,38 +250,35 @@ function LayoutBg({ card }) {
       )}
     </>
   )
-
-  if (cardLayout === 'simple') return (
-    <div style={{ position: 'absolute', inset: 0, background: bgColor }} />
-  )
-
   if (cardLayout === 'toptext') return (
     <>
       <div style={{ position: 'absolute', inset: 0, background: bgColor }} />
       {image && (
-        <div style={{ position: 'absolute', top: PHOTO_Y_TOPTEXT, left: 0, right: 0, bottom: 0, overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: PT, left: 0, right: 0, bottom: 0, overflow: 'hidden' }}>
           <img src={image} alt="" style={imgSt(card)} />
         </div>
       )}
     </>
   )
-
   return <div style={{ position: 'absolute', inset: 0, background: bgColor }} />
 }
 
 /* ── 추가 텍스트 블록 ────────────────────────────────────── */
-function ExtraTextBlock({ block, editing, cardRef, onDrag, onTextChange, onDelete }) {
+function ExtraTextBlock({ block, editing, selected, cardRef, onSelect, onDrag, onTextChange, onDelete }) {
   const [dragging, setDragging] = useState(false)
+  const didDrag   = useRef(false)
 
   const handleMouseDown = (e) => {
     if (!editing) return
-    e.stopPropagation()   // 사진 드래그 방지
+    e.stopPropagation()
     e.preventDefault()
+    didDrag.current = false
     setDragging(true)
     const sx = e.clientX, sy = e.clientY
     const bx = block.x,   by = block.y
 
     const onMove = (ev) => {
+      didDrag.current = true
       const rect = cardRef.current?.getBoundingClientRect()
       if (!rect) return
       const sc = rect.width / CARD_W
@@ -305,6 +289,8 @@ function ExtraTextBlock({ block, editing, cardRef, onDrag, onTextChange, onDelet
     }
     const onUp = () => {
       setDragging(false)
+      // 드래그가 아닌 클릭이면 선택
+      if (!didDrag.current) onSelect(block.id)
       document.removeEventListener('mousemove', onMove)
       document.removeEventListener('mouseup',   onUp)
     }
@@ -312,20 +298,35 @@ function ExtraTextBlock({ block, editing, cardRef, onDrag, onTextChange, onDelet
     document.addEventListener('mouseup',   onUp)
   }
 
+  // 선택 상태에 따른 테두리 스타일
+  const borderStyle = !editing ? 'none'
+    : selected
+      ? '2px solid rgba(59,130,246,0.95)'      // 선택됨: 실선 파란색
+      : '1.5px dashed rgba(148,163,184,0.5)'   // 미선택: 흐린 점선
+
   return (
     <div
       onMouseDown={editing ? handleMouseDown : undefined}
       onClick={editing ? e => e.stopPropagation() : undefined}
       style={{ position: 'absolute', left: block.x, top: block.y, zIndex: 8, userSelect: 'none', cursor: editing ? (dragging ? 'grabbing' : 'grab') : 'default' }}>
-      {editing && <div style={{ position: 'absolute', inset: -8, border: '1.5px dashed rgba(96,165,250,0.6)', borderRadius: 4, pointerEvents: 'none' }} />}
+
+      {/* 테두리 표시 */}
       {editing && (
+        <div style={{ position: 'absolute', inset: -8, border: borderStyle, borderRadius: 4, pointerEvents: 'none',
+          boxShadow: selected ? '0 0 0 3px rgba(59,130,246,0.15)' : 'none' }} />
+      )}
+
+      {/* 삭제 버튼 (선택된 상태에서만 표시) */}
+      {editing && selected && (
         <button
           onMouseDown={e => e.stopPropagation()}
           onClick={e => { e.stopPropagation(); onDelete(block.id) }}
-          style={{ position: 'absolute', top: -14, right: -14, width: 24, height: 24, borderRadius: '50%', background: '#ef4444', color: '#fff', border: '2px solid #fff', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, padding: 0, fontWeight: 900, lineHeight: 1 }}>
+          style={{ position: 'absolute', top: -16, right: -16, width: 24, height: 24, borderRadius: '50%', background: '#ef4444', color: '#fff', border: '2px solid #fff', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, padding: 0, fontWeight: 900, lineHeight: 1 }}>
           ×
         </button>
       )}
+
+      {/* 텍스트 */}
       <div
         contentEditable={editing} suppressContentEditableWarning
         onMouseDown={e => e.stopPropagation()}
@@ -338,7 +339,7 @@ function ExtraTextBlock({ block, editing, cardRef, onDrag, onTextChange, onDelet
           fontWeight: 700,
           textShadow: '0 2px 10px rgba(0,0,0,0.75)',
           outline: 'none',
-          borderBottom: editing ? '2px solid rgba(96,165,250,0.65)' : 'none',
+          borderBottom: editing ? '2px solid rgba(96,165,250,0.5)' : 'none',
           minWidth: 60, whiteSpace: 'pre-wrap', wordBreak: 'keep-all',
           cursor: 'text',
           fontFamily: "'Noto Sans KR','Apple SD Gothic Neo',sans-serif",
@@ -350,7 +351,7 @@ function ExtraTextBlock({ block, editing, cardRef, onDrag, onTextChange, onDelet
 
 /* ── 카드 렌더러 ─────────────────────────────────────────── */
 function CardContent({ card, editing, textBlockRef, onDragStart, isDragging, onChangeText,
-  onDragExtra, onTextExtra, onDeleteExtra, cardRef }) {
+  onDragExtra, onTextExtra, onDeleteExtra, onSelectExtra, selectedExtraId, cardRef }) {
   const def  = getDefaultPos(card.cardLayout, card.textPosition)
   const tx   = card.textPosX ?? def.x
   const ty   = card.textPosY ?? def.y
@@ -360,24 +361,24 @@ function CardContent({ card, editing, textBlockRef, onDragStart, isDragging, onC
     <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', fontFamily: "'Noto Sans KR','Apple SD Gothic Neo',sans-serif" }}>
       <LayoutBg card={card} />
 
-      {/* 메인 텍스트 블록 */}
-      <div
-        ref={textBlockRef}
+      <div ref={textBlockRef}
         onMouseDown={editing ? onDragStart : undefined}
         onTouchStart={editing ? onDragStart : undefined}
         onClick={editing ? e => e.stopPropagation() : undefined}
-        style={{ position: 'absolute', left: tx, top: ty, maxWidth: maxW, zIndex: 5, cursor: editing ? (isDragging ? 'grabbing' : 'grab') : 'default', userSelect: 'none', WebkitUserSelect: 'none' }}>
+        style={{ position: 'absolute', left: tx, top: ty, maxWidth: maxW, zIndex: 5,
+          cursor: editing ? (isDragging ? 'grabbing' : 'grab') : 'default',
+          userSelect: 'none', WebkitUserSelect: 'none' }}>
         {editing && <div style={{ position: 'absolute', inset: -10, border: '2px dashed rgba(96,165,250,0.75)', borderRadius: 6, pointerEvents: 'none' }} />}
         <TextContent card={card} editing={editing} onChangeText={onChangeText} />
       </div>
 
-      {/* 추가 텍스트 블록들 */}
       {(card.extraTexts || []).map(block => (
         <ExtraTextBlock
-          key={block.id}
-          block={block}
+          key={block.id} block={block}
           editing={editing}
+          selected={selectedExtraId === block.id}
           cardRef={cardRef}
+          onSelect={onSelectExtra}
           onDrag={onDragExtra}
           onTextChange={onTextExtra}
           onDelete={onDeleteExtra}
@@ -391,14 +392,15 @@ function CardContent({ card, editing, textBlockRef, onDragStart, isDragging, onC
 
 /* ── 개별 카드 에디터 ────────────────────────────────────── */
 function CardEditor({ card, idx, onUpdate }) {
-  const [editing,      setEditing]     = useState(true)
-  const [dr,           setDr]          = useState({ ...card })
-  const [saved,        setSaved]       = useState(true)
-  const [dl,           setDl]          = useState(false)
-  const [showPanel,    setShowPanel]   = useState(true)
-  const [scale,        setScale]       = useState(0.5)
-  const [isDragging,   setIsDragging]  = useState(false)
-  const [isImgDrag,    setIsImgDrag]   = useState(false)
+  const [editing,        setEditing]       = useState(true)
+  const [dr,             setDr]            = useState({ ...card })
+  const [saved,          setSaved]         = useState(true)
+  const [dl,             setDl]            = useState(false)
+  const [showPanel,      setShowPanel]     = useState(true)
+  const [scale,          setScale]         = useState(0.5)
+  const [isDragging,     setIsDragging]    = useState(false)
+  const [isImgDrag,      setIsImgDrag]     = useState(false)
+  const [selectedExtraId, setSelectedExtraId] = useState(null)   // 선택된 추가 텍스트 블록 ID
 
   const ref          = useRef(null)
   const wrapRef      = useRef(null)
@@ -418,7 +420,7 @@ function CardEditor({ card, idx, onUpdate }) {
     return () => obs.disconnect()
   }, [])
 
-  /* ── 마우스 휠로 사진 크기 조절 (non-passive) */
+  /* 마우스 휠 → 사진 크기 조절 (non-passive) */
   useEffect(() => {
     const el = wrapRef.current; if (!el) return
     const onWheel = (e) => {
@@ -434,13 +436,11 @@ function CardEditor({ card, idx, onUpdate }) {
     return () => el.removeEventListener('wheel', onWheel)
   }, [])
 
-  const changeMulti = useCallback((updates) => {
-    setDr(d => ({ ...d, ...updates })); setSaved(false)
-  }, [])
-  const change = useCallback((key, val) => changeMulti({ [key]: val }), [changeMulti])
+  const changeMulti = useCallback((updates) => { setDr(d => ({ ...d, ...updates })); setSaved(false) }, [])
+  const change      = useCallback((key, val) => changeMulti({ [key]: val }), [changeMulti])
 
-  const save   = () => { onUpdate(idx, { ...dr }); setEditing(false); setSaved(true) }
-  const cancel = () => { setDr({ ...card }); setEditing(false); setSaved(true) }
+  const save   = () => { onUpdate(idx, { ...dr }); setEditing(false); setSaved(true); setSelectedExtraId(null) }
+  const cancel = () => { setDr({ ...card });        setEditing(false); setSaved(true); setSelectedExtraId(null) }
 
   const dlPNG = async () => {
     if (!ref.current || !saved) return
@@ -459,11 +459,10 @@ function CardEditor({ card, idx, onUpdate }) {
     change('image', await readFileAsDataURL(f)); e.target.value = ''
   }
 
-  /* ── 메인 텍스트 블록 드래그 */
+  /* 메인 텍스트 블록 드래그 */
   const handleDragStart = useCallback((e) => {
     if (!editing) return
-    e.preventDefault()
-    e.stopPropagation()   // 사진 드래그 이벤트 차단
+    e.preventDefault(); e.stopPropagation()
     const clientX = e.touches ? e.touches[0].clientX : e.clientX
     const clientY = e.touches ? e.touches[0].clientY : e.clientY
     const cur = drRef.current
@@ -473,7 +472,6 @@ function CardEditor({ card, idx, onUpdate }) {
       startCardPos: { x: cur.textPosX ?? def.x, y: cur.textPosY ?? def.y },
     }
     setIsDragging(true)
-
     const onMove = (ev) => {
       if (!dragInfo.current) return
       if (ev.cancelable) ev.preventDefault()
@@ -503,17 +501,12 @@ function CardEditor({ card, idx, onUpdate }) {
     document.addEventListener('touchend',  onEnd)
   }, [editing])
 
-  /* ── 사진 드래그 (wrapRef mousedown에서 시작, 텍스트/버튼이 stopPropagation으로 차단) */
+  /* 사진 드래그 */
   const handleImgDragStart = useCallback((e) => {
     if (!editing || !drRef.current.image) return
     e.preventDefault()
-    imgDragRef.current = {
-      sx: e.clientX, sy: e.clientY,
-      ix: drRef.current.imgX ?? 50,
-      iy: drRef.current.imgY ?? 50,
-    }
+    imgDragRef.current = { sx: e.clientX, sy: e.clientY, ix: drRef.current.imgX ?? 50, iy: drRef.current.imgY ?? 50 }
     setIsImgDrag(true)
-
     const onMove = (ev) => {
       if (!imgDragRef.current) return
       const { sx, sy, ix, iy } = imgDragRef.current
@@ -535,16 +528,19 @@ function CardEditor({ card, idx, onUpdate }) {
     document.addEventListener('mouseup',   onEnd)
   }, [editing])
 
-  /* ── 추가 텍스트 블록 관리 */
+  /* 추가 텍스트 블록 관리 */
   const addExtraText = () => {
+    const fsk = dr.fontSize || 'md'
     const block = {
       id: Math.random().toString(36).slice(2, 9),
       text: '텍스트',
       x: 100, y: 180,
-      fontSize: EXTRA_FS[dr.fontSize] || 48,
+      fontSizeKey: fsk,
+      fontSize: EXTRA_FS[fsk] || 48,
       color: dr.textColor || dr.fgColor || '#ffffff',
     }
     setDr(d => ({ ...d, extraTexts: [...(d.extraTexts || []), block] }))
+    setSelectedExtraId(block.id)   // 추가 즉시 선택
     setSaved(false)
   }
 
@@ -560,8 +556,25 @@ function CardEditor({ card, idx, onUpdate }) {
 
   const deleteExtra = useCallback((id) => {
     setDr(d => ({ ...d, extraTexts: (d.extraTexts || []).filter(b => b.id !== id) }))
+    setSelectedExtraId(prev => prev === id ? null : prev)
     setSaved(false)
   }, [])
+
+  /* 추가 텍스트 블록 스타일 변경 */
+  const updateExtraStyle = useCallback((id, key, val) => {
+    setDr(d => ({
+      ...d,
+      extraTexts: (d.extraTexts || []).map(b => {
+        if (b.id !== id) return b
+        if (key === 'fontSizeKey') return { ...b, fontSizeKey: val, fontSize: EXTRA_FS[val] || 48 }
+        return { ...b, [key]: val }
+      }),
+    }))
+    setSaved(false)
+  }, [])
+
+  // 선택된 블록 데이터
+  const selectedBlock = selectedExtraId ? (dr.extraTexts || []).find(b => b.id === selectedExtraId) : null
 
   const dlDisabled  = dl || !saved
   const hasDragPos  = dr.textPosX !== null || dr.textPosY !== null
@@ -603,6 +616,7 @@ function CardEditor({ card, idx, onUpdate }) {
         <div
           ref={wrapRef}
           onMouseDown={editing ? handleImgDragStart : undefined}
+          onClick={editing ? () => setSelectedExtraId(null) : undefined}
           style={{ flex: 1, minWidth: 0, position: 'relative', background: '#e0ddd8', overflow: 'hidden', cursor: wrapCursor }}>
           <div style={{ paddingTop: '125%', position: 'relative' }}>
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden' }}>
@@ -617,31 +631,29 @@ function CardEditor({ card, idx, onUpdate }) {
                     onDragExtra={dragExtra}
                     onTextExtra={textExtra}
                     onDeleteExtra={deleteExtra}
+                    onSelectExtra={setSelectedExtraId}
+                    selectedExtraId={selectedExtraId}
                     cardRef={ref}
                   />
                 </div>
               </div>
             </div>
 
-            {/* 사진 없을 때: 정중앙 업로드 버튼 (오버레이는 pointerEvents:none) */}
+            {/* 사진 없을 때 업로드 버튼 */}
             {editing && !dr.image && (
               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, pointerEvents: 'none' }}>
                 <UploadButton onClick={() => fileRef.current?.click()} />
               </div>
             )}
 
-            {/* 사진 있을 때: 교체/제거 버튼 */}
+            {/* 사진 있을 때 교체/제거 */}
             {editing && dr.image && (
               <div style={{ position: 'absolute', top: 8, left: 8, display: 'flex', gap: 4, zIndex: 10 }}>
-                <button
-                  onMouseDown={e => e.stopPropagation()}
-                  onClick={() => fileRef.current?.click()}
+                <button onMouseDown={e => e.stopPropagation()} onClick={() => fileRef.current?.click()}
                   style={{ padding: '5px 10px', fontSize: 11, fontWeight: 700, background: 'rgba(0,0,0,0.65)', color: '#fff', border: 'none', borderRadius: 7, cursor: 'pointer' }}>
                   📷 교체
                 </button>
-                <button
-                  onMouseDown={e => e.stopPropagation()}
-                  onClick={() => change('image', null)}
+                <button onMouseDown={e => e.stopPropagation()} onClick={() => change('image', null)}
                   style={{ padding: '5px 8px', fontSize: 11, background: 'rgba(220,38,38,0.75)', color: '#fff', border: 'none', borderRadius: 7, cursor: 'pointer', fontWeight: 700 }}>
                   ✕
                 </button>
@@ -649,7 +661,6 @@ function CardEditor({ card, idx, onUpdate }) {
             )}
           </div>
 
-          {/* 편집 힌트 */}
           {editing && (
             <div style={{ position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)', background: 'rgba(30,30,30,0.72)', color: '#fff', fontSize: 11, padding: '5px 12px', borderRadius: 20, pointerEvents: 'none', whiteSpace: 'nowrap' }}>
               {dr.image ? '⠿ 드래그: 텍스트/사진 이동  ·  휠: 사진 크기' : '⠿ 텍스트 드래그로 이동  ·  글자 클릭으로 수정'}
@@ -660,11 +671,63 @@ function CardEditor({ card, idx, onUpdate }) {
         {/* 사이드 패널 */}
         {(editing || showPanel) && (
           <div style={{ width: 220, minWidth: 220, borderLeft: `1px solid ${C.bd}`, background: '#F8FAFF', overflowY: 'auto' }}>
-            <div style={{ padding: '16px 14px' }}>
+            <div style={{ padding: '14px 14px 20px' }}>
               <input ref={fileRef} type="file" accept="image/*" onChange={handleImg} style={{ display: 'none' }} />
 
-              {/* 레이아웃 */}
-              <SectionLabel>레이아웃</SectionLabel>
+              {/* ━━ 선택된 추가 텍스트 블록 스타일 ━━ */}
+              {selectedBlock ? (
+                <div style={{ background: '#EFF6FF', border: '1.5px solid #93C5FD', borderRadius: 10, padding: '12px 12px 14px', marginBottom: 14 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#1D4ED8' }}>✎ 추가 텍스트 스타일</span>
+                    <button
+                      onClick={() => setSelectedExtraId(null)}
+                      style={{ fontSize: 11, color: C.fa, background: 'none', border: 'none', cursor: 'pointer', padding: '2px 5px' }}>
+                      선택 해제
+                    </button>
+                  </div>
+
+                  {/* 글자 크기 */}
+                  <p style={{ fontSize: 10, fontWeight: 700, color: '#3B82F6', margin: '0 0 5px', letterSpacing: '0.05em' }}>글자 크기</p>
+                  <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
+                    {[['sm', '작게'], ['md', '보통'], ['lg', '크게'], ['xl', '아주']].map(([v, l]) => {
+                      const on = (selectedBlock.fontSizeKey || 'md') === v
+                      return (
+                        <button key={v} onClick={() => updateExtraStyle(selectedExtraId, 'fontSizeKey', v)}
+                          style={{ flex: 1, padding: '6px 2px', fontSize: 10, borderRadius: 6, border: `1.5px solid ${on ? '#3b82f6' : C.bd}`, background: on ? '#DBEAFE' : C.sur, color: on ? '#1d4ed8' : C.mu, cursor: 'pointer', fontWeight: on ? 700 : 400 }}>
+                          {l}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  {/* 글자색 */}
+                  <p style={{ fontSize: 10, fontWeight: 700, color: '#3B82F6', margin: '0 0 5px', letterSpacing: '0.05em' }}>글자색</p>
+                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
+                    {[['#ffffff', '흰색', '#bbb'], ['#1a1a1a', '검정', '#1a1a1a'], ['#ffd700', '노랑', '#ffd700'], ['#ff4444', '빨강', '#ff4444']].map(([v, l, border]) => {
+                      const on = selectedBlock.color === v
+                      return (
+                        <button key={v} onClick={() => updateExtraStyle(selectedExtraId, 'color', v)}
+                          style={{ padding: '5px 7px', fontSize: 10, borderRadius: 6, border: `2px solid ${on ? '#3b82f6' : border}`, background: v, color: v === '#ffffff' ? '#333' : '#fff', cursor: 'pointer', fontWeight: on ? 700 : 400 }}>
+                          {l}
+                        </button>
+                      )
+                    })}
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer' }}>
+                      <input type="color" value={selectedBlock.color || '#ffffff'}
+                        onChange={e => updateExtraStyle(selectedExtraId, 'color', e.target.value)}
+                        style={{ width: 26, height: 26, padding: 2, border: `1px solid ${C.bd}`, borderRadius: 5, cursor: 'pointer' }} />
+                      <span style={{ fontSize: 10, color: C.fa }}>직접</span>
+                    </label>
+                  </div>
+                </div>
+              ) : (
+                <p style={{ fontSize: 10, color: C.fa, margin: '0 0 12px', padding: '8px 10px', background: C.alt, borderRadius: 7, border: `1px dashed ${C.bd}`, lineHeight: 1.5 }}>
+                  카드 위 추가 텍스트를 클릭하면<br />여기서 스타일을 설정할 수 있어요
+                </p>
+              )}
+
+              {/* ── 레이아웃 */}
+              <SL>레이아웃</SL>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5, marginBottom: 14 }}>
                 {LAYOUTS.map(({ k, l }) => {
                   const on = dr.cardLayout === k
@@ -677,9 +740,9 @@ function CardEditor({ card, idx, onUpdate }) {
                 })}
               </div>
 
-              {/* 텍스트 위치 */}
-              <SectionLabel>텍스트 위치</SectionLabel>
-              <div style={{ display: 'flex', gap: 5, marginBottom: 8 }}>
+              {/* ── 텍스트 위치 */}
+              <SL>텍스트 위치</SL>
+              <div style={{ display: 'flex', gap: 5, marginBottom: 6 }}>
                 {[['top', '위'], ['center', '중앙'], ['bottom', '아래']].map(([v, l]) => {
                   const on = dr.textPosition === v
                   return (
@@ -692,20 +755,20 @@ function CardEditor({ card, idx, onUpdate }) {
               </div>
               {hasDragPos && (
                 <button onClick={() => changeMulti({ textPosX: null, textPosY: null })}
-                  style={{ width: '100%', padding: '5px', fontSize: 10, borderRadius: 6, border: `1px solid ${C.bd}`, background: C.sur, color: '#3b82f6', cursor: 'pointer', marginBottom: 6, fontWeight: 600 }}>
+                  style={{ width: '100%', padding: '5px', fontSize: 10, borderRadius: 6, border: `1px solid ${C.bd}`, background: C.sur, color: '#3b82f6', cursor: 'pointer', marginBottom: 4, fontWeight: 600 }}>
                   ↺ 텍스트 위치 초기화
                 </button>
               )}
               {hasImgMoved && (
                 <button onClick={() => changeMulti({ imgX: 50, imgY: 50, imgScale: 1 })}
-                  style={{ width: '100%', padding: '5px', fontSize: 10, borderRadius: 6, border: `1px solid ${C.bd}`, background: C.sur, color: '#3b82f6', cursor: 'pointer', marginBottom: 6, fontWeight: 600 }}>
+                  style={{ width: '100%', padding: '5px', fontSize: 10, borderRadius: 6, border: `1px solid ${C.bd}`, background: C.sur, color: '#3b82f6', cursor: 'pointer', marginBottom: 4, fontWeight: 600 }}>
                   ↺ 사진 위치/크기 초기화
                 </button>
               )}
-              <div style={{ marginBottom: 14 }} />
+              <div style={{ marginBottom: 12 }} />
 
-              {/* 글자 크기 */}
-              <SectionLabel>글자 크기</SectionLabel>
+              {/* ── 글자 크기 (카드 전체) */}
+              <SL>카드 글자 크기</SL>
               <div style={{ display: 'flex', gap: 4, marginBottom: 14 }}>
                 {[['sm', '작게'], ['md', '보통'], ['lg', '크게'], ['xl', '아주크게']].map(([v, l]) => {
                   const on = dr.fontSize === v
@@ -718,8 +781,8 @@ function CardEditor({ card, idx, onUpdate }) {
                 })}
               </div>
 
-              {/* 글자색 */}
-              <SectionLabel>글자색</SectionLabel>
+              {/* ── 글자색 (카드 전체) */}
+              <SL>카드 글자색</SL>
               <div style={{ display: 'flex', gap: 5, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
                 {[['#ffffff', '흰색', '#bbb'], ['#1a1a1a', '검정', '#1a1a1a'], ['#ffd700', '노랑', '#ffd700']].map(([v, l, border]) => {
                   const on = dr.textColor === v
@@ -737,8 +800,8 @@ function CardEditor({ card, idx, onUpdate }) {
                 </label>
               </div>
 
-              {/* 배경·포인트색 */}
-              <SectionLabel>배경·포인트색</SectionLabel>
+              {/* ── 배경·포인트색 */}
+              <SL>배경·포인트색</SL>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
                 {[['bgColor', '배경색'], ['accentColor', '포인트색']].map(([key, label]) => (
                   <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -750,20 +813,18 @@ function CardEditor({ card, idx, onUpdate }) {
                 ))}
               </div>
 
-              {/* 텍스트 추가 버튼 */}
+              {/* ── 텍스트 추가 버튼 */}
               <div style={{ borderTop: `1px solid ${C.bd}`, paddingTop: 14 }}>
-                <button
-                  onClick={addExtraText}
+                <button onClick={addExtraText}
                   style={{ width: '100%', padding: '10px', fontSize: 12, fontWeight: 700, borderRadius: 8, border: '1.5px dashed #3b82f6', background: '#EFF6FF', color: '#1d4ed8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                   + 텍스트 추가
                 </button>
                 {(dr.extraTexts || []).length > 0 && (
-                  <p style={{ fontSize: 10, color: C.fa, margin: '7px 0 0', textAlign: 'center', lineHeight: 1.5 }}>
-                    카드에서 드래그 이동<br />글자 클릭으로 수정  ·  × 삭제
+                  <p style={{ fontSize: 10, color: C.fa, margin: '7px 0 0', textAlign: 'center', lineHeight: 1.6 }}>
+                    클릭: 선택 · 드래그: 이동 · ×: 삭제
                   </p>
                 )}
               </div>
-
             </div>
           </div>
         )}
@@ -823,7 +884,7 @@ export default function CardNewsView({ result, savedCards, onCardsChange }) {
       {cards.map((card, i) => (
         <CardEditor key={i} card={card} idx={i} onUpdate={updateCard} />
       ))}
-      {caption && <Blk title="캡션"    lines={caption.lines}  />}
+      {caption && <Blk title="캡션"    lines={caption.lines} />}
       {hashtag && <Blk title="해시태그" lines={hashtag.lines} />}
     </div>
   )
