@@ -276,7 +276,7 @@ const _TONE_MAP = {
   '친근한/편안한': '친근하고 편안한 문체, 가까운 친구처럼 이야기하는 어조',
 }
 const _EMPH_MAP = {
-  '맛/향/품질': '맛·향·품질의 차별점을 감각적이고 생생하게 표현',
+  '품질/성능': '품질과 성능의 차별점을 구체적 근거와 함께 강조',
   '원산지/성분': '원산지·성분의 품질과 안전성을 구체적으로 강조',
   '가격/가성비': '가격 대비 우수한 가치와 실용성을 명확한 근거로 제시',
   '편의성': '사용 편리성·시간 절약·간편함을 전면에 강조',
@@ -289,7 +289,7 @@ const _EMPH_MAP = {
 function _buildCustomBlock(opts = {}) {
   const {
     category, priceRange,
-    gender, ageGroup, motivation, decision,
+    gender, ageGroup, purchaseSituation,
     pricePosition, competition,
     differentiator, differentiatorTypes = [],
     planningStyle, brandTone = [], emphasis = [],
@@ -302,10 +302,9 @@ function _buildCustomBlock(opts = {}) {
   }
 
   const targetParts = [gender, ageGroup].filter(Boolean)
-  if (targetParts.length || motivation || decision) {
+  if (targetParts.length || purchaseSituation) {
     if (targetParts.length) lines.push(`■ 타겟 고객: ${targetParts.join(' ')} 중심`)
-    if (motivation) lines.push(`  구매 동기: ${motivation}`)
-    if (decision) lines.push(`  구매 결정방식: ${decision} 위주`)
+    if (purchaseSituation) lines.push(`  구매 상황: ${purchaseSituation}`)
     lines.push(`  → 이 타겟의 언어·관심사·구매 심리에 맞게 카피 작성`)
   }
 
@@ -341,10 +340,10 @@ function _buildCustomBlock(opts = {}) {
 }
 
 function _buildQuizContext(opts = {}) {
-  const { gender, ageGroup, motivation, brandTone = [], emphasis = [] } = opts
+  const { gender, ageGroup, purchaseSituation, brandTone = [], emphasis = [] } = opts
   const parts = []
   const target = [gender, ageGroup].filter(Boolean)
-  if (target.length) parts.push(`타겟: ${target.join(' ')} 중심${motivation ? ', ' + motivation : ''}`)
+  if (target.length) parts.push(`타겟: ${target.join(' ')} 중심${purchaseSituation ? ', ' + purchaseSituation : ''}`)
   if (brandTone.length) parts.push(`톤: ${brandTone.join('·')}`)
   if (emphasis.length) parts.push(`강조: ${emphasis.join('·')}`)
   return parts.length ? `[참고 컨텍스트] ${parts.join(' / ')}\n위 정보를 참고해 콘텐츠 톤과 타겟 언어를 조정하세요.\n\n` : ''

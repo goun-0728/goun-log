@@ -12,9 +12,8 @@ import BlogThumbnail from './components/BlogThumbnail'
 const CATEGORIES = ['식품/음료', '뷰티/화장품', '생활용품', '패션/잡화', '건강/이너뷰티', '스포츠/레저', '디지털/가전', '반려동물', '기타']
 const PRICE_RANGES = ['~1만원', '1~3만원', '3~5만원', '5~10만원', '10만원이상']
 const GENDERS = ['여성', '남성', '무관']
-const AGE_GROUPS = ['10대', '20대', '30대', '40대', '50대이상', '무관']
-const MOTIVATIONS = ['나를위한구매', '선물용', '문제해결', '취미/관심사', '건강/웰빙', '가성비추구']
-const DECISIONS = ['리뷰/후기', '브랜드신뢰', '가격비교', '지인추천', '충동구매']
+const AGE_GROUPS = ['20대', '30대', '40대', '50대이상', '무관']
+const PURCHASE_SITUATIONS = ['일상소비(자주구매하는생필품)', '특별한날(선물/기념일)', '문제해결(불편함/필요에의해)', '자기계발/취미', '건강/관리목적', '트렌드/유행따라']
 const PRICE_POSITIONS = ['가성비/저가', '합리적중간가', '프리미엄']
 const COMPETITION_TYPES = ['경쟁많은시장', '차별화포지션', '틈새시장']
 const DIFF_TYPES = ['원산지/성분', '제조방식', '가격경쟁력', '디자인/패키지', '브랜드스토리', '인증/수상', '편의성/속도']
@@ -27,11 +26,11 @@ const PLANNING_STYLES = [
   { key: '스토리텔링형', desc: 'Hero → 브랜드스토리 → 소재설명 → 사용장면 → CTA' },
 ]
 const BRAND_TONES = ['따뜻한/감성적', '신뢰감/전문적', '힙/트렌디', '레트로/빈티지', '유머/B급', '고급스러운', '친근한/편안한']
-const EMPHASIS_POINTS = ['맛/향/품질', '원산지/성분', '가격/가성비', '편의성', '브랜드스토리', '인증/수상', '환경/윤리', '디자인/패키지']
+const EMPHASIS_POINTS = ['품질/성능', '원산지/성분', '가격/가성비', '편의성', '브랜드스토리', '인증/수상', '환경/윤리', '디자인/패키지']
 
 const EMPTY_QUIZ = {
   category: '', priceRange: '',
-  gender: '', ageGroup: '', motivation: '', decision: '',
+  gender: '', ageGroup: '', purchaseSituation: '',
   pricePosition: '', competition: '',
   differentiator: '', differentiatorTypes: [],
   planningStyle: '',
@@ -410,18 +409,19 @@ export default function App() {
   const [tabLoading, setTabLoading] = useState({})
   const [error, setError] = useState('')
 
+  // 새로고침 시 전체 초기화
+  useEffect(() => {
+    ;['cos_input','cos_quiz','cos_result_detail','cos_result_blog','cos_result_card',
+      'cos_card_data','cos_detail_data','cos_history'].forEach(k => {
+      try { localStorage.removeItem(k) } catch {}
+    })
+  }, [])
+
   // 공통 제품 정보
-  const [sharedInput, setSharedInput] = useState(() => {
-    try { return localStorage.getItem('cos_input') || '' } catch { return '' }
-  })
+  const [sharedInput, setSharedInput] = useState('')
 
   // 7단계 퀴즈
-  const [quiz, setQuiz] = useState(() => {
-    try {
-      const s = localStorage.getItem('cos_quiz')
-      return s ? { ...EMPTY_QUIZ, ...JSON.parse(s) } : { ...EMPTY_QUIZ }
-    } catch { return { ...EMPTY_QUIZ } }
-  })
+  const [quiz, setQuiz] = useState({ ...EMPTY_QUIZ })
 
   const updQuiz = useCallback((key, val) => setQuiz(q => ({ ...q, [key]: val })), [])
 
@@ -435,7 +435,7 @@ export default function App() {
 
   // 단계 완료 여부
   const step1Done = !!(sharedInput.trim() && quiz.category && quiz.priceRange)
-  const step2Done = !!(quiz.gender && quiz.ageGroup && quiz.motivation && quiz.decision)
+  const step2Done = !!(quiz.gender && quiz.ageGroup && quiz.purchaseSituation)
   const step3Done = !!(quiz.pricePosition && quiz.competition)
   const step4Done = !!(quiz.differentiator.trim())
   const step5Done = !!(quiz.planningStyle)
@@ -497,9 +497,7 @@ export default function App() {
   }, [])
 
   const [keywordContext, setKeywordContext] = useState('')
-  const [history, setHistory] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('cos_history') || '[]') } catch { return [] }
-  })
+  const [history, setHistory] = useState([])
   const [histOpen, setHistOpen] = useState(false)
   const [titleHover, setTitleHover] = useState(false)
 
@@ -726,11 +724,8 @@ export default function App() {
             <SubQ label="주 구매 연령대">
               <OptionBtns options={AGE_GROUPS} value={quiz.ageGroup} onChange={v => updQuiz('ageGroup', v)} />
             </SubQ>
-            <SubQ label="구매 동기">
-              <OptionBtns options={MOTIVATIONS} value={quiz.motivation} onChange={v => updQuiz('motivation', v)} />
-            </SubQ>
-            <SubQ label="구매 결정방식">
-              <OptionBtns options={DECISIONS} value={quiz.decision} onChange={v => updQuiz('decision', v)} />
+            <SubQ label="구매 상황">
+              <OptionBtns options={PURCHASE_SITUATIONS} value={quiz.purchaseSituation} onChange={v => updQuiz('purchaseSituation', v)} />
             </SubQ>
           </StepCard>
 
@@ -775,14 +770,14 @@ export default function App() {
 
           {/* ── STEP 6: 브랜드 톤 ── */}
           <StepCard stepNum={6} label="브랜드 톤" done={step6Done}>
-            <p style={{ fontSize: 11, color: C.fa, margin: '0 0 8px' }}>최대 3개 선택 ({quiz.brandTone.length}/3)</p>
-            <OptionBtns multi maxSelect={3} options={BRAND_TONES} value={quiz.brandTone} onChange={v => updQuiz('brandTone', v)} />
+            <p style={{ fontSize: 11, color: C.fa, margin: '0 0 8px' }}>최대 2개 선택 ({quiz.brandTone.length}/2)</p>
+            <OptionBtns multi maxSelect={2} options={BRAND_TONES} value={quiz.brandTone} onChange={v => updQuiz('brandTone', v)} />
           </StepCard>
 
           {/* ── STEP 7: 강조 포인트 ── */}
           <StepCard stepNum={7} label="강조 포인트" done={step7Done}>
-            <p style={{ fontSize: 11, color: C.fa, margin: '0 0 8px' }}>최대 3개 선택 ({quiz.emphasis.length}/3)</p>
-            <OptionBtns multi maxSelect={3} options={EMPHASIS_POINTS} value={quiz.emphasis} onChange={v => updQuiz('emphasis', v)} />
+            <p style={{ fontSize: 11, color: C.fa, margin: '0 0 8px' }}>최대 2개 선택 ({quiz.emphasis.length}/2)</p>
+            <OptionBtns multi maxSelect={2} options={EMPHASIS_POINTS} value={quiz.emphasis} onChange={v => updQuiz('emphasis', v)} />
           </StepCard>
 
           {/* ── 콘텐츠 유형 선택 + 생성하기 ── */}
