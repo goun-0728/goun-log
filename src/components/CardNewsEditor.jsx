@@ -143,6 +143,7 @@ function TextContent({ card, editing, onChangeText }) {
         contentEditable
         suppressContentEditableWarning
         onMouseDown={e => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
         onBlur={e => onChangeText?.(fieldKey, e.currentTarget.innerText)}
         dangerouslySetInnerHTML={{ __html: value || '' }}
         style={{ ...style, outline: 'none', borderBottom: '2px solid rgba(96,165,250,0.7)', cursor: 'text', minWidth: 40, whiteSpace: 'pre-wrap' }}
@@ -261,6 +262,7 @@ function CardContent({ card, editing, textBlockRef, onDragStart, isDragging, onC
         ref={textBlockRef}
         onMouseDown={editing ? onDragStart : undefined}
         onTouchStart={editing ? onDragStart : undefined}
+        onClick={editing ? e => e.stopPropagation() : undefined}
         style={{
           position: 'absolute',
           left: tx,

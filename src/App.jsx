@@ -781,9 +781,9 @@ export default function App() {
           </StepCard>
 
           {/* ── 콘텐츠 유형 선택 + 생성하기 ── */}
-          <div style={{ background: C.sur, borderRadius: 16, border: `1.5px solid ${allDone ? C.bd : '#FECACA'}`, overflow: 'hidden', marginBottom: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.05)' }}>
-            <div style={{ padding: '10px 16px', background: C.alt, borderBottom: `1px solid ${C.bd}` }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: C.mu }}>콘텐츠 유형 선택</span>
+          <div style={{ background: '#EFF6FF', borderRadius: 16, border: `1.5px solid ${allDone ? '#BFDBFE' : '#FECACA'}`, overflow: 'hidden', marginBottom: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.05)' }}>
+            <div style={{ padding: '10px 16px', background: '#DBEAFE', borderBottom: '1px solid #BFDBFE' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#1E40AF' }}>콘텐츠 유형 선택</span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: `repeat(${TASKS.length},1fr)`, gap: 8, padding: '10px 14px', borderBottom: `1px solid ${C.bd}` }}>
               {TASKS.map(t => {
