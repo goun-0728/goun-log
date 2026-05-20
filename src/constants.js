@@ -32,12 +32,14 @@ export const AUTO_DS = {
   HERO: '웜베이지', '문제 공감': '크림', '해결 제안': '포레스트그린',
   '특징 강조': '딥네이비', '사용 상황': '올리브', '비교': '슬레이트',
   '추천 대상': '웜베이지', CTA: '버건디', '브랜드 스토리': '웜베이지',
+  '소재설명': '크림', '인증/수상': '딥네이비', '사용 장면': '올리브',
 }
 
 export const AUTO_TPL = {
   HERO: 'hero', '문제 공감': 'material', '해결 제안': 'points3',
   '특징 강조': 'detail2col', '사용 상황': 'scene', '비교': 'compare',
   '추천 대상': 'target', CTA: 'cta', '브랜드 스토리': 'scene',
+  '소재설명': 'material', '인증/수상': 'points3', '사용 장면': 'scene',
 }
 
 export const TPL_LABELS = [
@@ -213,63 +215,148 @@ AI프롬프트: (브랜드 철학·스토리 감성 장면 — lifestyle photogr
 서브카피:
 버튼문구: (5자)
 AI프롬프트: (구매욕구 자극 감성샷 — product photography, [제품을 가장 매력적으로 보여주는 구도], [고급스러운 배경/소품], soft studio lighting with [빛의 방향], shot on Sony A7 50mm lens, shallow depth of field, [색감/분위기], ${_NO})`,
+
+  '소재설명': n => `[SECTION ${n} - 소재설명]
+메인카피:
+서브카피:
+포인트:
+•
+•
+•
+촬영기획:
+  - 장면:
+  - 분위기:
+  - 구도:
+AI프롬프트: (소재·성분·원료 클로즈업 — product photography, extreme close-up of [소재/원료], [자연스러운 배경], soft studio lighting diffused from above, shot on Sony A7 100mm macro lens, shallow depth of field, [색감/분위기], ${_NO})`,
+
+  '인증/수상': n => `[SECTION ${n} - 인증/수상]
+메인카피:
+서브카피:
+포인트:
+•
+•
+•
+AI프롬프트: (신뢰·인증 강조 장면 — product photography, [제품과 인증서/수상 배지 배치], [깔끔한 밝은 배경], soft studio lighting, shot on Sony A7 50mm lens, shallow depth of field, [색감/분위기], ${_NO})`,
+
+  '사용 장면': n => `[SECTION ${n} - 사용 장면]
+메인카피:
+서브카피:
+포인트:
+•
+•
+촬영기획:
+  - 장면:
+  - 분위기:
+  - 구도:
+AI프롬프트: (제품 활용 라이프스타일 장면 2 — lifestyle photography, [사용 중인 두 번째 구체적 장면], [생활 공간 배경], natural lighting from [방향], shot on Canon 5D Mark IV 35mm lens, shallow depth of field, [색감/분위기], ${_NO})`,
 }
 
-function _buildSections(emphasis = [], style = []) {
+function _buildSections(opts = {}) {
+  const { planningStyle } = opts
   let order
-  if (emphasis.includes('문제 해결')) {
-    order = ['HERO', '문제 공감', '해결 제안', '특징 강조', '비교', '추천 대상', 'CTA']
-  } else if (emphasis.includes('브랜드 스토리') || style.includes('스토리텔링')) {
-    order = ['HERO', '브랜드 스토리', '사용 상황', '추천 대상', 'CTA']
-  } else if (emphasis.includes('라이프스타일')) {
-    order = ['HERO', '사용 상황', '특징 강조', '추천 대상', '비교', 'CTA']
-  } else {
-    order = ['HERO', '문제 공감', '해결 제안', '특징 강조', '사용 상황', '비교', '추천 대상', 'CTA']
+  switch (planningStyle) {
+    case '문제해결형':   order = ['HERO', '문제 공감', '해결 제안', '특징 강조', '비교', 'CTA']; break
+    case '감성소구형':   order = ['HERO', '브랜드 스토리', '사용 상황', '추천 대상', 'CTA']; break
+    case '전문성강조형': order = ['HERO', '소재설명', '특징 강조', '인증/수상', 'CTA']; break
+    case '라이프스타일형': order = ['HERO', '사용 상황', '사용 장면', '추천 대상', 'CTA']; break
+    case '비교우위형':   order = ['HERO', '문제 공감', '비교', '특징 강조', 'CTA']; break
+    case '스토리텔링형': order = ['HERO', '브랜드 스토리', '소재설명', '사용 상황', 'CTA']; break
+    default: order = ['HERO', '문제 공감', '해결 제안', '특징 강조', '사용 상황', '비교', '추천 대상', 'CTA']
   }
   return order.map((name, i) => _S[name](i + 1)).join('\n\n')
 }
 
-function _buildCustomBlock(target = [], style = [], emphasis = []) {
-  if (!target.length && !style.length && !emphasis.length) return ''
-  const styleMap = {
-    '신뢰/전문성 강조': '전문적·신뢰감 있는 문체, 근거·수치 중심, 권위 있는 어조',
-    '따뜻한 감성': '따뜻하고 감성적인 문체, 공감과 위로 중심, 부드러운 어휘',
-    '힙하고 트렌디': 'MZ세대 감성, 짧고 임팩트 있는 카피, 세련되고 현대적인 표현',
-    '레트로/빈티지': '레트로·빈티지 감성, 향수와 정서를 자극하는 클래식한 어휘',
-    'B급/유머': 'B급 감성과 유머, 재치 있는 표현, 예상치 못한 웃음 포인트',
-    '스토리텔링': '서사 중심 구성, 브랜드·제품의 이야기를 스토리 형식으로 전개',
-  }
-  const emphasisMap = {
-    '원산지/성분/소재': '원산지·성분·소재의 품질과 안전성을 섹션 전반에 구체적으로 강조',
-    '맛/향/품질': '맛·향·품질의 차별점을 감각적이고 생생한 묘사로 표현',
-    '가격 대비 가치': '가격 대비 우수한 가치·실용성을 명확한 근거로 제시',
-    '브랜드 스토리': '브랜드의 철학·역사·스토리를 중심으로 신뢰와 감성 구축',
-    '문제 해결': '고객 불편함→문제→해결 흐름을 극적으로 구성',
-    '라이프스타일': '제품을 사용하는 일상 장면과 라이프스타일 이미지를 중심으로',
-  }
+const _TONE_MAP = {
+  '따뜻한/감성적': '따뜻하고 감성적인 문체, 공감과 위로 중심, 부드러운 어휘',
+  '신뢰감/전문적': '전문적·신뢰감 있는 문체, 근거·수치 중심, 권위 있는 어조',
+  '힙/트렌디': 'MZ세대 감성, 짧고 임팩트 있는 카피, 세련되고 현대적인 표현',
+  '레트로/빈티지': '레트로·빈티지 감성, 향수와 정서를 자극하는 클래식한 어휘',
+  '유머/B급': 'B급 감성과 유머, 재치 있는 표현, 예상치 못한 웃음 포인트',
+  '고급스러운': '고급스럽고 세련된 문체, 품격 있는 어조, 감각적인 표현',
+  '친근한/편안한': '친근하고 편안한 문체, 가까운 친구처럼 이야기하는 어조',
+}
+const _EMPH_MAP = {
+  '맛/향/품질': '맛·향·품질의 차별점을 감각적이고 생생하게 표현',
+  '원산지/성분': '원산지·성분의 품질과 안전성을 구체적으로 강조',
+  '가격/가성비': '가격 대비 우수한 가치와 실용성을 명확한 근거로 제시',
+  '편의성': '사용 편리성·시간 절약·간편함을 전면에 강조',
+  '브랜드스토리': '브랜드의 철학·역사·스토리를 중심으로 신뢰와 감성 구축',
+  '인증/수상': '인증·수상 이력을 근거로 품질 신뢰 강조',
+  '환경/윤리': '친환경·윤리적 생산·지속가능성 가치를 강조',
+  '디자인/패키지': '디자인과 패키지의 감성과 차별점 강조',
+}
+
+function _buildCustomBlock(opts = {}) {
+  const {
+    category, priceRange,
+    gender, ageGroup, motivation, decision,
+    pricePosition, competition,
+    differentiator, differentiatorTypes = [],
+    planningStyle, brandTone = [], emphasis = [],
+  } = opts
   const lines = ['━━━ 맞춤 기획 설정 ━━━']
-  if (target.length) {
-    lines.push(`■ 타겟 고객: ${target.join(', ')}`)
-    lines.push(`  → 이 타겟의 구매 동기·관심사·언어에 맞게 카피와 섹션 내용 작성`)
+
+  if (category || priceRange) {
+    const parts = [category, priceRange].filter(Boolean)
+    lines.push(`■ 제품 카테고리/가격대: ${parts.join(' / ')}`)
   }
-  if (style.length) {
-    lines.push(`■ 페이지 톤&매너: ${style.join(', ')}`)
-    lines.push(`  → ${style.map(s => styleMap[s] || s).join(' / ')}`)
+
+  const targetParts = [gender, ageGroup].filter(Boolean)
+  if (targetParts.length || motivation || decision) {
+    if (targetParts.length) lines.push(`■ 타겟 고객: ${targetParts.join(' ')} 중심`)
+    if (motivation) lines.push(`  구매 동기: ${motivation}`)
+    if (decision) lines.push(`  구매 결정방식: ${decision} 위주`)
+    lines.push(`  → 이 타겟의 언어·관심사·구매 심리에 맞게 카피 작성`)
   }
+
+  if (pricePosition || competition) {
+    const pp = [pricePosition, competition].filter(Boolean)
+    lines.push(`■ 시장 포지션: ${pp.join(' / ')}`)
+  }
+
+  if (differentiator) {
+    lines.push(`■ 핵심 차별점: ${differentiator}`)
+    if (differentiatorTypes.length) lines.push(`  차별점 유형: ${differentiatorTypes.join(', ')}`)
+    lines.push(`  → 비교·특징 섹션에 이 차별점을 구체적으로 활용`)
+  }
+
+  if (planningStyle) {
+    lines.push(`■ 기획 방식: ${planningStyle} → 아래 섹션 순서대로 작성`)
+  }
+
+  if (brandTone.length) {
+    lines.push(`■ 브랜드 톤: ${brandTone.join(', ')}`)
+    lines.push(`  → ${brandTone.map(t => _TONE_MAP[t] || t).join(' / ')}`)
+    lines.push(`  → 모든 카피와 섹션에 이 톤을 일관되게 반영`)
+  }
+
   if (emphasis.length) {
-    lines.push(`■ 핵심 강조점: ${emphasis.join(', ')}`)
-    lines.push(`  → ${emphasis.map(e => emphasisMap[e] || e).join(' / ')}`)
-    lines.push(`  → 섹션 구성·카피·AI프롬프트 전반에 이 강조점을 최우선 반영`)
+    lines.push(`■ 강조 포인트: ${emphasis.join(', ')}`)
+    lines.push(`  → ${emphasis.map(e => _EMPH_MAP[e] || e).join(' / ')}`)
+    lines.push(`  → 카피·섹션 구성 전반에 이 강조점을 최우선 반영`)
   }
+
   lines.push('━━━━━━━━━━━━━━━━━━')
   return lines.join('\n')
 }
 
+function _buildQuizContext(opts = {}) {
+  const { gender, ageGroup, motivation, brandTone = [], emphasis = [] } = opts
+  const parts = []
+  const target = [gender, ageGroup].filter(Boolean)
+  if (target.length) parts.push(`타겟: ${target.join(' ')} 중심${motivation ? ', ' + motivation : ''}`)
+  if (brandTone.length) parts.push(`톤: ${brandTone.join('·')}`)
+  if (emphasis.length) parts.push(`강조: ${emphasis.join('·')}`)
+  return parts.length ? `[참고 컨텍스트] ${parts.join(' / ')}\n위 정보를 참고해 콘텐츠 톤과 타겟 언어를 조정하세요.\n\n` : ''
+}
+
 // 시스템 프롬프트
 export function getSys(id, tone = '생활형', opts = {}) {
+  const ctx = _buildQuizContext(opts)
+
   if (id === 'blog') return `당신은 네이버 블로그 마케팅 전문가입니다.
 말투: ${tone}. 최소 1500자. AI티 완전 제거. 실제 사람이 쓴 느낌. 광고 문체 금지.
-
+${ctx}
 반드시 아래 형식만 출력:
 ▼ 제목 후보
 1.
@@ -287,7 +374,7 @@ export function getSys(id, tone = '생활형', opts = {}) {
 (10개)`
 
   if (id === 'card') return `당신은 인스타그램 카드뉴스 기획 전문가입니다.
-
+${ctx}
 반드시 아래 형식만 출력:
 ▼ 콘텐츠 컨셉
 ▼ 카드 구성
@@ -331,9 +418,8 @@ export function getSys(id, tone = '생활형', opts = {}) {
 (15개)`
 
   // 상세페이지
-  const { target = [], style = [], emphasis = [] } = opts
-  const customBlock = _buildCustomBlock(target, style, emphasis)
-  const sectionsBlock = _buildSections(emphasis, style)
+  const customBlock = _buildCustomBlock(opts)
+  const sectionsBlock = _buildSections(opts)
 
   return `당신은 스마트스토어 상세페이지 전문 기획자 겸 카피라이터입니다.
 제품 정보를 바탕으로 기획안을 작성합니다.
