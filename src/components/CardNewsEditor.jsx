@@ -450,12 +450,15 @@ function CardEditor({ card, idx, onUpdate }) {
               </div>
             </div>
 
-            {/* 사진 없을 때 클릭 업로드 오버레이 */}
+            {/* 사진 없을 때 업로드 힌트 — 오버레이 자체는 pointerEvents:none, badge만 클릭 가능 */}
             {editing && !dr.image && (
-              <div onClick={() => fileRef.current?.click()}
-                style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', zIndex: 10, pointerEvents: 'auto' }}>
-                <span style={{ fontSize: 28, opacity: 0.5 }}>📷</span>
-                <span style={{ fontSize: 11, color: '#222222', fontWeight: 600, background: '#e0e0e0', padding: '4px 14px', borderRadius: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>클릭해서 사진 업로드</span>
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', paddingBottom: '12%', gap: 8, zIndex: 10, pointerEvents: 'none' }}>
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, background: 'rgba(0,0,0,0.55)', border: 'none', borderRadius: 14, padding: '12px 22px', cursor: 'pointer', pointerEvents: 'auto' }}>
+                  <span style={{ fontSize: 22, lineHeight: 1 }}>📷</span>
+                  <span style={{ fontSize: 11, color: '#fff', fontWeight: 600, whiteSpace: 'nowrap' }}>사진 업로드</span>
+                </button>
               </div>
             )}
 
