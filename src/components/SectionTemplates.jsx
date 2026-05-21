@@ -9,6 +9,7 @@ export const FONT_OPTS = [
   { l: '고딕A1',   v: "'Gothic A1', sans-serif" },
   { l: '도현',     v: "'Do Hyeon', sans-serif" },
   { l: '제주고딕', v: "'Jeju Gothic', sans-serif" },
+  { l: '검은고딕', v: "'Black Han Sans', sans-serif" },
 ]
 
 export const SHAPE_DEFS = [
@@ -126,7 +127,7 @@ function getTS(s, field, def = {}) {
     fontSize:      stored.fontSize      ?? def.fontSize      ?? 18,
     color:         stored.color         ?? def.color         ?? '#111',
     fontFamily:    stored.fontFamily    ?? def.fontFamily    ?? "'Nanum Gothic', sans-serif",
-    fontWeight:    def.fontWeight,
+    fontWeight:    stored.bold ? 700 : (def.fontWeight ?? 400),
     lineHeight:    def.lineHeight    || 1.6,
     letterSpacing: def.letterSpacing || 'normal',
     wordBreak: 'keep-all',
@@ -233,10 +234,10 @@ export function TplFullHero({ s, img, t, editing, onChange, secMeta, onSecMeta, 
   const imgNode = img || (editing ? 'slot' : null)
   return (
     <div style={{ width: CARD_W, background: t.bg, overflow: 'hidden' }}>
-      <div style={{ position: 'relative', height: 720 }}>
+      <div style={{ position: 'relative', height: 1529 }}>
         {imgNode
           ? <ImgBox url={imgNode} t={t} editing={editing} onImgChange={v => onChange('secImg', v)}
-              imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} fixedH={720} fitMode="cover" />
+              imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} fixedH={1529} fitMode="cover" />
           : <div style={{ height: 720, background: `linear-gradient(135deg, ${t.ac}66 0%, ${t.bg} 100%)` }} />
         }
         {/* 그라데이션 오버레이 */}
@@ -352,15 +353,6 @@ export function TplLeftRight({ s, img, t, editing, onChange, secMeta, onSecMeta,
           </div>
         ))}
       </div>
-      {editing && (
-        <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
-          <button onClick={addPt} style={{ ...addBtnStyle, flex: 1, padding: '10px 0', fontSize: 12 }}>+ 항목 추가</button>
-          <button onClick={() => onChange('flipped', !flipped)}
-            style={{ padding: '10px 14px', fontSize: 11, borderRadius: 7, border: '1px solid #3b82f6', background: '#EFF6FF', color: '#1d4ed8', cursor: 'pointer', fontWeight: 700 }}>
-            ⇄ 좌우반전
-          </button>
-        </div>
-      )}
     </div>
   )
 
@@ -427,11 +419,6 @@ export function TplPoints3Icon({ s, img, t, editing, onChange, secMeta, onSecMet
             )
           })}
         </div>
-        {editing && (
-          <div style={{ textAlign: 'center', marginTop: 24 }}>
-            <button onClick={addPt} style={addBtnStyle}>+ 포인트 추가</button>
-          </div>
-        )}
       </div>
     </div>
   )
@@ -508,8 +495,8 @@ export function TplHowTo({ s, img, t, editing, onChange, secMeta, onSecMeta, onF
 
   return (
     <div style={{ width: CARD_W, background: t.bg }}>
-      {/* 로고/제목 헤더 */}
-      <div style={{ padding: '56px 72px 48px', textAlign: 'center', borderBottom: `1px solid ${t.bd}` }}>
+      {/* 로고/제목 헤더 — 대비색 박스 배경 */}
+      <div style={{ padding: '56px 72px 48px', textAlign: 'center', background: t.fg }}>
         {(s.description || editing) && (
           <div style={{ marginBottom: 14 }}>
             <ET s={s} field="description" editing={editing} onChange={onChange} onFocus={onFieldFocus}
@@ -518,7 +505,7 @@ export function TplHowTo({ s, img, t, editing, onChange, secMeta, onSecMeta, onF
           </div>
         )}
         <ET s={s} field="mainCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-          def={{ fontSize: 40, color: t.fg, fontWeight: 900, lineHeight: 1.3, letterSpacing: '-0.02em' }} />
+          def={{ fontSize: 40, color: t.bg, fontWeight: 900, lineHeight: 1.3, letterSpacing: '-0.02em' }} />
       </div>
 
       {/* 큰 이미지 */}
@@ -558,9 +545,6 @@ export function TplHowTo({ s, img, t, editing, onChange, secMeta, onSecMeta, onF
             </div>
           )
         })}
-        {editing && (
-          <button onClick={addPt} style={{ ...addBtnStyle, width: '100%', marginTop: 16, padding: '12px 0' }}>+ 항목 추가</button>
-        )}
       </div>
     </div>
   )
@@ -632,12 +616,6 @@ export function TplCompare({ s, img, t, editing, onChange, secMeta, onSecMeta, o
               </div>
             )
           })}
-          {editing && (
-            <button onClick={addPt}
-              style={{ width:'100%',padding:'14px 0',fontSize:13,fontWeight:600,border:'none',borderTop:`1px dashed ${t.bd}`,background:'#fafaf8',color:t.ac,cursor:'pointer' }}>
-              + 행 추가
-            </button>
-          )}
         </div>
       </div>
 
@@ -738,12 +716,6 @@ export function TplSpecTable({ s, img, t, editing, onChange, onFieldFocus }) {
             })}
           </tbody>
         </table>
-        {editing && (
-          <button onClick={addRow}
-            style={{ marginTop:16,width:'100%',padding:'11px 0',fontSize:13,fontWeight:600,border:'1.5px dashed #ccc',borderRadius:8,background:'transparent',color:'#888',cursor:'pointer' }}>
-            + 항목 추가
-          </button>
-        )}
       </div>
     </div>
   )
