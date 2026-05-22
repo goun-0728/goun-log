@@ -14,7 +14,23 @@ function getGradCSS(grad, t) {
 
 function OverlayTextBlock({ ot, containerRef, onUpdate, onRemove, isActive, onSelect }) {
   const [dragging, setDragging] = useState(false)
+  const [resizing, setResizing] = useState(false)
   const startRef = useRef(null)
+  const rsRef    = useRef(null)
+
+  useEffect(() => {
+    if (!resizing) return
+    const onMove = e => {
+      const { startY, startSize } = rsRef.current
+      const dy = e.clientY - startY
+      const newSize = Math.max(10, Math.min(120, Math.round(startSize + dy / 4)))
+      onUpdate({ ...ot, style: { ...(ot.style || {}), fontSize: newSize } })
+    }
+    const onUp = () => setResizing(false)
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
+  }, [resizing]) // eslint-disable-line
 
   useEffect(() => {
     if (!dragging) return
@@ -74,15 +90,25 @@ function OverlayTextBlock({ ot, containerRef, onUpdate, onRemove, isActive, onSe
         dangerouslySetInnerHTML={{ __html: ot.text || '텍스트' }}
       />
       {isActive && (
-        <button
-          onClick={e => { e.stopPropagation(); onRemove(ot.id) }}
-          style={{
-            position:'absolute', top:-10, right:-10, width:20, height:20,
-            borderRadius:'50%', background:'#ef4444', border:'none', color:'#fff',
-            fontSize:13, fontWeight:700, cursor:'pointer',
-            display:'flex', alignItems:'center', justifyContent:'center', zIndex:20,
-          }}
-        >×</button>
+        <>
+          <button
+            onClick={e => { e.stopPropagation(); onRemove(ot.id) }}
+            style={{
+              position:'absolute', top:-10, right:-10, width:20, height:20,
+              borderRadius:'50%', background:'#ef4444', border:'none', color:'#fff',
+              fontSize:13, fontWeight:700, cursor:'pointer',
+              display:'flex', alignItems:'center', justifyContent:'center', zIndex:20,
+            }}
+          >×</button>
+          <div
+            style={{ position:'absolute', bottom:-6, right:-6, width:12, height:12, borderRadius:2, background:'#3b82f6', cursor:'se-resize', zIndex:20, border:'1.5px solid #fff', boxShadow:'0 1px 4px rgba(0,0,0,0.25)' }}
+            onMouseDown={e => {
+              e.preventDefault(); e.stopPropagation()
+              rsRef.current = { startY: e.clientY, startSize: ot.style?.fontSize ?? 24 }
+              setResizing(true)
+            }}
+          />
+        </>
       )}
     </div>
   )

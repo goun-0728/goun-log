@@ -3,6 +3,14 @@ import React, { useRef, useState, useEffect, useCallback } from 'react'
 
 const CARD_W = 860
 
+const SAMPLE_IMGS = [
+  'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800',
+  'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800',
+  'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800',
+  'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800',
+  'https://images.unsplash.com/photo-1585386959984-a4155224a1ad?w=800',
+]
+
 export const FONT_OPTS = [
   { l: '나눔고딕', v: "'Nanum Gothic', sans-serif" },
   { l: '나눔명조', v: "'Nanum Myeongjo', serif" },
@@ -88,6 +96,7 @@ export function ImageAdjust({ url, editing, imgMeta, onMetaChange, fixedH, fitMo
 /* ── ImgBox: 이미지 슬롯 (업로드 + ImageAdjust 통합) ── */
 export function ImgBox({ url, t, editing, onImgChange, minH = 320, imgMeta, onMetaChange, fixedH, fitMode }) {
   const ref = useRef(null)
+  const sampleRef = useRef(SAMPLE_IMGS[Math.floor(Math.random() * SAMPLE_IMGS.length)])
   const handleFile = e => {
     const f = e.target.files[0]; if (!f || !onImgChange) return
     const fr = new FileReader()
@@ -99,8 +108,9 @@ export function ImgBox({ url, t, editing, onImgChange, minH = 320, imgMeta, onMe
     <div style={{ position:'relative', height: fixedH || minH, overflow:'hidden' }}>
       <input ref={ref} type="file" accept="image/*" onChange={handleFile} style={{ display:'none' }} />
       <img
-        src="/smile.svg"
+        src={sampleRef.current}
         alt=""
+        crossOrigin="anonymous"
         style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}
       />
       <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.08)' }}>
@@ -144,18 +154,52 @@ function getTS(s, field, def = {}) {
   }
 }
 
-/* ── ET: 클릭하면 인라인 편집되는 텍스트 ── */
+/* ── ET: 클릭하면 인라인 편집 + 모서리 리사이즈 핸들 ── */
 function ET({ s, field, editing, onChange, onFocus, def = {}, style: extra = {} }) {
   const st  = { ...getTS(s, field, def), ...extra }
   const val = s[field] || ''
+  const [hovered,  setHovered]  = useState(false)
+  const [resizing, setResizing] = useState(false)
+  const rsRef = useRef(null)
+
+  useEffect(() => {
+    if (!resizing) return
+    const onMove = e => {
+      const { startY, startSize, snapStyles } = rsRef.current
+      const dy = e.clientY - startY
+      const newSize = Math.max(10, Math.min(120, Math.round(startSize + dy / 4)))
+      onChange('textStyles', { ...snapStyles, [field]: { ...(snapStyles[field] || {}), fontSize: newSize } })
+    }
+    const onUp = () => setResizing(false)
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
+  }, [resizing]) // eslint-disable-line
+
   if (!editing) return <div style={st}>{val}</div>
   return (
-    <div contentEditable suppressContentEditableWarning
-      onFocus={() => onFocus?.(field)}
-      onBlur={e => onChange(field, e.currentTarget.innerText)}
-      style={{ ...st, outline: 'none', borderBottom: '1.5px dashed rgba(59,130,246,0.55)', minHeight: 20, cursor: 'text' }}
-      dangerouslySetInnerHTML={{ __html: val }}
-    />
+    <div
+      style={{ position: 'relative', display: extra.display || 'block' }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div contentEditable suppressContentEditableWarning
+        onFocus={() => onFocus?.(field)}
+        onBlur={e => onChange(field, e.currentTarget.innerText)}
+        style={{ ...st, display: undefined, outline: 'none', borderBottom: '1.5px dashed rgba(59,130,246,0.55)', minHeight: 20, cursor: 'text' }}
+        dangerouslySetInnerHTML={{ __html: val }}
+      />
+      {(hovered || resizing) && (
+        <div
+          style={{ position:'absolute', bottom:-6, right:-6, width:12, height:12, borderRadius:2, background:'#3b82f6', cursor:'se-resize', zIndex:30, border:'1.5px solid #fff', boxShadow:'0 1px 4px rgba(0,0,0,0.25)' }}
+          onMouseDown={e => {
+            e.preventDefault(); e.stopPropagation()
+            rsRef.current = { startY: e.clientY, startSize: st.fontSize, snapStyles: s.textStyles || {} }
+            setResizing(true)
+          }}
+        />
+      )}
+    </div>
   )
 }
 
@@ -167,8 +211,25 @@ function DragET({ s, field, editing, onChange, onFocus, def = {} }) {
   const st      = getTS(s, field, def)
   const val     = s[field] || ''
   const dragRef = useRef(null)
-  const [dragging, setDragging] = useState(false)
+  const [dragging,  setDragging]  = useState(false)
+  const [hdHovered, setHdHovered] = useState(false)
+  const [resizing,  setResizing]  = useState(false)
   const startRef = useRef(null)
+  const rsRef    = useRef(null)
+
+  useEffect(() => {
+    if (!resizing) return
+    const onMove = e => {
+      const { startY, startSize, snapStyles } = rsRef.current
+      const dy = e.clientY - startY
+      const newSize = Math.max(10, Math.min(120, Math.round(startSize + dy / 4)))
+      onChange('textStyles', { ...snapStyles, [field]: { ...(snapStyles[field] || {}), fontSize: newSize } })
+    }
+    const onUp = () => setResizing(false)
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
+  }, [resizing]) // eslint-disable-line
 
   const setPos = useCallback((x, y) => {
     onChange('textStyles', {
@@ -207,6 +268,8 @@ function DragET({ s, field, editing, onChange, onFocus, def = {} }) {
         outline: editing ? '1px dashed rgba(255,255,255,0.45)' : 'none' }}
       onMouseDown={onMD}
       onClick={() => editing && onFocus?.(field)}
+      onMouseEnter={() => setHdHovered(true)}
+      onMouseLeave={() => setHdHovered(false)}
     >
       {editing
         ? <div contentEditable suppressContentEditableWarning
@@ -217,6 +280,16 @@ function DragET({ s, field, editing, onChange, onFocus, def = {} }) {
           />
         : <div style={{ ...st, textShadow: '0 2px 14px rgba(0,0,0,0.9)' }}>{val}</div>
       }
+      {editing && (hdHovered || resizing) && (
+        <div
+          style={{ position:'absolute', bottom:-6, right:-6, width:12, height:12, borderRadius:2, background:'#3b82f6', cursor:'se-resize', zIndex:30, border:'1.5px solid #fff', boxShadow:'0 1px 4px rgba(0,0,0,0.25)' }}
+          onMouseDown={e => {
+            e.preventDefault(); e.stopPropagation()
+            rsRef.current = { startY: e.clientY, startSize: st.fontSize, snapStyles: s.textStyles || {} }
+            setResizing(true)
+          }}
+        />
+      )}
     </div>
   )
 }
@@ -259,7 +332,7 @@ export function TplFullHero({ s, img, t, editing, onChange, secMeta, onSecMeta, 
             def={{ x: 74, y: 3, fontSize: 12, color: '#fff', fontWeight: 700, letterSpacing: '0.15em' }} />
         )}
         <DragET s={s} field="subCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-          def={{ x: 6, y: 58, fontSize: 17, color: 'rgba(255,255,255,0.88)', lineHeight: 1.7 }} />
+          def={{ x: 6, y: 58, fontSize: 28, color: 'rgba(255,255,255,0.88)', lineHeight: 1.5 }} />
         <DragET s={s} field="mainCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
           def={{ x: 6, y: 68, fontSize: 54, color: '#fff', fontWeight: 900, lineHeight: 1.18, letterSpacing: '-0.025em' }} />
       </div>
@@ -289,7 +362,7 @@ export function TplTopBottom({ s, img, t, editing, onChange, secMeta, onSecMeta,
             def={{ fontSize: 48, color: t.fg, fontWeight: 900, lineHeight: 1.22, letterSpacing: '-0.025em' }} />
         </div>
         <ET s={s} field="subCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-          def={{ fontSize: 17, color: t.fg, lineHeight: 1.82 }}
+          def={{ fontSize: 28, color: t.fg, lineHeight: 1.62 }}
           style={{ opacity: 0.73, maxWidth: 540 }} />
       </div>
       {/* 하단: 이미지 */}
@@ -341,11 +414,11 @@ export function TplLeftRight({ s, img, t, editing, onChange, secMeta, onSecMeta,
       )}
       <div style={{ marginBottom: 16 }}>
         <ET s={s} field="mainCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-          def={{ fontSize: 34, color: t.fg, fontWeight: 900, lineHeight: 1.28, letterSpacing: '-0.02em' }} />
+          def={{ fontSize: 48, color: t.fg, fontWeight: 900, lineHeight: 1.22, letterSpacing: '-0.025em' }} />
       </div>
       <div style={{ marginBottom: 28 }}>
         <ET s={s} field="subCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-          def={{ fontSize: 15, color: t.fg, lineHeight: 1.82 }}
+          def={{ fontSize: 28, color: t.fg, lineHeight: 1.55 }}
           style={{ opacity: 0.7 }} />
       </div>
       <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -398,10 +471,10 @@ export function TplPoints3Icon({ s, img, t, editing, onChange, secMeta, onSecMet
       <div style={{ padding: '60px 64px 28px', textAlign: 'center' }}>
         <div style={{ marginBottom: 14 }}>
           <ET s={s} field="mainCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ fontSize: 40, color: t.fg, fontWeight: 900, lineHeight: 1.28, letterSpacing: '-0.025em' }} />
+            def={{ fontSize: 48, color: t.fg, fontWeight: 900, lineHeight: 1.22, letterSpacing: '-0.025em' }} />
         </div>
         <ET s={s} field="subCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-          def={{ fontSize: 17, color: t.fg, lineHeight: 1.78 }}
+          def={{ fontSize: 28, color: t.fg, lineHeight: 1.55 }}
           style={{ opacity: 0.62 }} />
       </div>
       <div style={{ padding: '20px 48px 80px' }}>
@@ -450,12 +523,12 @@ export function TplStory({ s, img, t, editing, onChange, secMeta, onSecMeta, onF
         </div>
         <div style={{ marginBottom: 40 }}>
           <ET s={s} field="subCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ fontSize: 18, color: t.fg, lineHeight: 1.92 }}
+            def={{ fontSize: 28, color: t.fg, lineHeight: 1.6 }}
             style={{ opacity: 0.78 }} />
         </div>
         {(s.description || editing) && (
           <ET s={s} field="description" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ fontSize: 16, color: t.fg, lineHeight: 1.88 }}
+            def={{ fontSize: 20, color: t.fg, lineHeight: 1.88 }}
             style={{ opacity: 0.58 }} />
         )}
       </div>
@@ -514,7 +587,7 @@ export function TplHowTo({ s, img, t, editing, onChange, secMeta, onSecMeta, onF
           </div>
         )}
         <ET s={s} field="mainCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-          def={{ fontSize: 40, color: t.bg, fontWeight: 900, lineHeight: 1.3, letterSpacing: '-0.02em' }} />
+          def={{ fontSize: 48, color: t.bg, fontWeight: 900, lineHeight: 1.22, letterSpacing: '-0.025em' }} />
       </div>
 
       {/* 큰 이미지 */}
@@ -527,7 +600,7 @@ export function TplHowTo({ s, img, t, editing, onChange, secMeta, onSecMeta, onF
       {(s.subCopy || editing) && (
         <div style={{ padding: '40px 72px 20px' }}>
           <ET s={s} field="subCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ fontSize: 22, color: t.fg, fontWeight: 700, lineHeight: 1.45, letterSpacing: '-0.01em' }} />
+            def={{ fontSize: 28, color: t.fg, fontWeight: 700, lineHeight: 1.4, letterSpacing: '-0.01em' }} />
         </div>
       )}
 
@@ -576,10 +649,10 @@ export function TplCompare({ s, img, t, editing, onChange, secMeta, onSecMeta, o
       <div style={{ padding: '64px 64px 48px', textAlign: 'center' }}>
         <div style={{ marginBottom: 16 }}>
           <ET s={s} field="mainCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ fontSize: 44, color: t.fg, fontWeight: 900, lineHeight: 1.26, letterSpacing: '-0.025em' }} />
+            def={{ fontSize: 48, color: t.fg, fontWeight: 900, lineHeight: 1.22, letterSpacing: '-0.025em' }} />
         </div>
         <ET s={s} field="subCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-          def={{ fontSize: 17, color: t.fg, lineHeight: 1.78 }}
+          def={{ fontSize: 28, color: t.fg, lineHeight: 1.55 }}
           style={{ opacity: 0.62 }} />
       </div>
 
@@ -677,7 +750,7 @@ export function TplSpecTable({ s, img, t, editing, onChange, onFieldFocus }) {
         )}
         <div style={{ marginBottom: 8 }}>
           <ET s={s} field="mainCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ fontSize: 30, color: '#111', fontWeight: 900, letterSpacing: '-0.02em' }} />
+            def={{ fontSize: 48, color: '#111', fontWeight: 900, letterSpacing: '-0.025em' }} />
         </div>
         {(s.subCopy || editing) && (
           <ET s={s} field="subCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}

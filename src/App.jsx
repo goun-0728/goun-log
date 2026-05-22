@@ -174,7 +174,7 @@ function AddBetweenHover({ onClick, loading }) {
 
 /* ── Canva 우측 편집 패널 ────────────────────────────── */
 function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, onAddOverlay, onAddSection, dlAll, onDlAll, onDlSection }) {
-  const panelStyle = { position:'fixed', right:0, top:52, width:340, height:'calc(100vh - 52px)', zIndex:50, background:'#fff', boxShadow:'-4px 0 24px rgba(0,0,0,0.1)', display:'flex', flexDirection:'column', overflow:'hidden' }
+  const panelStyle = { width:'100%', height:'calc(100vh - 52px)', background:'#fff', boxShadow:'-4px 0 24px rgba(0,0,0,0.1)', display:'flex', flexDirection:'column', overflow:'hidden' }
 
   if (sec === null || idx === null) {
     return (
@@ -219,7 +219,7 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, 
   }
 
   return (
-    <div style={{ position:'fixed', right:0, top:52, width:340, height:'calc(100vh - 52px)', zIndex:50, background:'#fff', boxShadow:'-4px 0 24px rgba(0,0,0,0.1)', display:'flex', flexDirection:'column', overflow:'hidden' }}>
+    <div style={panelStyle}>
 
       {/* 헤더 */}
       <div style={{ padding:'10px 14px', borderBottom:`1px solid ${C.bd}`, background:'#F8FAFF', flexShrink:0 }}>
@@ -712,46 +712,48 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
       )}
 
       {sects.length > 0 && (
-        <>
-          {/* 캔바 스타일 캔버스 — 회색 배경, 860px 중앙 페이지 */}
-          <div
-            style={{ margin:'0 -20px', background:'#F5F2ED', paddingTop:32, paddingBottom:60, paddingRight:340 }}
-            onClick={() => setSelectedIdx(null)}
-          >
-            <div
-              style={{ width:'100%', maxWidth:640, margin:'0 auto', boxShadow:'0 8px 48px rgba(0,0,0,0.15)' }}
-              onClick={e => e.stopPropagation()}
+        <div style={{ margin:'0 -20px', background:'#F5F2ED', paddingTop:32, paddingBottom:60 }}>
+          <div style={{ display:'flex', alignItems:'flex-start' }}>
+            {/* 캔버스 */}
+            <div style={{ flex:1, minWidth:0, padding:'0 20px' }}
+              onClick={() => setSelectedIdx(null)}
             >
-              {sects.map((s, i) => (
-                <SectionEditor
-                  key={s._id || i}
-                  sec={s} idx={i} onUpdate={upd}
-                  isSelected={selectedIdx === i}
-                  onSelect={selectSection}
-                  activeField={selectedIdx === i ? activeField : null}
-                  onActiveFieldChange={f => { setActiveField(f); setActiveOverlay(null) }}
-                  activeOverlay={selectedIdx === i ? activeOverlay : null}
-                  onActiveOverlayChange={id => { setActiveOverlay(id); setActiveField(null) }}
-                />
-              ))}
+              <div
+                style={{ maxWidth:640, margin:'0 auto', boxShadow:'0 8px 48px rgba(0,0,0,0.15)' }}
+                onClick={e => e.stopPropagation()}
+              >
+                {sects.map((s, i) => (
+                  <SectionEditor
+                    key={s._id || i}
+                    sec={s} idx={i} onUpdate={upd}
+                    isSelected={selectedIdx === i}
+                    onSelect={selectSection}
+                    activeField={selectedIdx === i ? activeField : null}
+                    onActiveFieldChange={f => { setActiveField(f); setActiveOverlay(null) }}
+                    activeOverlay={selectedIdx === i ? activeOverlay : null}
+                    onActiveOverlayChange={id => { setActiveOverlay(id); setActiveField(null) }}
+                  />
+                ))}
+              </div>
+            </div>
+            {/* 스티키 편집 패널 */}
+            <div style={{ width:340, flexShrink:0, position:'sticky', top:52, alignSelf:'flex-start' }}>
+              <CanvaPanel
+                sec={selectedIdx !== null ? sects[selectedIdx] : null}
+                idx={selectedIdx}
+                onUpdate={upd}
+                onDelete={() => selectedIdx !== null && setDeleteConfirm(selectedIdx)}
+                onAddSection={() => setAddModal(selectedIdx ?? sects.length - 1)}
+                activeField={activeField}
+                activeOverlay={activeOverlay}
+                onAddOverlay={addOverlay}
+                dlAll={dlAll}
+                onDlAll={dlAllPNG}
+                onDlSection={dlSectionPNG}
+              />
             </div>
           </div>
-
-          {/* 오른쪽 고정 편집 패널 */}
-          <CanvaPanel
-            sec={selectedIdx !== null ? sects[selectedIdx] : null}
-            idx={selectedIdx}
-            onUpdate={upd}
-            onDelete={() => selectedIdx !== null && setDeleteConfirm(selectedIdx)}
-            onAddSection={() => setAddModal(selectedIdx ?? sects.length - 1)}
-            activeField={activeField}
-            activeOverlay={activeOverlay}
-            onAddOverlay={addOverlay}
-            dlAll={dlAll}
-            onDlAll={dlAllPNG}
-            onDlSection={dlSectionPNG}
-          />
-        </>
+        </div>
       )}
 
       {seo && (
