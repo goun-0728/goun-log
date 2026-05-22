@@ -99,7 +99,7 @@ export function ImgBox({ url, t, editing, onImgChange, minH = 320, imgMeta, onMe
     <div style={{ position:'relative', height: fixedH || minH, overflow:'hidden' }}>
       <input ref={ref} type="file" accept="image/*" onChange={handleFile} style={{ display:'none' }} />
       <img
-        src="https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=860"
+        src="/smile.png"
         alt=""
         style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}
       />
