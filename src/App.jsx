@@ -531,66 +531,12 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
   })
   const [activeField,  setActiveField]  = useState(null)
   const [activeOverlay,setActiveOverlay]= useState(null)
-  const [smartTitles, setSmartTitles] = useState([])
-  const [titlesLoading, setTitlesLoading] = useState(false)
-
   const sectsInit = useRef(false)
 
   useEffect(() => {
     if (!sectsInit.current) { sectsInit.current = true; return }
     onSectsChange?.(sects)
   }, [sects])
-
-  useEffect(() => {
-    if (!productInput?.trim()) return
-    const genTitles = async () => {
-      setTitlesLoading(true)
-      try {
-        const quizInfo = quiz ? [
-          quiz.category && `카테고리: ${quiz.category}`,
-          quiz.priceRange && `가격대: ${quiz.priceRange}`,
-          (quiz.gender || quiz.ageGroup) && `타겟: ${[quiz.gender, quiz.ageGroup].filter(Boolean).join(' ')}`,
-          quiz.pricePosition && `가격 포지션: ${quiz.pricePosition}`,
-          quiz.emphasis?.length && `강조 포인트: ${quiz.emphasis.join(', ')}`,
-          quiz.brandTone?.length && `브랜드 톤: ${quiz.brandTone.join(', ')}`,
-          quiz.differentiator && `차별점: ${quiz.differentiator}`,
-        ].filter(Boolean).join('\n') : ''
-        const text = await generateContent({
-          systemPrompt: `당신은 스마트스토어 상품 제목 최적화 전문가입니다. 아래 규칙을 반드시 지켜서 상품 제목 5개를 생성해주세요.
-
-[스마트스토어 제목 규칙]
-- 40자 이내 (필수)
-- 핵심 키워드를 앞쪽에 배치
-- 브랜드명 + 제품명 + 특징 + 용량/수량 구조 권장
-- 특수문자 최소화 (슬래시 / 정도만 허용)
-- 검색 노출에 유리한 키워드 조합
-- 5개 각각 다른 키워드 조합과 강조점으로 생성
-- 제공된 가격대/타겟/강조포인트 반영
-
-[출력 형식 - 번호와 제목만 출력, 설명 없이]
-1. 제목
-2. 제목
-3. 제목
-4. 제목
-5. 제목`,
-          userPrompt: `제품 정보:\n${productInput.trim()}${quizInfo ? '\n\n마케팅 정보:\n' + quizInfo : ''}`,
-          model: 'gpt-4o',
-          maxTokens: 400,
-        })
-        const titles = text.split('\n')
-          .filter(l => /^\d+[\.\)]\s+.+/.test(l.trim()))
-          .map(l => l.trim().replace(/^\d+[\.\)]\s*/, '').trim())
-          .filter(t => t.length > 0)
-          .slice(0, 5)
-        setSmartTitles(titles)
-      } catch (e) {
-        console.error('Smart title gen error:', e)
-      } finally {
-        setTitlesLoading(false)
-      }
-    }
-    genTitles()
-  }, [])
 
   const upd = useCallback((i, v) => setSects(p => p.map((s, j) => j === i ? v : s)), [])
 
@@ -674,38 +620,6 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
           <div style={{ background: C.alt, borderRadius: 10, border: `1px solid ${C.bd}`, padding: '14px 16px' }}>
             <pre style={{ margin: 0, fontFamily: 'inherit', fontSize: 13.5, lineHeight: 1.9, color: C.tx, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{rep.lines.join('\n').trim()}</pre>
           </div>
-        </div>
-      )}
-
-      {(titlesLoading || smartTitles.length > 0) && (
-        <div style={{ background: '#F0FDF4', margin: '0 -20px', padding: '20px 20px', borderTop: '1px solid #BBF7D0', borderBottom: '1px solid #BBF7D0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 12, fontWeight: 800, color: '#15803D', letterSpacing: '-0.02em' }}>🏪 스마트스토어 제목 추천</span>
-              <span style={{ fontSize: 11, color: '#16A34A' }}>— 검색 최적화 5가지 조합</span>
-            </div>
-            {smartTitles.length > 0 && (
-              <CopyBtn text={smartTitles.map((t, i) => `${i + 1}. ${t}`).join('\n')} label="⎘ 전체 복사" />
-            )}
-          </div>
-          {titlesLoading ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '14px 0', color: '#16A34A', fontSize: 13 }}>
-              <Spin /> 스마트스토어 제목 생성 중…
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {smartTitles.map((title, i) => (
-                <div key={i} style={{ background: '#fff', borderRadius: 9, border: '1px solid #BBF7D0', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#15803D', color: '#fff', fontSize: 11, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
-                  <span style={{ flex: 1, fontSize: 13.5, color: '#18170F', lineHeight: 1.6, wordBreak: 'break-all' }}>{title}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                    <span style={{ fontSize: 11, color: title.length > 40 ? '#EF4444' : '#16A34A', fontWeight: 700, background: title.length > 40 ? '#FEF2F2' : '#F0FDF4', padding: '2px 7px', borderRadius: 20, border: `1px solid ${title.length > 40 ? '#FECACA' : '#BBF7D0'}` }}>{title.length}자</span>
-                    <CopyBtn text={title} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       )}
 
@@ -801,7 +715,7 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
         <>
           {/* 캔바 스타일 캔버스 — 회색 배경, 860px 중앙 페이지 */}
           <div
-            style={{ margin:'0 -20px', background:'#E8E8E8', paddingTop:32, paddingBottom:60, paddingRight:340 }}
+            style={{ margin:'0 -20px', background:'#F5F2ED', paddingTop:32, paddingBottom:60, paddingRight:340 }}
             onClick={() => setSelectedIdx(null)}
           >
             <div
@@ -1159,7 +1073,7 @@ export default function App() {
 
       {/* ── 메인 콘텐츠 ── */}
       <div style={{ marginLeft: histOpen ? 260 : 0, transition: 'margin-left .22s ease', paddingTop: 52, minHeight: '100vh', background: C.bg, color: C.tx }}>
-        <main style={{ maxWidth: 860, margin: '0 auto', padding: '36px 18px 100px' }}>
+        <main style={{ maxWidth: 1200, margin: '0 auto', padding: '36px 8px 100px' }}>
 
           {/* 타이틀 (클릭 시 전체 리셋) */}
           <div onClick={resetAll} onMouseEnter={() => setTitleHover(true)} onMouseLeave={() => setTitleHover(false)}
@@ -1334,26 +1248,30 @@ export default function App() {
 
           {/* 결과 */}
           {result && !loading && (
-            <div ref={resRef} style={{ background: C.sur, borderRadius: 16, border: `1.5px solid ${C.bd}`, boxShadow: '0 4px 28px rgba(0,0,0,0.06)', overflow: 'hidden', animation: 'fi .25s ease' }}>
-              <div style={{ padding: '12px 20px 10px', borderBottom: `1px solid ${C.bd}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: task.col, background: task.li, padding: '2px 9px', borderRadius: 20 }}>{task.label}</span>
-                  <span style={{ fontSize: 11, color: '#15803d', background: '#f0fdf4', padding: '2px 8px', borderRadius: 20 }}>✓ 완성</span>
-                </div>
-                <CopyBtn text={result} />
+            task.id === 'detail' ? (
+              <div ref={resRef}>
+                <DetailView key={detailGenKey} result={result} savedSects={detailData} onSectsChange={saveDetailData} productInput={sharedInput} quiz={quiz} />
               </div>
-              <div style={{ padding: '16px 20px' }}>
-                {task.id === 'detail'
-                  ? <DetailView key={detailGenKey} result={result} savedSects={detailData} onSectsChange={saveDetailData} productInput={sharedInput} quiz={quiz} />
-                  : task.id === 'card'
+            ) : (
+              <div ref={resRef} style={{ background: C.sur, borderRadius: 16, border: `1.5px solid ${C.bd}`, boxShadow: '0 4px 28px rgba(0,0,0,0.06)', overflow: 'hidden', animation: 'fi .25s ease' }}>
+                <div style={{ padding: '12px 20px 10px', borderBottom: `1px solid ${C.bd}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: task.col, background: task.li, padding: '2px 9px', borderRadius: 20 }}>{task.label}</span>
+                    <span style={{ fontSize: 11, color: '#15803d', background: '#f0fdf4', padding: '2px 8px', borderRadius: 20 }}>✓ 완성</span>
+                  </div>
+                  <CopyBtn text={result} />
+                </div>
+                <div style={{ padding: '16px 20px' }}>
+                  {task.id === 'card'
                     ? <CardNewsView key={cardGenKey} result={result} savedCards={cardData} onCardsChange={saveCardData} />
                     : <>
                         {topBlocks.map((b, i) => <Blk key={i} title={b.title} lines={b.lines} />)}
                         {task.id === 'blog' && <BlogThumbnail key={result.slice(0, 40)} blogTitle={blogTitle} />}
                       </>
-                }
+                  }
+                </div>
               </div>
-            </div>
+            )
           )}
 
         </main>

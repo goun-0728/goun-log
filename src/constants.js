@@ -23,7 +23,6 @@ export const DS = {
   '웜베이지':     { bg: '#FAF3E0', fg: '#2D2000', ac: '#8B6914', sub: '#F0E8CC', bd: '#DDD0A0' },
   '로즈':         { bg: '#FDF2F2', fg: '#2D0808', ac: '#C0404A', sub: '#F8E8E8', bd: '#E8C0C0' },
   '올리브':       { bg: '#2A2E1A', fg: '#F8F8E8', ac: '#8B9E3A', sub: '#383C28', bd: '#484C38' },
-  '스틸블루':     { bg: '#1A2A3A', fg: '#EEF4F8', ac: '#5B8DB8', sub: '#253545', bd: '#304555' },
   '크림':         { bg: '#FDFAF5', fg: '#2A2010', ac: '#A0784A', sub: '#F5F0E8', bd: '#E0D8C8' },
   '민트':         { bg: '#F0FDF9', fg: '#0D3A2A', ac: '#10B981', sub: '#D8F5EC', bd: '#A7E8D2' },
   '라벤더':       { bg: '#F6F3FF', fg: '#2E1A5C', ac: '#7C3AED', sub: '#EDE8FF', bd: '#C9B8F5' },
