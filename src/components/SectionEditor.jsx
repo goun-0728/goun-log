@@ -12,7 +12,6 @@ function getGradCSS(grad, t) {
   return `linear-gradient(${dirs[grad.dir] || 'to bottom'}, rgba(${rgb},${alpha}) 0%, rgba(${rgb},0) 60%)`
 }
 
-/* ── 오버레이 텍스트 블록 ── */
 function OverlayTextBlock({ ot, containerRef, onUpdate, onRemove, isActive, onSelect }) {
   const [dragging, setDragging] = useState(false)
   const startRef = useRef(null)
@@ -89,10 +88,6 @@ function OverlayTextBlock({ ot, containerRef, onUpdate, onRemove, isActive, onSe
   )
 }
 
-/* ══════════════════════════════════════════════════
-   SectionEditor — Canva-style: 클릭 선택, 인라인 편집
-   우측 패널은 DetailView(App.jsx)의 CanvaPanel이 담당
-══════════════════════════════════════════════════ */
 export default function SectionEditor({
   sec, idx, onUpdate,
   isSelected, onSelect,
@@ -101,6 +96,7 @@ export default function SectionEditor({
 }) {
   const [scale,   setScale]   = useState(1)
   const [secMeta, setSecMeta] = useState({})
+  const [hovered, setHovered] = useState(false)
   const ref     = useRef(null)
   const wrapRef = useRef(null)
 
@@ -143,32 +139,34 @@ export default function SectionEditor({
 
   return (
     <div
-      onClick={() => onSelect?.(idx)}
-      style={{
-        marginBottom: 10,
-        borderRadius: 10,
-        overflow: 'clip',
-        border: `2.5px solid ${isSelected ? '#3b82f6' : 'transparent'}`,
-        transition: 'border-color .15s',
-        position: 'relative',
-        cursor: 'default',
-        boxShadow: isSelected
-          ? '0 0 0 4px rgba(59,130,246,0.12)'
-          : '0 1px 5px rgba(0,0,0,0.08)',
-      }}
+      onClick={e => { onSelect?.(idx); e.stopPropagation() }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{ position: 'relative', cursor: 'default' }}
     >
+      {/* 선택/호버 테두리 오버레이 — layout에 영향 없음 */}
+      {(isSelected || hovered) && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 20, pointerEvents: 'none',
+          border: isSelected ? '2px solid #3b82f6' : '1px solid #93c5fd',
+          boxShadow: isSelected ? 'inset 0 0 0 1px rgba(59,130,246,0.2)' : 'none',
+        }} />
+      )}
+
       {/* 섹션 배지 */}
-      <div style={{
-        position:'absolute', top:8, left:8, zIndex:20, pointerEvents:'none',
-        background: isSelected ? '#3b82f6' : 'rgba(0,0,0,0.45)',
-        color:'#fff', fontSize:10, fontWeight:700,
-        padding:'2px 8px', borderRadius:4,
-      }}>
-        S{idx+1} · {sec.sectionType}
-      </div>
+      {(isSelected || hovered) && (
+        <div style={{
+          position:'absolute', top:8, left:8, zIndex:21, pointerEvents:'none',
+          background: isSelected ? '#3b82f6' : 'rgba(0,0,0,0.4)',
+          color:'#fff', fontSize:10, fontWeight:700,
+          padding:'2px 8px', borderRadius:4,
+        }}>
+          S{idx+1} · {sec.sectionType}
+        </div>
+      )}
 
       {/* 카드 미리보기 */}
-      <div ref={wrapRef} style={{ position:'relative', background:'#e8e6e0', overflow:'hidden' }}>
+      <div ref={wrapRef} style={{ position:'relative', overflow:'hidden' }}>
         <div style={{ width:860, transformOrigin:'top left', transform:`scale(${scale})` }}>
           <div
             ref={ref}

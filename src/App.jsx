@@ -173,12 +173,19 @@ function AddBetweenHover({ onClick, loading }) {
 }
 
 /* ── Canva 우측 편집 패널 ────────────────────────────── */
-function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, onAddOverlay, dlAll, onDlAll, onDlSection }) {
+function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, onAddOverlay, onAddSection, dlAll, onDlAll, onDlSection }) {
+  const panelStyle = { position:'fixed', right:0, top:52, width:280, height:'calc(100vh - 52px)', zIndex:50, background:'#fff', boxShadow:'-4px 0 24px rgba(0,0,0,0.1)', display:'flex', flexDirection:'column', overflow:'hidden' }
+
   if (sec === null || idx === null) {
     return (
-      <div style={{ width:280, minWidth:280, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', borderLeft:`1px solid ${C.bd}`, background:'#F8FAFF', height:'100%', gap:8 }}>
-        <div style={{ fontSize:28, color:C.fa }}>←</div>
-        <p style={{ fontSize:12, color:C.mu, textAlign:'center', lineHeight:1.7, margin:0 }}>왼쪽 섹션을<br/>클릭하세요</p>
+      <div style={{ ...panelStyle, alignItems:'center', justifyContent:'center', gap:12 }}>
+        <p style={{ fontSize:12, color:C.mu, textAlign:'center', lineHeight:1.8, margin:0, padding:'0 24px' }}>섹션을 클릭해서<br/>편집하세요</p>
+        {onAddSection && (
+          <button onClick={onAddSection}
+            style={{ padding:'8px 20px', fontSize:12, fontWeight:700, borderRadius:8, border:'1.5px dashed #10b981', background:'#f0fdf4', color:'#059669', cursor:'pointer', marginTop:8 }}>
+            + 섹션 추가
+          </button>
+        )}
       </div>
     )
   }
@@ -212,13 +219,13 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, 
   }
 
   return (
-    <div style={{ width:280, minWidth:280, borderLeft:`1px solid ${C.bd}`, background:'#F8FAFF', display:'flex', flexDirection:'column', height:'100%', overflow:'hidden' }}>
+    <div style={{ position:'fixed', right:0, top:52, width:280, height:'calc(100vh - 52px)', zIndex:50, background:'#fff', boxShadow:'-4px 0 24px rgba(0,0,0,0.1)', display:'flex', flexDirection:'column', overflow:'hidden' }}>
 
       {/* 헤더 */}
-      <div style={{ padding:'8px 12px', borderBottom:`1px solid ${C.bd}`, background:'#EFF6FF', flexShrink:0 }}>
+      <div style={{ padding:'10px 14px', borderBottom:`1px solid ${C.bd}`, background:'#F8FAFF', flexShrink:0 }}>
         <div style={{ display:'flex', alignItems:'center', gap:7 }}>
-          <div style={{ width:7, height:7, borderRadius:'50%', background:t.ac, flexShrink:0 }} />
-          <span style={{ fontSize:11, fontWeight:700, color:'#1E40AF' }}>S{idx+1} · {sec.sectionType}</span>
+          <div style={{ width:8, height:8, borderRadius:'50%', background:'#3b82f6', flexShrink:0 }} />
+          <span style={{ fontSize:12, fontWeight:700, color:'#1E40AF' }}>S{idx+1} · {sec.sectionType}</span>
         </div>
       </div>
 
@@ -404,8 +411,12 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, 
           </>
         )}
 
-        {/* 삭제 */}
+        {/* 섹션 추가 / 삭제 */}
         <div style={{ borderTop:`1px solid ${C.bd}`, margin:'6px 0 8px' }} />
+        <button onClick={onAddSection}
+          style={{ width:'100%', padding:'8px 0', fontSize:12, fontWeight:700, borderRadius:7, border:'1.5px dashed #10b981', background:'#f0fdf4', color:'#059669', cursor:'pointer', marginBottom:6 }}>
+          + 섹션 추가
+        </button>
         <button onClick={onDelete}
           style={{ width:'100%', padding:'8px 0', fontSize:12, fontWeight:700, borderRadius:7, border:'1px solid #fca5a5', background:'#fef2f2', color:'#ef4444', cursor:'pointer' }}>
           × 섹션 삭제
@@ -514,7 +525,10 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
   const [addLoading, setAddLoading] = useState(null)
   const [addModal,   setAddModal]   = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
-  const [selectedIdx,  setSelectedIdx]  = useState(null)
+  const [selectedIdx,  setSelectedIdx]  = useState(() => {
+    const s = savedSects ?? parseSections(result)
+    return s.length > 0 ? 0 : null
+  })
   const [activeField,  setActiveField]  = useState(null)
   const [activeOverlay,setActiveOverlay]= useState(null)
   const [smartTitles, setSmartTitles] = useState([])
@@ -784,48 +798,46 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
       )}
 
       {sects.length > 0 && (
-        <div style={{ margin:'0 -20px', position:'sticky', top:52, height:'calc(100vh - 52px)', zIndex:10, display:'flex', flexDirection:'column', overflow:'hidden', borderTop:'1px solid #E0DED8' }}>
-          {/* 헤더 */}
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 20px', borderBottom:`1px solid ${C.bd}`, background:'#F8F8F6', flexShrink:0 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-              <span style={{ fontSize:12, fontWeight:800, color:C.tx, letterSpacing:'-0.02em' }}>🖼 섹션 편집기</span>
-              <span style={{ fontSize:11, color:C.mu }}>— 클릭하여 섹션 선택 · 텍스트/이미지 직접 편집</span>
-            </div>
-          </div>
-          {/* 2단 레이아웃 */}
-          <div style={{ display:'flex', flex:1, overflow:'hidden', background:'#F0EFEB' }}>
-            {/* 왼쪽: 섹션 목록 */}
-            <div style={{ flex:1, minWidth:0, padding:'16px', overflowY:'auto', overflowX:'hidden' }}>
+        <>
+          {/* 캔바 스타일 캔버스 — 회색 배경, 860px 중앙 페이지 */}
+          <div
+            style={{ margin:'0 -20px', background:'#E8E8E8', paddingTop:32, paddingBottom:60, paddingRight:280 }}
+            onClick={() => setSelectedIdx(null)}
+          >
+            <div
+              style={{ width:860, margin:'0 auto', boxShadow:'0 8px 48px rgba(0,0,0,0.15)' }}
+              onClick={e => e.stopPropagation()}
+            >
               {sects.map((s, i) => (
-                <React.Fragment key={s._id || i}>
-                  <SectionEditor
-                    sec={s} idx={i} onUpdate={upd}
-                    isSelected={selectedIdx === i}
-                    onSelect={selectSection}
-                    activeField={selectedIdx === i ? activeField : null}
-                    onActiveFieldChange={f => { setActiveField(f); setActiveOverlay(null) }}
-                    activeOverlay={selectedIdx === i ? activeOverlay : null}
-                    onActiveOverlayChange={id => { setActiveOverlay(id); setActiveField(null) }}
-                  />
-                  <AddBetweenHover onClick={() => setAddModal(i)} loading={addLoading !== null} />
-                </React.Fragment>
+                <SectionEditor
+                  key={s._id || i}
+                  sec={s} idx={i} onUpdate={upd}
+                  isSelected={selectedIdx === i}
+                  onSelect={selectSection}
+                  activeField={selectedIdx === i ? activeField : null}
+                  onActiveFieldChange={f => { setActiveField(f); setActiveOverlay(null) }}
+                  activeOverlay={selectedIdx === i ? activeOverlay : null}
+                  onActiveOverlayChange={id => { setActiveOverlay(id); setActiveField(null) }}
+                />
               ))}
             </div>
-            {/* 오른쪽: 고정 편집 패널 */}
-            <CanvaPanel
-              sec={selectedIdx !== null ? sects[selectedIdx] : null}
-              idx={selectedIdx}
-              onUpdate={upd}
-              onDelete={() => selectedIdx !== null && setDeleteConfirm(selectedIdx)}
-              activeField={activeField}
-              activeOverlay={activeOverlay}
-              onAddOverlay={addOverlay}
-              dlAll={dlAll}
-              onDlAll={dlAllPNG}
-              onDlSection={dlSectionPNG}
-            />
           </div>
-        </div>
+
+          {/* 오른쪽 고정 편집 패널 */}
+          <CanvaPanel
+            sec={selectedIdx !== null ? sects[selectedIdx] : null}
+            idx={selectedIdx}
+            onUpdate={upd}
+            onDelete={() => selectedIdx !== null && setDeleteConfirm(selectedIdx)}
+            onAddSection={() => setAddModal(selectedIdx ?? sects.length - 1)}
+            activeField={activeField}
+            activeOverlay={activeOverlay}
+            onAddOverlay={addOverlay}
+            dlAll={dlAll}
+            onDlAll={dlAllPNG}
+            onDlSection={dlSectionPNG}
+          />
+        </>
       )}
 
       {seo && (

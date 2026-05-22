@@ -96,15 +96,21 @@ export function ImgBox({ url, t, editing, onImgChange, minH = 320, imgMeta, onMe
   }
   if (!url) return null
   if (url === 'slot') return (
-    <div style={{ ...(fixedH ? { height: fixedH } : { minHeight: minH }), background: t.sub,
-      border: `2px dashed ${t.bd}`, display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-      <input ref={ref} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
-      <div onClick={e => { e.stopPropagation(); ref.current?.click() }}
-        style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10,
-          cursor:'pointer', background:'rgba(0,0,0,0.08)', padding:'22px 36px', borderRadius:18 }}>
-        <span style={{ fontSize: 52, opacity: 0.5 }}>📷</span>
-        <span style={{ fontSize: 15, color: '#222', fontWeight: 700, background: '#d8d8d8', padding: '8px 22px', borderRadius: 24 }}>클릭해서 사진 업로드</span>
+    <div style={{ position:'relative', height: fixedH || minH, overflow:'hidden' }}>
+      <input ref={ref} type="file" accept="image/*" onChange={handleFile} style={{ display:'none' }} />
+      <img
+        src="https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=860"
+        alt=""
+        style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}
+      />
+      <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.08)' }}>
+        <div onClick={e => { e.stopPropagation(); ref.current?.click() }}
+          style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10,
+            cursor:'pointer', background:'rgba(255,255,255,0.9)', padding:'20px 32px',
+            borderRadius:16, boxShadow:'0 4px 20px rgba(0,0,0,0.2)', backdropFilter:'blur(4px)' }}>
+          <span style={{ fontSize:36 }}>📷</span>
+          <span style={{ fontSize:13, fontWeight:700, color:'#111' }}>클릭해서 사진 교체</span>
+        </div>
       </div>
     </div>
   )
