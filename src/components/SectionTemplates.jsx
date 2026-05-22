@@ -105,7 +105,7 @@ export function ImgBox({ url, t, editing, onImgChange, minH = 320, imgMeta, onMe
   }
   if (!url) return null
   if (url === 'slot') return (
-    <div style={{ position:'relative', height: fixedH || minH, overflow:'hidden' }}>
+    <div style={{ position:'relative', aspectRatio: '9/16', overflow:'hidden' }}>
       <input ref={ref} type="file" accept="image/*" onChange={handleFile} style={{ display:'none' }} />
       <img
         src={sampleRef.current}
@@ -154,12 +154,13 @@ function getTS(s, field, def = {}) {
   }
 }
 
-/* ── ET: 클릭하면 인라인 편집 + 모서리 리사이즈 핸들 ── */
-function ET({ s, field, editing, onChange, onFocus, def = {}, style: extra = {} }) {
+/* ── ET: 클릭하면 인라인 편집 + placeholder + 모서리 리사이즈 핸들 ── */
+function ET({ s, field, editing, onChange, onFocus, def = {}, style: extra = {}, placeholder = '' }) {
   const st  = { ...getTS(s, field, def), ...extra }
   const val = s[field] || ''
   const [hovered,  setHovered]  = useState(false)
   const [resizing, setResizing] = useState(false)
+  const [focused,  setFocused]  = useState(false)
   const rsRef = useRef(null)
 
   useEffect(() => {
@@ -176,17 +177,27 @@ function ET({ s, field, editing, onChange, onFocus, def = {}, style: extra = {} 
     return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
   }, [resizing]) // eslint-disable-line
 
-  if (!editing) return <div style={st}>{val}</div>
+  if (!editing) {
+    const display = val || placeholder
+    if (!display) return null
+    return <div style={{ ...st, opacity: val ? 1 : 0.35 }}>{display}</div>
+  }
+  const showPH = !!placeholder && !val && !focused
   return (
     <div
       style={{ position: 'relative', display: extra.display || 'block' }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
+      {showPH && (
+        <div style={{ ...st, display: undefined, opacity: 0.32, position: 'absolute', top: 0, left: 0, right: 0, pointerEvents: 'none', zIndex: 1 }}>
+          {placeholder}
+        </div>
+      )}
       <div contentEditable suppressContentEditableWarning
-        onFocus={() => onFocus?.(field)}
-        onBlur={e => onChange(field, e.currentTarget.innerText)}
-        style={{ ...st, display: undefined, outline: 'none', borderBottom: '1.5px dashed rgba(59,130,246,0.55)', minHeight: 20, cursor: 'text' }}
+        onFocus={e => { setFocused(true); onFocus?.(field) }}
+        onBlur={e => { setFocused(false); onChange(field, e.currentTarget.innerText) }}
+        style={{ ...st, display: undefined, outline: 'none', borderBottom: '1.5px dashed rgba(59,130,246,0.55)', minHeight: 20, cursor: 'text', position: 'relative', zIndex: 2 }}
         dangerouslySetInnerHTML={{ __html: val }}
       />
       {(hovered || resizing) && (
@@ -204,7 +215,7 @@ function ET({ s, field, editing, onChange, onFocus, def = {}, style: extra = {} 
 }
 
 /* ── DragET: 이미지 위 절대좌표 드래그 가능 텍스트 ── */
-function DragET({ s, field, editing, onChange, onFocus, def = {} }) {
+function DragET({ s, field, editing, onChange, onFocus, def = {}, placeholder = '' }) {
   const stored  = s.textStyles?.[field] || {}
   const xp      = stored.x ?? def.x ?? 6
   const yp      = stored.y ?? def.y ?? 60
@@ -272,12 +283,17 @@ function DragET({ s, field, editing, onChange, onFocus, def = {} }) {
       onMouseLeave={() => setHdHovered(false)}
     >
       {editing
-        ? <div contentEditable suppressContentEditableWarning
-            onFocus={() => onFocus?.(field)}
-            onBlur={e => onChange(field, e.currentTarget.innerText)}
-            style={{ ...st, outline: 'none', cursor: 'text', textShadow: '0 2px 14px rgba(0,0,0,0.9)' }}
-            dangerouslySetInnerHTML={{ __html: val }}
-          />
+        ? <>
+            {!val && !!placeholder && (
+              <div style={{ ...st, opacity: 0.38, pointerEvents: 'none', textShadow: '0 2px 14px rgba(0,0,0,0.9)' }}>{placeholder}</div>
+            )}
+            <div contentEditable suppressContentEditableWarning
+              onFocus={() => onFocus?.(field)}
+              onBlur={e => onChange(field, e.currentTarget.innerText)}
+              style={{ ...st, outline: 'none', cursor: 'text', textShadow: '0 2px 14px rgba(0,0,0,0.9)', position: 'relative' }}
+              dangerouslySetInnerHTML={{ __html: val }}
+            />
+          </>
         : <div style={{ ...st, textShadow: '0 2px 14px rgba(0,0,0,0.9)' }}>{val}</div>
       }
       {editing && (hdHovered || resizing) && (
@@ -329,12 +345,15 @@ export function TplFullHero({ s, img, t, editing, onChange, secMeta, onSecMeta, 
         {/* 드래그 가능한 텍스트들 */}
         {(s.badge || editing) && (
           <DragET s={s} field="badge" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ x: 74, y: 3, fontSize: 12, color: '#fff', fontWeight: 700, letterSpacing: '0.15em' }} />
+            def={{ x: 74, y: 3, fontSize: 12, color: '#fff', fontWeight: 700, letterSpacing: '0.15em' }}
+            placeholder="BADGE" />
         )}
         <DragET s={s} field="subCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-          def={{ x: 6, y: 58, fontSize: 28, color: 'rgba(255,255,255,0.88)', lineHeight: 1.5 }} />
+          def={{ x: 6, y: 58, fontSize: 28, color: 'rgba(255,255,255,0.88)', lineHeight: 1.5 }}
+          placeholder="서브 제목" />
         <DragET s={s} field="mainCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-          def={{ x: 6, y: 68, fontSize: 54, color: '#fff', fontWeight: 900, lineHeight: 1.18, letterSpacing: '-0.025em' }} />
+          def={{ x: 6, y: 68, fontSize: 54, color: '#fff', fontWeight: 900, lineHeight: 1.18, letterSpacing: '-0.025em' }}
+          placeholder="메인 제목" />
       </div>
     </div>
   )
@@ -354,16 +373,19 @@ export function TplTopBottom({ s, img, t, editing, onChange, secMeta, onSecMeta,
           <div style={{ marginBottom: 18 }}>
             <ET s={s} field="description" editing={editing} onChange={onChange} onFocus={onFieldFocus}
               def={{ fontSize: 11, color: t.ac, fontWeight: 800, letterSpacing: '0.28em' }}
-              style={{ textTransform: 'uppercase', display: 'inline-block' }} />
+              style={{ textTransform: 'uppercase', display: 'inline-block' }}
+              placeholder="카테고리" />
           </div>
         )}
         <div style={{ marginBottom: 20 }}>
           <ET s={s} field="mainCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ fontSize: 48, color: t.fg, fontWeight: 900, lineHeight: 1.22, letterSpacing: '-0.025em' }} />
+            def={{ fontSize: 48, color: t.fg, fontWeight: 900, lineHeight: 1.22, letterSpacing: '-0.025em' }}
+            placeholder="메인 제목" />
         </div>
         <ET s={s} field="subCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
           def={{ fontSize: 28, color: t.fg, lineHeight: 1.62 }}
-          style={{ opacity: 0.73, maxWidth: 540 }} />
+          style={{ opacity: 0.73, maxWidth: 540 }}
+          placeholder="서브 제목" />
       </div>
       {/* 하단: 이미지 */}
       <div style={{ minHeight: 360 }}>
@@ -409,17 +431,20 @@ export function TplLeftRight({ s, img, t, editing, onChange, secMeta, onSecMeta,
         <div style={{ marginBottom: 16 }}>
           <ET s={s} field="description" editing={editing} onChange={onChange} onFocus={onFieldFocus}
             def={{ fontSize: 11, color: t.ac, fontWeight: 800, letterSpacing: '0.28em' }}
-            style={{ textTransform: 'uppercase' }} />
+            style={{ textTransform: 'uppercase' }}
+            placeholder="카테고리" />
         </div>
       )}
       <div style={{ marginBottom: 16 }}>
         <ET s={s} field="mainCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-          def={{ fontSize: 48, color: t.fg, fontWeight: 900, lineHeight: 1.22, letterSpacing: '-0.025em' }} />
+          def={{ fontSize: 48, color: t.fg, fontWeight: 900, lineHeight: 1.22, letterSpacing: '-0.025em' }}
+          placeholder="메인 제목" />
       </div>
       <div style={{ marginBottom: 28 }}>
         <ET s={s} field="subCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
           def={{ fontSize: 28, color: t.fg, lineHeight: 1.55 }}
-          style={{ opacity: 0.7 }} />
+          style={{ opacity: 0.7 }}
+          placeholder="서브 제목" />
       </div>
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         {displayPts.map((p, i) => (
@@ -471,11 +496,13 @@ export function TplPoints3Icon({ s, img, t, editing, onChange, secMeta, onSecMet
       <div style={{ padding: '60px 64px 28px', textAlign: 'center' }}>
         <div style={{ marginBottom: 14 }}>
           <ET s={s} field="mainCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ fontSize: 48, color: t.fg, fontWeight: 900, lineHeight: 1.22, letterSpacing: '-0.025em' }} />
+            def={{ fontSize: 48, color: t.fg, fontWeight: 900, lineHeight: 1.22, letterSpacing: '-0.025em' }}
+            placeholder="메인 제목" />
         </div>
         <ET s={s} field="subCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
           def={{ fontSize: 28, color: t.fg, lineHeight: 1.55 }}
-          style={{ opacity: 0.62 }} />
+          style={{ opacity: 0.62 }}
+          placeholder="서브 제목" />
       </div>
       <div style={{ padding: '20px 48px 80px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 24 }}>
@@ -519,17 +546,20 @@ export function TplStory({ s, img, t, editing, onChange, secMeta, onSecMeta, onF
       <div style={{ padding: '80px 80px 56px' }}>
         <div style={{ marginBottom: 32 }}>
           <ET s={s} field="mainCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ fontSize: 48, color: t.fg, fontWeight: 900, lineHeight: 1.22, letterSpacing: '-0.028em' }} />
+            def={{ fontSize: 48, color: t.fg, fontWeight: 900, lineHeight: 1.22, letterSpacing: '-0.028em' }}
+            placeholder="메인 제목" />
         </div>
         <div style={{ marginBottom: 40 }}>
           <ET s={s} field="subCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
             def={{ fontSize: 28, color: t.fg, lineHeight: 1.6 }}
-            style={{ opacity: 0.78 }} />
+            style={{ opacity: 0.78 }}
+            placeholder="서브 제목" />
         </div>
         {(s.description || editing) && (
           <ET s={s} field="description" editing={editing} onChange={onChange} onFocus={onFieldFocus}
             def={{ fontSize: 20, color: t.fg, lineHeight: 1.88 }}
-            style={{ opacity: 0.58 }} />
+            style={{ opacity: 0.58 }}
+            placeholder="본문 내용" />
         )}
       </div>
 
@@ -583,11 +613,13 @@ export function TplHowTo({ s, img, t, editing, onChange, secMeta, onSecMeta, onF
           <div style={{ marginBottom: 14 }}>
             <ET s={s} field="description" editing={editing} onChange={onChange} onFocus={onFieldFocus}
               def={{ fontSize: 11, color: t.ac, fontWeight: 800, letterSpacing: '0.3em' }}
-              style={{ textTransform: 'uppercase', display: 'inline-block' }} />
+              style={{ textTransform: 'uppercase', display: 'inline-block' }}
+              placeholder="카테고리" />
           </div>
         )}
         <ET s={s} field="mainCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-          def={{ fontSize: 48, color: t.bg, fontWeight: 900, lineHeight: 1.22, letterSpacing: '-0.025em' }} />
+          def={{ fontSize: 48, color: t.bg, fontWeight: 900, lineHeight: 1.22, letterSpacing: '-0.025em' }}
+          placeholder="메인 제목" />
       </div>
 
       {/* 큰 이미지 */}
@@ -600,7 +632,8 @@ export function TplHowTo({ s, img, t, editing, onChange, secMeta, onSecMeta, onF
       {(s.subCopy || editing) && (
         <div style={{ padding: '40px 72px 20px' }}>
           <ET s={s} field="subCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ fontSize: 28, color: t.fg, fontWeight: 700, lineHeight: 1.4, letterSpacing: '-0.01em' }} />
+            def={{ fontSize: 28, color: t.fg, fontWeight: 700, lineHeight: 1.4, letterSpacing: '-0.01em' }}
+            placeholder="서브 제목" />
         </div>
       )}
 
@@ -649,11 +682,13 @@ export function TplCompare({ s, img, t, editing, onChange, secMeta, onSecMeta, o
       <div style={{ padding: '64px 64px 48px', textAlign: 'center' }}>
         <div style={{ marginBottom: 16 }}>
           <ET s={s} field="mainCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ fontSize: 48, color: t.fg, fontWeight: 900, lineHeight: 1.22, letterSpacing: '-0.025em' }} />
+            def={{ fontSize: 48, color: t.fg, fontWeight: 900, lineHeight: 1.22, letterSpacing: '-0.025em' }}
+            placeholder="메인 제목" />
         </div>
         <ET s={s} field="subCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
           def={{ fontSize: 28, color: t.fg, lineHeight: 1.55 }}
-          style={{ opacity: 0.62 }} />
+          style={{ opacity: 0.62 }}
+          placeholder="서브 제목" />
       </div>
 
       {/* 비교표 */}
@@ -750,11 +785,13 @@ export function TplSpecTable({ s, img, t, editing, onChange, onFieldFocus }) {
         )}
         <div style={{ marginBottom: 8 }}>
           <ET s={s} field="mainCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ fontSize: 48, color: '#111', fontWeight: 900, letterSpacing: '-0.025em' }} />
+            def={{ fontSize: 48, color: '#111', fontWeight: 900, letterSpacing: '-0.025em' }}
+            placeholder="메인 제목" />
         </div>
         {(s.subCopy || editing) && (
           <ET s={s} field="subCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ fontSize: 14, color: '#888', lineHeight: 1.65 }} />
+            def={{ fontSize: 14, color: '#888', lineHeight: 1.65 }}
+            placeholder="서브 제목" />
         )}
       </div>
       <div style={{ padding: '0 64px 72px' }}>

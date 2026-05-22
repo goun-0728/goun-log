@@ -17,7 +17,12 @@ export function parseSections(text) {
   const out = []; let m
   while ((m = re.exec(text)) !== null) {
     const r = m[3]
-    const gf = k => { const rx = new RegExp(k + ':\\s*([^\\n]+)'); const f = r.match(rx); return f ? f[1].trim() : '' }
+    const gf = k => {
+      const rx = new RegExp(k + ':\\s*([^\\n]+)')
+      const f = r.match(rx); if (!f) return ''
+      // annotation 힌트 제거: (15자 이내), (1줄) 등
+      return f[1].replace(/^\([^)]+\)\s*/, '').replace(/\s*\([^)]+\)$/, '').trim()
+    }
     const gb = k => {
       const rx = new RegExp(k + ':\\s*\\n([\\s\\S]*?)(?=\\n[가-힣A-Za-z]+:|\\n\\[|▼|$)')
       const f = r.match(rx); if (!f) return []
