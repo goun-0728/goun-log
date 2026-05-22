@@ -47,7 +47,7 @@ const GRAD_DIRS = [
   { k: 'right',  l: '우' },
 ]
 const PRESET_COLORS = ['#ffffff','#111111','#ef4444','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#0f172a','#fafaf8']
-const sLabel = { fontSize:10, fontWeight:700, color:'#B0ADA5', letterSpacing:'0.07em', textTransform:'uppercase', marginBottom:7, marginTop:0 }
+const sLabel = { fontSize:9, fontWeight:700, color:'#B0ADA5', letterSpacing:'0.07em', textTransform:'uppercase', marginBottom:4, marginTop:0 }
 
 function TplIcon({ k }) {
   const d = '#9CA3AF', l = '#E5E7EB', a = '#6B7280'
@@ -176,9 +176,9 @@ function AddBetweenHover({ onClick, loading }) {
 function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, onAddOverlay, dlAll, onDlAll, onDlSection }) {
   if (sec === null || idx === null) {
     return (
-      <div style={{ width:280, minWidth:280, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', borderLeft:`1px solid ${C.bd}`, background:'#F8FAFF', minHeight:480, gap:10 }}>
-        <div style={{ fontSize:36 }}>🖱</div>
-        <p style={{ fontSize:13, color:C.mu, textAlign:'center', lineHeight:1.7, margin:0 }}>섹션을 클릭해서<br/>선택하세요</p>
+      <div style={{ width:280, minWidth:280, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', borderLeft:`1px solid ${C.bd}`, background:'#F8FAFF', height:'100%', gap:8 }}>
+        <div style={{ fontSize:28, color:C.fa }}>←</div>
+        <p style={{ fontSize:12, color:C.mu, textAlign:'center', lineHeight:1.7, margin:0 }}>왼쪽 섹션을<br/>클릭하세요</p>
       </div>
     )
   }
@@ -212,22 +212,22 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, 
   }
 
   return (
-    <div style={{ width:280, minWidth:280, borderLeft:`1px solid ${C.bd}`, background:'#F8FAFF', display:'flex', flexDirection:'column', position:'sticky', top:52, maxHeight:'calc(100vh - 52px)', alignSelf:'flex-start' }}>
+    <div style={{ width:280, minWidth:280, borderLeft:`1px solid ${C.bd}`, background:'#F8FAFF', display:'flex', flexDirection:'column', height:'100%', overflow:'hidden' }}>
 
       {/* 헤더 */}
-      <div style={{ padding:'12px 14px', borderBottom:`1px solid ${C.bd}`, background:'#EFF6FF', flexShrink:0 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-          <div style={{ width:8, height:8, borderRadius:'50%', background:t.ac, flexShrink:0 }} />
-          <span style={{ fontSize:12, fontWeight:700, color:'#1E40AF' }}>S{idx+1} · {sec.sectionType}</span>
+      <div style={{ padding:'8px 12px', borderBottom:`1px solid ${C.bd}`, background:'#EFF6FF', flexShrink:0 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:7 }}>
+          <div style={{ width:7, height:7, borderRadius:'50%', background:t.ac, flexShrink:0 }} />
+          <span style={{ fontSize:11, fontWeight:700, color:'#1E40AF' }}>S{idx+1} · {sec.sectionType}</span>
         </div>
       </div>
 
       {/* 스크롤 컨트롤 영역 */}
-      <div style={{ flex:1, overflowY:'auto', padding:'12px 14px 16px' }}>
+      <div style={{ flex:1, overflowY:'auto', padding:'8px 12px 10px' }}>
 
         {/* 레이아웃 */}
         <p style={sLabel}>레이아웃</p>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:4, marginBottom:16 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:3, marginBottom:8 }}>
           {TPL_LABELS.map(({k,l}) => {
             const on = tplKey === k
             return (
@@ -242,7 +242,7 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, 
 
         {/* 색상 테마 */}
         <p style={sLabel}>색상 테마</p>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:4, marginBottom:14 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:3, marginBottom:8 }}>
           {DS_KEYS.map(s => {
             const on = sec.designStyle === s; const d = DS[s]
             return (
@@ -260,7 +260,7 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, 
 
         {/* 커스텀 색상 */}
         <p style={sLabel}>커스텀 색상</p>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginBottom:14 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6, marginBottom:8 }}>
           {[{ label:'배경색', key:'bg' }, { label:'강조색', key:'ac' }, { label:'글자색', key:'fg' }].map(({ label, key }) => (
             <div key={key} style={{ display:'flex', flexDirection:'column', gap:3, alignItems:'center' }}>
               <span style={{ fontSize:9, color:C.mu }}>{label}</span>
@@ -280,8 +280,8 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, 
 
         {/* 그라데이션 */}
         <p style={sLabel}>그라데이션</p>
-        <div style={{ marginBottom:14 }}>
-          <div style={{ display:'flex', gap:4, flexWrap:'wrap', marginBottom:8 }}>
+        <div style={{ marginBottom:8 }}>
+          <div style={{ display:'flex', gap:3, flexWrap:'wrap', marginBottom:6 }}>
             {GRAD_DIRS.map(({k,l}) => {
               const on = (grad.dir || 'none') === k
               return (
@@ -320,7 +320,7 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, 
 
         {/* 폰트 */}
         <p style={sLabel}>폰트</p>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:3, marginBottom:5 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:3, marginBottom:3 }}>
           {FONT_OPTS.map(f => {
             const on = currentStyle.fontFamily === f.v
             return (
@@ -332,7 +332,7 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, 
           })}
         </div>
         <button onClick={() => updateTS('bold', !currentStyle.bold)}
-          style={{ width:'100%', padding:'6px 0', fontSize:11, borderRadius:6, border:`1.5px solid ${currentStyle.bold?'#3b82f6':C.bd}`, background:currentStyle.bold?'#EFF6FF':C.sur, color:currentStyle.bold?'#1d4ed8':C.mu, cursor:'pointer', fontWeight:currentStyle.bold?700:400, marginBottom:14 }}>
+          style={{ width:'100%', padding:'5px 0', fontSize:11, borderRadius:6, border:`1.5px solid ${currentStyle.bold?'#3b82f6':C.bd}`, background:currentStyle.bold?'#EFF6FF':C.sur, color:currentStyle.bold?'#1d4ed8':C.mu, cursor:'pointer', fontWeight:currentStyle.bold?700:400, marginBottom:8 }}>
           <strong>B</strong> 굵게
         </button>
 
@@ -370,7 +370,7 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, 
 
         {/* 텍스트 추가 */}
         <button onClick={onAddOverlay}
-          style={{ width:'100%', padding:'10px 0', fontSize:13, fontWeight:700, borderRadius:8, border:'2px dashed #3b82f6', background:'#EFF6FF', color:'#1d4ed8', cursor:'pointer', marginBottom:14 }}>
+          style={{ width:'100%', padding:'8px 0', fontSize:12, fontWeight:700, borderRadius:7, border:'1.5px dashed #3b82f6', background:'#EFF6FF', color:'#1d4ed8', cursor:'pointer', marginBottom:8 }}>
           + 텍스트 추가
         </button>
 
@@ -405,21 +405,21 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, 
         )}
 
         {/* 삭제 */}
-        <div style={{ borderTop:`1px solid ${C.bd}`, margin:'8px 0 12px' }} />
+        <div style={{ borderTop:`1px solid ${C.bd}`, margin:'6px 0 8px' }} />
         <button onClick={onDelete}
-          style={{ width:'100%', padding:'10px 0', fontSize:12, fontWeight:700, borderRadius:8, border:'1px solid #fca5a5', background:'#fef2f2', color:'#ef4444', cursor:'pointer' }}>
+          style={{ width:'100%', padding:'8px 0', fontSize:12, fontWeight:700, borderRadius:7, border:'1px solid #fca5a5', background:'#fef2f2', color:'#ef4444', cursor:'pointer' }}>
           × 섹션 삭제
         </button>
       </div>
 
       {/* 하단 PNG 버튼 */}
-      <div style={{ borderTop:`1px solid ${C.bd}`, padding:'12px 14px', background:'#F8FAFF', flexShrink:0, display:'flex', gap:8, flexDirection:'column' }}>
+      <div style={{ borderTop:`1px solid ${C.bd}`, padding:'10px 12px', background:'#F8FAFF', flexShrink:0, display:'flex', gap:6, flexDirection:'column' }}>
         <button onClick={onDlSection}
-          style={{ width:'100%', padding:'9px 0', fontSize:12, fontWeight:700, borderRadius:8, border:'1px solid #1d6b45', background:'#f0fdf4', color:'#1d6b45', cursor:'pointer' }}>
+          style={{ width:'100%', padding:'8px 0', fontSize:11, fontWeight:700, borderRadius:7, border:'1px solid #1d6b45', background:'#f0fdf4', color:'#1d6b45', cursor:'pointer' }}>
           ↓ 선택 PNG
         </button>
         <button onClick={onDlAll} disabled={dlAll}
-          style={{ width:'100%', padding:'9px 0', fontSize:12, fontWeight:700, borderRadius:8, border:`1px solid ${dlAll?C.bd:C.bdm}`, background:dlAll?C.alt:C.tx, color:dlAll?C.fa:'#fff', cursor:dlAll?'not-allowed':'pointer' }}>
+          style={{ width:'100%', padding:'8px 0', fontSize:11, fontWeight:700, borderRadius:7, border:`1px solid ${dlAll?C.bd:C.bdm}`, background:dlAll?C.alt:C.tx, color:dlAll?C.fa:'#fff', cursor:dlAll?'not-allowed':'pointer' }}>
           {dlAll ? '저장 중…' : '↓ 전체 PNG'}
         </button>
       </div>
@@ -784,18 +784,18 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
       )}
 
       {sects.length > 0 && (
-        <div style={{ background: '#F0EFEB', margin: '0 -20px', borderTop: '1px solid #E0DED8', borderBottom: '1px solid #E0DED8' }}>
+        <div style={{ margin:'0 -20px', position:'sticky', top:52, height:'calc(100vh - 52px)', zIndex:10, display:'flex', flexDirection:'column', overflow:'hidden', borderTop:'1px solid #E0DED8' }}>
           {/* 헤더 */}
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 20px', borderBottom:`1px solid ${C.bd}`, background:'#F8F8F6' }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 20px', borderBottom:`1px solid ${C.bd}`, background:'#F8F8F6', flexShrink:0 }}>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
               <span style={{ fontSize:12, fontWeight:800, color:C.tx, letterSpacing:'-0.02em' }}>🖼 섹션 편집기</span>
               <span style={{ fontSize:11, color:C.mu }}>— 클릭하여 섹션 선택 · 텍스트/이미지 직접 편집</span>
             </div>
           </div>
           {/* 2단 레이아웃 */}
-          <div style={{ display:'flex', alignItems:'flex-start' }}>
+          <div style={{ display:'flex', flex:1, overflow:'hidden', background:'#F0EFEB' }}>
             {/* 왼쪽: 섹션 목록 */}
-            <div style={{ flex:1, minWidth:0, padding:'16px', overflowX:'hidden' }}>
+            <div style={{ flex:1, minWidth:0, padding:'16px', overflowY:'auto', overflowX:'hidden' }}>
               {sects.map((s, i) => (
                 <React.Fragment key={s._id || i}>
                   <SectionEditor

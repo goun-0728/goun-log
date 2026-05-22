@@ -96,20 +96,23 @@ export function ImgBox({ url, t, editing, onImgChange, minH = 320, imgMeta, onMe
   }
   if (!url) return null
   if (url === 'slot') return (
-    <div onClick={() => ref.current?.click()}
-      style={{ ...(fixedH ? { height: fixedH } : { minHeight: minH }), background: t.sub,
-        border: `2px dashed ${t.bd}`, display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center', gap: 14, cursor: 'pointer' }}>
+    <div style={{ ...(fixedH ? { height: fixedH } : { minHeight: minH }), background: t.sub,
+      border: `2px dashed ${t.bd}`, display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', gap: 12 }}>
       <input ref={ref} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
-      <span style={{ fontSize: 40, opacity: 0.3 }}>📷</span>
-      <span style={{ fontSize: 14, color: '#222', fontWeight: 600, background: '#e0e0e0', padding: '6px 18px', borderRadius: 24 }}>클릭해서 사진 업로드</span>
+      <div onClick={e => { e.stopPropagation(); ref.current?.click() }}
+        style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10,
+          cursor:'pointer', background:'rgba(0,0,0,0.08)', padding:'22px 36px', borderRadius:18 }}>
+        <span style={{ fontSize: 52, opacity: 0.5 }}>📷</span>
+        <span style={{ fontSize: 15, color: '#222', fontWeight: 700, background: '#d8d8d8', padding: '8px 22px', borderRadius: 24 }}>클릭해서 사진 업로드</span>
+      </div>
     </div>
   )
   return (
     <div style={{ position: 'relative' }}>
       <input ref={ref} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
       {editing && (
-        <button onClick={() => ref.current?.click()}
+        <button onClick={e => { e.stopPropagation(); ref.current?.click() }}
           style={{ position: 'absolute', top: 10, left: 10, zIndex: 10, padding: '8px 18px', fontSize: 13, fontWeight: 700, background: 'rgba(0,0,0,0.65)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}>
           📷 교체
         </button>
