@@ -1,9 +1,10 @@
 // src/App.jsx
 import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { C, TASKS, BLOG_TONES, getSys, EXTRA_SECTIONS, getExtraSectSys, mkSec } from './constants'
+import { C, DS, DS_KEYS, TPL_LABELS, TPL_COMPAT, TASKS, BLOG_TONES, getSys, EXTRA_SECTIONS, getExtraSectSys, mkSec } from './constants'
 import { parseBlocks, parseSections, capturePNG, downloadURL } from './utils'
 import { generateContent } from './api/generate'
 import SectionEditor from './components/SectionEditor'
+import { FONT_OPTS, SHAPE_DEFS } from './components/SectionTemplates'
 import CardNewsView from './components/CardNewsEditor'
 import BlogKeywords from './components/BlogKeywords'
 import BlogThumbnail from './components/BlogThumbnail'
@@ -38,6 +39,93 @@ const EMPTY_QUIZ = {
   emphasis: [],
 }
 
+const GRAD_DIRS = [
+  { k: 'none',   l: '없음' },
+  { k: 'top',    l: '위' },
+  { k: 'bottom', l: '아래' },
+  { k: 'left',   l: '좌' },
+  { k: 'right',  l: '우' },
+]
+const PRESET_COLORS = ['#ffffff','#111111','#ef4444','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#0f172a','#fafaf8']
+const sLabel = { fontSize:10, fontWeight:700, color:'#B0ADA5', letterSpacing:'0.07em', textTransform:'uppercase', marginBottom:7, marginTop:0 }
+
+function TplIcon({ k }) {
+  const d = '#9CA3AF', l = '#E5E7EB', a = '#6B7280'
+  const base = { borderRadius:2, overflow:'hidden', width:'100%', height:32, position:'relative', flexShrink:0 }
+  if (k === 'fullHero') return (
+    <div style={{ ...base, background:d }}>
+      <div style={{ position:'absolute',bottom:5,left:5,right:5,height:5,background:'rgba(255,255,255,0.35)',borderRadius:1 }} />
+      <div style={{ position:'absolute',bottom:12,left:5,width:'55%',height:4,background:'rgba(255,255,255,0.6)',borderRadius:1 }} />
+    </div>
+  )
+  if (k === 'topBottom') return (
+    <div style={{ ...base, display:'flex',flexDirection:'column',gap:1 }}>
+      <div style={{ flex:1,background:l,display:'flex',alignItems:'center',paddingLeft:4 }}>
+        <div style={{ width:'55%',height:3,background:a,borderRadius:1,opacity:0.6 }} />
+      </div>
+      <div style={{ flex:1,background:d }} />
+    </div>
+  )
+  if (k === 'leftRight') return (
+    <div style={{ ...base, display:'flex',gap:1 }}>
+      <div style={{ flex:1,background:d }} />
+      <div style={{ flex:1,background:l,display:'flex',flexDirection:'column',justifyContent:'center',gap:2,padding:4 }}>
+        <div style={{ height:3,background:a,borderRadius:1,opacity:0.7 }} />
+        <div style={{ height:2,background:a,borderRadius:1,opacity:0.4 }} />
+      </div>
+    </div>
+  )
+  if (k === 'points3icon') return (
+    <div style={{ ...base, display:'flex',flexDirection:'column',gap:1 }}>
+      <div style={{ flex:2,background:d }} />
+      <div style={{ flex:1,display:'flex',gap:1 }}>
+        <div style={{ flex:1,background:l }} />
+        <div style={{ flex:1,background:l }} />
+        <div style={{ flex:1,background:l }} />
+      </div>
+    </div>
+  )
+  if (k === 'story') return (
+    <div style={{ ...base, background:l,display:'flex',flexDirection:'column',justifyContent:'center',gap:3,padding:'4px 6px' }}>
+      <div style={{ height:5,background:d,borderRadius:1,width:'80%' }} />
+      <div style={{ height:2,background:a,borderRadius:1,opacity:0.5,width:'95%' }} />
+      <div style={{ height:2,background:a,borderRadius:1,opacity:0.5,width:'70%' }} />
+    </div>
+  )
+  if (k === 'howTo') return (
+    <div style={{ ...base, display:'flex',flexDirection:'column',gap:1 }}>
+      <div style={{ height:10,background:d,display:'flex',alignItems:'center',justifyContent:'center' }}>
+        <div style={{ height:3,width:'50%',background:'rgba(255,255,255,0.6)',borderRadius:1 }} />
+      </div>
+      <div style={{ flex:1,background:'#c5c9d0' }} />
+      <div style={{ height:8,background:l,display:'flex',flexDirection:'column',justifyContent:'center',gap:1,padding:'0 4px' }}>
+        <div style={{ height:2,background:a,borderRadius:1,opacity:0.5 }} />
+      </div>
+    </div>
+  )
+  if (k === 'compare') return (
+    <div style={{ ...base, background:l,display:'flex',flexDirection:'column',gap:1,padding:3 }}>
+      <div style={{ height:3,background:d,borderRadius:1,width:'55%',margin:'1px auto 3px' }} />
+      <div style={{ flex:1,display:'flex',gap:1 }}>
+        <div style={{ flex:1,background:'#d1d5db',borderRadius:1 }} />
+        <div style={{ flex:1,background:d,borderRadius:1 }} />
+      </div>
+    </div>
+  )
+  if (k === 'specTable') return (
+    <div style={{ ...base, background:'#FDFAF5',display:'flex',flexDirection:'column',gap:2,padding:3 }}>
+      <div style={{ height:4,background:d,borderRadius:1,marginBottom:2 }} />
+      {[1,2,3].map(i => (
+        <div key={i} style={{ height:4,display:'flex',gap:1 }}>
+          <div style={{ width:'30%',background:'#d0c8b8',borderRadius:1 }} />
+          <div style={{ flex:1,background:l,borderRadius:1 }} />
+        </div>
+      ))}
+    </div>
+  )
+  return <div style={{ ...base, background:l }} />
+}
+
 /* ── 미니 컴포넌트 ─────────────────────────────────── */
 function Spin() {
   return <span style={{ display: 'inline-block', width: 14, height: 14, borderRadius: '50%', border: '2px solid #ddd', borderTopColor: '#555', animation: 'sp .6s linear infinite', flexShrink: 0 }} />
@@ -67,14 +155,274 @@ function Blk({ title, lines }) {
   )
 }
 
-/* ── 섹션 사이 추가 버튼 ────────────────────────────── */
-function AddBetweenBtn({ onClick, loading }) {
+/* ── 섹션 사이 호버 추가 버튼 ────────────────────────── */
+function AddBetweenHover({ onClick, loading }) {
+  const [hov, setHov] = useState(false)
   return (
-    <div style={{ margin:'6px 0 14px' }}>
+    <div
+      style={{ height: hov ? 44 : 10, transition:'height .15s', overflow:'hidden', display:'flex', alignItems:'center' }}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+    >
       <button onClick={onClick} disabled={loading}
-        style={{ width:'100%', padding:'10px 0', fontSize:12, borderRadius:12, border:'1.5px solid #3B82F6', background:loading?'#93c5fd':'#3B82F6', color:'#fff', cursor:loading?'not-allowed':'pointer', fontWeight:600, transition:'background .12s', opacity:loading?0.7:1 }}>
+        style={{ width:'100%', height:34, fontSize:12, borderRadius:8, border:'1.5px dashed #3B82F6', background:'rgba(239,246,255,0.95)', color:'#3B82F6', cursor:loading?'not-allowed':'pointer', fontWeight:600 }}>
         {loading ? '생성 중…' : '+ 섹션 추가'}
       </button>
+    </div>
+  )
+}
+
+/* ── Canva 우측 편집 패널 ────────────────────────────── */
+function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, onAddOverlay, dlAll, onDlAll, onDlSection }) {
+  if (sec === null || idx === null) {
+    return (
+      <div style={{ width:280, minWidth:280, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', borderLeft:`1px solid ${C.bd}`, background:'#F8FAFF', minHeight:480, gap:10 }}>
+        <div style={{ fontSize:36 }}>🖱</div>
+        <p style={{ fontSize:13, color:C.mu, textAlign:'center', lineHeight:1.7, margin:0 }}>섹션을 클릭해서<br/>선택하세요</p>
+      </div>
+    )
+  }
+
+  const baseT  = DS[sec.designStyle] || Object.values(DS)[0]
+  const t      = { ...baseT, ...(sec.customColors || {}) }
+  const tplKey = TPL_LABELS.find(x => x.k === sec.template) ? sec.template : (TPL_COMPAT[sec.template] || 'topBottom')
+  const grad   = sec.gradient || {}
+
+  const change  = (key, val) => onUpdate(idx, { ...sec, [key]: val })
+  const setGrad = (key, val) => change('gradient', { ...grad, [key]: val })
+
+  const hasActive    = activeField || activeOverlay
+  const currentStyle = activeField
+    ? (sec.textStyles?.[activeField] || {})
+    : activeOverlay
+      ? ((sec.overlayTexts || []).find(o => o.id === activeOverlay)?.style || {})
+      : {}
+
+  const updateTS = (key, val) => {
+    if (activeField) {
+      change('textStyles', {
+        ...(sec.textStyles || {}),
+        [activeField]: { ...(sec.textStyles?.[activeField] || {}), [key]: val },
+      })
+    } else if (activeOverlay) {
+      change('overlayTexts', (sec.overlayTexts || []).map(ot =>
+        ot.id === activeOverlay ? { ...ot, style: { ...(ot.style || {}), [key]: val } } : ot
+      ))
+    }
+  }
+
+  return (
+    <div style={{ width:280, minWidth:280, borderLeft:`1px solid ${C.bd}`, background:'#F8FAFF', display:'flex', flexDirection:'column', position:'sticky', top:52, maxHeight:'calc(100vh - 52px)', alignSelf:'flex-start' }}>
+
+      {/* 헤더 */}
+      <div style={{ padding:'12px 14px', borderBottom:`1px solid ${C.bd}`, background:'#EFF6FF', flexShrink:0 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <div style={{ width:8, height:8, borderRadius:'50%', background:t.ac, flexShrink:0 }} />
+          <span style={{ fontSize:12, fontWeight:700, color:'#1E40AF' }}>S{idx+1} · {sec.sectionType}</span>
+        </div>
+      </div>
+
+      {/* 스크롤 컨트롤 영역 */}
+      <div style={{ flex:1, overflowY:'auto', padding:'12px 14px 16px' }}>
+
+        {/* 레이아웃 */}
+        <p style={sLabel}>레이아웃</p>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:4, marginBottom:16 }}>
+          {TPL_LABELS.map(({k,l}) => {
+            const on = tplKey === k
+            return (
+              <button key={k} onClick={() => change('template', k)}
+                style={{ padding:'4px 4px 4px', fontSize:9, borderRadius:6, border:`1.5px solid ${on?'#3b82f6':C.bd}`, background:on?'#EFF6FF':C.sur, color:on?'#1d4ed8':C.mu, cursor:'pointer', fontWeight:on?700:400, textAlign:'center', display:'flex', flexDirection:'column', gap:3, alignItems:'stretch' }}>
+                <TplIcon k={k} />
+                <span style={{ lineHeight:1.2, marginTop:1 }}>{l}</span>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* 색상 테마 */}
+        <p style={sLabel}>색상 테마</p>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:4, marginBottom:14 }}>
+          {DS_KEYS.map(s => {
+            const on = sec.designStyle === s; const d = DS[s]
+            return (
+              <button key={s} onClick={() => change('designStyle', s)}
+                style={{ borderRadius:7, border:`2px solid ${on?'#3b82f6':'transparent'}`, cursor:'pointer', padding:0, overflow:'hidden', background:'none', outline:'none' }}>
+                <div style={{ height:22, background:d.bg, display:'flex', alignItems:'center', justifyContent:'center', gap:3 }}>
+                  <div style={{ width:7, height:7, borderRadius:'50%', background:d.ac }} />
+                  <div style={{ width:10, height:2, borderRadius:2, background:d.fg, opacity:0.4 }} />
+                </div>
+                <div style={{ padding:'2px', background:on?'#EFF6FF':C.alt, fontSize:8, color:on?'#1d4ed8':C.mu, fontWeight:on?700:400, textAlign:'center', lineHeight:1.3 }}>{s}</div>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* 커스텀 색상 */}
+        <p style={sLabel}>커스텀 색상</p>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginBottom:14 }}>
+          {[{ label:'배경색', key:'bg' }, { label:'강조색', key:'ac' }, { label:'글자색', key:'fg' }].map(({ label, key }) => (
+            <div key={key} style={{ display:'flex', flexDirection:'column', gap:3, alignItems:'center' }}>
+              <span style={{ fontSize:9, color:C.mu }}>{label}</span>
+              <label style={{ cursor:'pointer', position:'relative' }}>
+                <div style={{ width:44, height:24, borderRadius:5, background:(sec.customColors?.[key]) || t[key], border:`1.5px solid ${C.bd}`, cursor:'pointer' }} />
+                <input type="color" value={(sec.customColors?.[key]) || t[key] || '#ffffff'}
+                  onChange={e => change('customColors', { ...(sec.customColors||{}), [key]: e.target.value })}
+                  style={{ position:'absolute', opacity:0, width:0, height:0, top:0, left:0 }} />
+              </label>
+              {sec.customColors?.[key] && (
+                <button onClick={() => { const cc={...(sec.customColors||{})}; delete cc[key]; change('customColors',cc) }}
+                  style={{ fontSize:8, color:'#ef4444', border:'none', background:'none', cursor:'pointer', padding:0 }}>초기화</button>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* 그라데이션 */}
+        <p style={sLabel}>그라데이션</p>
+        <div style={{ marginBottom:14 }}>
+          <div style={{ display:'flex', gap:4, flexWrap:'wrap', marginBottom:8 }}>
+            {GRAD_DIRS.map(({k,l}) => {
+              const on = (grad.dir || 'none') === k
+              return (
+                <button key={k} onClick={() => setGrad('dir', k)}
+                  style={{ padding:'4px 10px', fontSize:10, borderRadius:5, border:`1.5px solid ${on?'#3b82f6':C.bd}`, background:on?'#EFF6FF':C.sur, color:on?'#1d4ed8':C.mu, cursor:'pointer', fontWeight:on?700:400 }}>
+                  {l}
+                </button>
+              )
+            })}
+          </div>
+          {grad.dir && grad.dir !== 'none' && (
+            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+              <div>
+                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
+                  <span style={{ fontSize:10, color:C.mu }}>강도</span>
+                  <span style={{ fontSize:10, fontWeight:700, color:C.tx }}>{grad.alpha ?? 70}%</span>
+                </div>
+                <input type="range" min={0} max={100} step={5}
+                  value={grad.alpha ?? 70}
+                  onChange={e => setGrad('alpha', +e.target.value)}
+                  style={{ width:'100%', accentColor:'#3b82f6' }} />
+              </div>
+              <label style={{ fontSize:9, color:C.mu, display:'flex', alignItems:'center', gap:6, cursor:'pointer' }}>
+                <span>색상</span>
+                <input type="color" value={grad.color || t.bg || '#000000'}
+                  onChange={e => setGrad('color', e.target.value)}
+                  style={{ width:26, height:18, border:'1px solid #ccc', padding:0, cursor:'pointer', borderRadius:3 }} />
+                {grad.color && (
+                  <button onClick={() => { const g2={...grad}; delete g2.color; change('gradient',g2) }}
+                    style={{ fontSize:8, color:'#ef4444', border:'none', background:'none', cursor:'pointer' }}>배경색으로</button>
+                )}
+              </label>
+            </div>
+          )}
+        </div>
+
+        {/* 폰트 */}
+        <p style={sLabel}>폰트</p>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:3, marginBottom:5 }}>
+          {FONT_OPTS.map(f => {
+            const on = currentStyle.fontFamily === f.v
+            return (
+              <button key={f.v} onClick={() => updateTS('fontFamily', f.v)}
+                style={{ padding:'6px 8px', fontSize:11, borderRadius:6, border:`1.5px solid ${on?'#3b82f6':C.bd}`, background:on?'#EFF6FF':C.sur, color:on?'#1d4ed8':C.mu, cursor:'pointer', fontWeight:on?700:400, textAlign:'left', fontFamily:f.v, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                {f.l}
+              </button>
+            )
+          })}
+        </div>
+        <button onClick={() => updateTS('bold', !currentStyle.bold)}
+          style={{ width:'100%', padding:'6px 0', fontSize:11, borderRadius:6, border:`1.5px solid ${currentStyle.bold?'#3b82f6':C.bd}`, background:currentStyle.bold?'#EFF6FF':C.sur, color:currentStyle.bold?'#1d4ed8':C.mu, cursor:'pointer', fontWeight:currentStyle.bold?700:400, marginBottom:14 }}>
+          <strong>B</strong> 굵게
+        </button>
+
+        {/* 선택된 텍스트 스타일 */}
+        {hasActive && (
+          <>
+            <div style={{ borderTop:`1px solid ${C.bd}`, margin:'4px 0 12px' }} />
+            <p style={sLabel}>선택된 텍스트</p>
+            <div style={{ marginBottom:12 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
+                <span style={{ fontSize:10, color:C.mu }}>크기</span>
+                <span style={{ fontSize:10, fontWeight:700, color:C.tx }}>{currentStyle.fontSize ?? 24}px</span>
+              </div>
+              <input type="range" min={12} max={80} step={1}
+                value={currentStyle.fontSize ?? 24}
+                onChange={e => updateTS('fontSize', +e.target.value)}
+                style={{ width:'100%', accentColor:'#3b82f6' }} />
+            </div>
+            <div style={{ marginBottom:12 }}>
+              <span style={{ fontSize:10, color:C.mu, display:'block', marginBottom:5 }}>글자색</span>
+              <div style={{ display:'flex', gap:4, flexWrap:'wrap', alignItems:'center' }}>
+                {PRESET_COLORS.map(c => (
+                  <button key={c} onClick={() => updateTS('color', c)}
+                    style={{ width:22, height:22, borderRadius:4, background:c,
+                      border: currentStyle.color===c ? '2px solid #3b82f6' : '1px solid #ccc',
+                      cursor:'pointer', flexShrink:0 }} />
+                ))}
+                <input type="color" value={currentStyle.color || '#111111'}
+                  onChange={e => updateTS('color', e.target.value)}
+                  style={{ width:28, height:22, border:'1px solid #ccc', padding:0, cursor:'pointer', borderRadius:4, flexShrink:0 }} />
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* 텍스트 추가 */}
+        <button onClick={onAddOverlay}
+          style={{ width:'100%', padding:'10px 0', fontSize:13, fontWeight:700, borderRadius:8, border:'2px dashed #3b82f6', background:'#EFF6FF', color:'#1d4ed8', cursor:'pointer', marginBottom:14 }}>
+          + 텍스트 추가
+        </button>
+
+        {/* 아이콘 모양 (points3icon) */}
+        {tplKey === 'points3icon' && (
+          <>
+            <div style={{ borderTop:`1px solid ${C.bd}`, margin:'4px 0 12px' }} />
+            <p style={sLabel}>아이콘 모양</p>
+            <div style={{ display:'flex', gap:4, flexWrap:'wrap', marginBottom:10 }}>
+              {SHAPE_DEFS.map(({ k, l }) => {
+                const on = (sec.pointShape || 'circle') === k
+                return (
+                  <button key={k} onClick={() => change('pointShape', k)}
+                    style={{ padding:'5px 10px', fontSize:10, borderRadius:6, border:`1.5px solid ${on?'#3b82f6':C.bd}`, background:on?'#EFF6FF':C.sur, color:on?'#1d4ed8':C.mu, cursor:'pointer', fontWeight:on?700:400 }}>
+                    {l}
+                  </button>
+                )
+              })}
+            </div>
+          </>
+        )}
+
+        {/* 좌우반전 (leftRight) */}
+        {tplKey === 'leftRight' && (
+          <>
+            <div style={{ borderTop:`1px solid ${C.bd}`, margin:'4px 0 12px' }} />
+            <button onClick={() => change('flipped', !sec.flipped)}
+              style={{ width:'100%', padding:'8px 0', fontSize:12, borderRadius:7, border:'1px solid #3b82f6', background:'#EFF6FF', color:'#1d4ed8', cursor:'pointer', fontWeight:700, marginBottom:10 }}>
+              ⇄ 좌우 반전
+            </button>
+          </>
+        )}
+
+        {/* 삭제 */}
+        <div style={{ borderTop:`1px solid ${C.bd}`, margin:'8px 0 12px' }} />
+        <button onClick={onDelete}
+          style={{ width:'100%', padding:'10px 0', fontSize:12, fontWeight:700, borderRadius:8, border:'1px solid #fca5a5', background:'#fef2f2', color:'#ef4444', cursor:'pointer' }}>
+          × 섹션 삭제
+        </button>
+      </div>
+
+      {/* 하단 PNG 버튼 */}
+      <div style={{ borderTop:`1px solid ${C.bd}`, padding:'12px 14px', background:'#F8FAFF', flexShrink:0, display:'flex', gap:8, flexDirection:'column' }}>
+        <button onClick={onDlSection}
+          style={{ width:'100%', padding:'9px 0', fontSize:12, fontWeight:700, borderRadius:8, border:'1px solid #1d6b45', background:'#f0fdf4', color:'#1d6b45', cursor:'pointer' }}>
+          ↓ 선택 PNG
+        </button>
+        <button onClick={onDlAll} disabled={dlAll}
+          style={{ width:'100%', padding:'9px 0', fontSize:12, fontWeight:700, borderRadius:8, border:`1px solid ${dlAll?C.bd:C.bdm}`, background:dlAll?C.alt:C.tx, color:dlAll?C.fa:'#fff', cursor:dlAll?'not-allowed':'pointer' }}>
+          {dlAll ? '저장 중…' : '↓ 전체 PNG'}
+        </button>
+      </div>
     </div>
   )
 }
@@ -166,8 +514,9 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
   const [addLoading, setAddLoading] = useState(null)
   const [addModal,   setAddModal]   = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
-  const [savedMap,   setSavedMap]   = useState({})
-  const [dlWarnModal, setDlWarnModal] = useState(false)
+  const [selectedIdx,  setSelectedIdx]  = useState(null)
+  const [activeField,  setActiveField]  = useState(null)
+  const [activeOverlay,setActiveOverlay]= useState(null)
   const [smartTitles, setSmartTitles] = useState([])
   const [titlesLoading, setTitlesLoading] = useState(false)
 
@@ -230,11 +579,21 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
   }, [])
 
   const upd = useCallback((i, v) => setSects(p => p.map((s, j) => j === i ? v : s)), [])
-  const handleSavedChange = useCallback((i, isSaved) => setSavedMap(prev => ({ ...prev, [i]: isSaved })), [])
+
+  const selectSection = useCallback((idx) => {
+    setSelectedIdx(idx)
+    setActiveField(null)
+    setActiveOverlay(null)
+  }, [])
 
   const deleteSection = useCallback(i => {
     setSects(p => p.filter((_, j) => j !== i))
     setPlanOpen({})
+    setSelectedIdx(prev => {
+      if (prev === null) return null
+      if (prev === i) { setActiveField(null); setActiveOverlay(null); return null }
+      return prev > i ? prev - 1 : prev
+    })
   }, [])
 
   const addSection = useCallback(async (typeInfo, insertAfterIdx) => {
@@ -259,8 +618,17 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
     }
   }, [productInput])
 
+  const addOverlay = useCallback(() => {
+    if (selectedIdx === null) return
+    const id  = Math.random().toString(36).slice(2, 9)
+    const newOt = { id, text: '텍스트', x: 10, y: 20, style: { fontSize: 28, color: '#ffffff', fontFamily: "'Nanum Gothic', sans-serif" } }
+    const sec = sects[selectedIdx]
+    upd(selectedIdx, { ...sec, overlayTexts: [...(sec.overlayTexts || []), newOt] })
+    setActiveOverlay(id)
+    setActiveField(null)
+  }, [selectedIdx, sects, upd])
+
   const dlAllPNG = async () => {
-    if (Object.values(savedMap).some(v => v === false)) { setDlWarnModal(true); return }
     setDlAll(true)
     const els = document.querySelectorAll('[data-sect-card]')
     for (let i = 0; i < els.length; i++) {
@@ -268,6 +636,17 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
       catch (e) { console.error(e) }
     }
     setDlAll(false)
+  }
+
+  const dlSectionPNG = async () => {
+    if (selectedIdx === null) return
+    const els = document.querySelectorAll('[data-sect-card]')
+    const el  = els[selectedIdx]
+    if (!el) return
+    setDlAll(true)
+    try { await capturePNG(el, `section_${selectedIdx + 1}.png`) }
+    catch (e) { console.error(e) }
+    finally { setDlAll(false) }
   }
 
   return (
@@ -405,24 +784,47 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
       )}
 
       {sects.length > 0 && (
-        <div style={{ background: '#F8F8F8', margin: '0 -20px', padding: '20px 20px 24px', borderBottom: '1px solid #E0E0E0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 12, fontWeight: 800, color: C.tx, letterSpacing: '-0.02em' }}>🖼 다운로드용 섹션 이미지</span>
-              <span style={{ fontSize: 11, color: C.mu }}>— 수정 후 PNG 저장</span>
+        <div style={{ background: '#F0EFEB', margin: '0 -20px', borderTop: '1px solid #E0DED8', borderBottom: '1px solid #E0DED8' }}>
+          {/* 헤더 */}
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 20px', borderBottom:`1px solid ${C.bd}`, background:'#F8F8F6' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <span style={{ fontSize:12, fontWeight:800, color:C.tx, letterSpacing:'-0.02em' }}>🖼 섹션 편집기</span>
+              <span style={{ fontSize:11, color:C.mu }}>— 클릭하여 섹션 선택 · 텍스트/이미지 직접 편집</span>
             </div>
-            <button onClick={dlAllPNG} disabled={dlAll} style={{ padding: '6px 12px', fontSize: 11, borderRadius: 7, border: `1px solid ${dlAll ? C.bd : C.bdm}`, background: dlAll ? C.alt : C.sur, color: dlAll ? C.fa : C.tx, cursor: dlAll ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
-              {dlAll ? <><Spin /> 저장 중…</> : '↓ 전체 PNG'}
-            </button>
           </div>
-          {sects.map((s, i) => (
-            <React.Fragment key={s._id || i}>
-              <div data-sect>
-                <SectionEditor sec={s} idx={i} onUpdate={upd} onDelete={() => setDeleteConfirm(i)} onSavedChange={handleSavedChange} />
-              </div>
-              <AddBetweenBtn onClick={() => setAddModal(i)} loading={addLoading !== null} />
-            </React.Fragment>
-          ))}
+          {/* 2단 레이아웃 */}
+          <div style={{ display:'flex', alignItems:'flex-start' }}>
+            {/* 왼쪽: 섹션 목록 */}
+            <div style={{ flex:1, minWidth:0, padding:'16px', overflowX:'hidden' }}>
+              {sects.map((s, i) => (
+                <React.Fragment key={s._id || i}>
+                  <SectionEditor
+                    sec={s} idx={i} onUpdate={upd}
+                    isSelected={selectedIdx === i}
+                    onSelect={selectSection}
+                    activeField={selectedIdx === i ? activeField : null}
+                    onActiveFieldChange={f => { setActiveField(f); setActiveOverlay(null) }}
+                    activeOverlay={selectedIdx === i ? activeOverlay : null}
+                    onActiveOverlayChange={id => { setActiveOverlay(id); setActiveField(null) }}
+                  />
+                  <AddBetweenHover onClick={() => setAddModal(i)} loading={addLoading !== null} />
+                </React.Fragment>
+              ))}
+            </div>
+            {/* 오른쪽: 고정 편집 패널 */}
+            <CanvaPanel
+              sec={selectedIdx !== null ? sects[selectedIdx] : null}
+              idx={selectedIdx}
+              onUpdate={upd}
+              onDelete={() => selectedIdx !== null && setDeleteConfirm(selectedIdx)}
+              activeField={activeField}
+              activeOverlay={activeOverlay}
+              onAddOverlay={addOverlay}
+              dlAll={dlAll}
+              onDlAll={dlAllPNG}
+              onDlSection={dlSectionPNG}
+            />
+          </div>
         </div>
       )}
 
@@ -453,18 +855,6 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
                 </button>
               ))}
             </div>
-          </div>
-        </div>
-      )}
-
-      {dlWarnModal && (
-        <div style={{ position:'fixed', inset:0, zIndex:300, background:'rgba(0,0,0,0.55)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <div style={{ background:'#fff', borderRadius:16, padding:'32px 36px', maxWidth:400, width:'90%', boxShadow:'0 20px 60px rgba(0,0,0,0.3)', textAlign:'center' }}>
-            <div style={{ fontSize:48, marginBottom:14 }}>⚠️</div>
-            <p style={{ fontSize:17, fontWeight:700, color:'#18170F', margin:'0 0 10px' }}>저장되지 않은 섹션이 있습니다</p>
-            <p style={{ fontSize:13, color:'#B0ADA5', margin:'0 0 28px', lineHeight:1.7 }}>모든 섹션을 저장한 후 다운로드해주세요.</p>
-            <button onClick={() => setDlWarnModal(false)}
-              style={{ padding:'11px 40px', borderRadius:9, border:'none', background:'#3b82f6', color:'#fff', cursor:'pointer', fontWeight:700, fontSize:14 }}>확인</button>
           </div>
         </div>
       )}
