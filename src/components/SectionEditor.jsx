@@ -60,7 +60,7 @@ function OverlayTextBlock({ ot, containerRef, onUpdate, onRemove, isActive, onSe
       style={{
         position:'absolute', left:`${ot.x ?? 10}%`, top:`${ot.y ?? 10}%`, zIndex:15,
         cursor: dragging ? 'grabbing' : 'grab',
-        outline: isActive ? '2px solid #3b82f6' : 'none',
+        border: isActive ? '2px solid #3b82f6' : '2px dashed rgba(153,153,153,0.7)',
         borderRadius:4, padding: '3px 6px',
       }}
       onMouseDown={handleMD}
@@ -148,8 +148,7 @@ export default function SectionEditor({
       {(isSelected || hovered) && (
         <div style={{
           position: 'absolute', inset: 0, zIndex: 20, pointerEvents: 'none',
-          border: isSelected ? '2px solid #3b82f6' : '1px solid #93c5fd',
-          boxShadow: isSelected ? 'inset 0 0 0 1px rgba(59,130,246,0.2)' : 'none',
+          border: isSelected ? '3px solid #2563EB' : '2px solid #93C5FD',
         }} />
       )}
 

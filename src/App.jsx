@@ -174,7 +174,7 @@ function AddBetweenHover({ onClick, loading }) {
 
 /* ── Canva 우측 편집 패널 ────────────────────────────── */
 function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, onAddOverlay, onAddSection, dlAll, onDlAll, onDlSection }) {
-  const panelStyle = { position:'fixed', right:0, top:52, width:280, height:'calc(100vh - 52px)', zIndex:50, background:'#fff', boxShadow:'-4px 0 24px rgba(0,0,0,0.1)', display:'flex', flexDirection:'column', overflow:'hidden' }
+  const panelStyle = { position:'fixed', right:0, top:52, width:340, height:'calc(100vh - 52px)', zIndex:50, background:'#fff', boxShadow:'-4px 0 24px rgba(0,0,0,0.1)', display:'flex', flexDirection:'column', overflow:'hidden' }
 
   if (sec === null || idx === null) {
     return (
@@ -219,7 +219,7 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, 
   }
 
   return (
-    <div style={{ position:'fixed', right:0, top:52, width:280, height:'calc(100vh - 52px)', zIndex:50, background:'#fff', boxShadow:'-4px 0 24px rgba(0,0,0,0.1)', display:'flex', flexDirection:'column', overflow:'hidden' }}>
+    <div style={{ position:'fixed', right:0, top:52, width:340, height:'calc(100vh - 52px)', zIndex:50, background:'#fff', boxShadow:'-4px 0 24px rgba(0,0,0,0.1)', display:'flex', flexDirection:'column', overflow:'hidden' }}>
 
       {/* 헤더 */}
       <div style={{ padding:'10px 14px', borderBottom:`1px solid ${C.bd}`, background:'#F8FAFF', flexShrink:0 }}>
@@ -234,7 +234,7 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, 
 
         {/* 레이아웃 */}
         <p style={sLabel}>레이아웃</p>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:3, marginBottom:8 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:3, marginBottom:8 }}>
           {TPL_LABELS.map(({k,l}) => {
             const on = tplKey === k
             return (
@@ -249,7 +249,7 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, 
 
         {/* 색상 테마 */}
         <p style={sLabel}>색상 테마</p>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:3, marginBottom:8 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:3, marginBottom:8 }}>
           {DS_KEYS.map(s => {
             const on = sec.designStyle === s; const d = DS[s]
             return (
@@ -801,11 +801,11 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
         <>
           {/* 캔바 스타일 캔버스 — 회색 배경, 860px 중앙 페이지 */}
           <div
-            style={{ margin:'0 -20px', background:'#E8E8E8', paddingTop:32, paddingBottom:60, paddingRight:280 }}
+            style={{ margin:'0 -20px', background:'#E8E8E8', paddingTop:32, paddingBottom:60, paddingRight:340 }}
             onClick={() => setSelectedIdx(null)}
           >
             <div
-              style={{ width:860, margin:'0 auto', boxShadow:'0 8px 48px rgba(0,0,0,0.15)' }}
+              style={{ width:'100%', maxWidth:640, margin:'0 auto', boxShadow:'0 8px 48px rgba(0,0,0,0.15)' }}
               onClick={e => e.stopPropagation()}
             >
               {sects.map((s, i) => (
