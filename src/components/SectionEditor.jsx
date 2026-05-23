@@ -84,13 +84,19 @@ function OverlayTextBlock({ ot, containerRef, onUpdate, onRemove, isActive, onSe
       onMouseDown={handleMD}
       onClick={e => { onSelect(ot.id); e.stopPropagation() }}
     >
-      <div
-        contentEditable suppressContentEditableWarning
-        style={{ ...st, outline:'none', cursor:'text', minWidth:20 }}
-        onFocus={e => { onSelect(ot.id); e.stopPropagation() }}
-        onBlur={e => onUpdate({ ...ot, text: e.currentTarget.innerText })}
-        dangerouslySetInnerHTML={{ __html: ot.text || '텍스트' }}
-      />
+      <div style={{
+        fontFamily: st.fontFamily, fontSize: st.fontSize, color: st.color,
+        fontWeight: st.fontWeight, lineHeight: st.lineHeight,
+        whiteSpace: st.whiteSpace, wordBreak: st.wordBreak, textShadow: st.textShadow,
+      }}>
+        <div
+          contentEditable suppressContentEditableWarning
+          style={{ outline:'none', cursor:'text', minWidth:20 }}
+          onFocus={e => { onSelect(ot.id); e.stopPropagation() }}
+          onBlur={e => onUpdate({ ...ot, text: e.currentTarget.innerText })}
+          dangerouslySetInnerHTML={{ __html: ot.text || '텍스트' }}
+        />
+      </div>
       {isActive && (
         <>
           <button
