@@ -612,7 +612,7 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
   return (
     <div>
       {rep && (
-        <div style={{ background: '#FFFFFF', margin: '0 -20px', padding: '20px 20px 20px' }}>
+        <div style={{ background: '#FFFFFF', padding: '20px 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
             <span style={{ fontSize: 12, fontWeight: 800, color: C.tx, letterSpacing: '-0.02em' }}>📋 기획 보고서</span>
             <CopyBtn text={rep.lines.join('\n').trim()} />
@@ -624,7 +624,7 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
       )}
 
       {(pageTitle || metaDesc) && (
-        <div style={{ background: '#EFF6FF', margin: '0 -20px', padding: '20px 20px', borderTop: '1px solid #BFDBFE', borderBottom: '1px solid #BFDBFE' }}>
+        <div style={{ background: '#EFF6FF', padding: '20px 0', borderTop: '1px solid #BFDBFE', borderBottom: '1px solid #BFDBFE' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <span style={{ fontSize: 12, fontWeight: 800, color: '#1E40AF', letterSpacing: '-0.02em' }}>🔍 Page Title & Meta Description</span>
             <span style={{ fontSize: 11, color: '#3B82F6' }}>— SEO 최적화</span>
@@ -651,7 +651,7 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
       )}
 
       {sects.length > 0 && (
-        <div style={{ background: '#FEFCE8', margin: '0 -20px', padding: '20px 20px 24px', borderTop: '1px solid #FEF08A', borderBottom: '1px solid #FEF08A' }}>
+        <div style={{ background: '#FEFCE8', padding: '20px 0 24px', borderTop: '1px solid #FEF08A', borderBottom: '1px solid #FEF08A' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <span style={{ fontSize: 12, fontWeight: 800, color: '#713F12', letterSpacing: '-0.02em' }}>📐 섹션별 기획안</span>
             <span style={{ fontSize: 11, color: '#A16207' }}>— 촬영 가이드 · AI 프롬프트 포함</span>
@@ -712,10 +712,10 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
       )}
 
       {sects.length > 0 && (
-        <div style={{ margin:'0 -20px', background:'#F5F2ED', paddingTop:32, paddingBottom:60 }}>
+        <div style={{ background:'#F5F2ED', paddingTop:32, paddingBottom:60 }}>
           <div style={{ display:'flex', alignItems:'flex-start' }}>
             {/* 캔버스 */}
-            <div style={{ flex:1, minWidth:0, padding:'0 20px' }}
+            <div style={{ flex:1, minWidth:0 }}
               onClick={() => setSelectedIdx(null)}
             >
               <div

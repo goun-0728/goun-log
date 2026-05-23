@@ -21,9 +21,11 @@ function OverlayTextBlock({ ot, containerRef, onUpdate, onRemove, isActive, onSe
   useEffect(() => {
     if (!resizing) return
     const onMove = e => {
-      const { startY, startSize } = rsRef.current
+      const { startX, startY, startSize, corner } = rsRef.current
+      const dx = e.clientX - startX
       const dy = e.clientY - startY
-      const newSize = Math.max(10, Math.min(120, Math.round(startSize + dy / 4)))
+      const delta = corner === 'se' ? (dx + dy) / 4 : corner === 'nw' ? (-dx - dy) / 4 : corner === 'ne' ? (dx - dy) / 4 : (-dx + dy) / 4
+      const newSize = Math.max(10, Math.min(120, Math.round(startSize + delta)))
       onUpdate({ ...ot, style: { ...(ot.style || {}), fontSize: newSize } })
     }
     const onUp = () => setResizing(false)
@@ -100,14 +102,17 @@ function OverlayTextBlock({ ot, containerRef, onUpdate, onRemove, isActive, onSe
               display:'flex', alignItems:'center', justifyContent:'center', zIndex:20,
             }}
           >×</button>
-          <div
-            style={{ position:'absolute', bottom:-6, right:-6, width:12, height:12, borderRadius:2, background:'#3b82f6', cursor:'se-resize', zIndex:20, border:'1.5px solid #fff', boxShadow:'0 1px 4px rgba(0,0,0,0.25)' }}
-            onMouseDown={e => {
-              e.preventDefault(); e.stopPropagation()
-              rsRef.current = { startY: e.clientY, startSize: ot.style?.fontSize ?? 24 }
-              setResizing(true)
-            }}
-          />
+          {[['nw', { top: -5, left: -5 }, 'nw-resize'], ['ne', { top: -5, right: -5 }, 'ne-resize'],
+            ['sw', { bottom: -5, left: -5 }, 'sw-resize'], ['se', { bottom: -5, right: -5 }, 'se-resize']].map(([corner, pos, cur]) => (
+            <div key={corner}
+              style={{ position:'absolute', ...pos, width:10, height:10, borderRadius:2, background:'#3b82f6', cursor:cur, zIndex:20, border:'1.5px solid #fff', boxShadow:'0 1px 4px rgba(0,0,0,0.25)' }}
+              onMouseDown={e => {
+                e.preventDefault(); e.stopPropagation()
+                rsRef.current = { startX: e.clientX, startY: e.clientY, startSize: ot.style?.fontSize ?? 24, corner }
+                setResizing(true)
+              }}
+            />
+          ))}
         </>
       )}
     </div>

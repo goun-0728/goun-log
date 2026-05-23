@@ -39,6 +39,7 @@ export function parseSections(text) {
     out.push(mkSec({
       sectionType: sn, title: sn,
       mainCopy: gf('메인카피'), subCopy: gf('서브카피'),
+      description: gf('내용'),
       points: gb('포인트'), cta: gf('버튼문구'),
       designStyle: AUTO_DS[sn] || '크림',
       template: AUTO_TPL[sn] || 'material',

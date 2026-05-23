@@ -4,11 +4,16 @@ import React, { useRef, useState, useEffect, useCallback } from 'react'
 const CARD_W = 860
 
 const SAMPLE_IMGS = [
-  'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800',
-  'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800',
-  'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800',
-  'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800',
-  'https://images.unsplash.com/photo-1585386959984-a4155224a1ad?w=800',
+  'https://images.unsplash.com/photo-1490818387583-1baba5e638af?w=800',
+  'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800',
+  'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800',
+  'https://images.unsplash.com/photo-1498654896293-37aacf113fd9?w=800',
+  'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800',
+  'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800',
+  'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800',
+  'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800',
+  'https://images.unsplash.com/photo-1551218808-94e220e084d2?w=800',
+  'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800',
 ]
 
 export const FONT_OPTS = [
@@ -105,7 +110,7 @@ export function ImgBox({ url, t, editing, onImgChange, minH = 320, imgMeta, onMe
   }
   if (!url) return null
   if (url === 'slot') return (
-    <div style={{ position:'relative', aspectRatio: '9/16', overflow:'hidden' }}>
+    <div style={{ position:'relative', aspectRatio: '3/4', overflow:'hidden' }}>
       <input ref={ref} type="file" accept="image/*" onChange={handleFile} style={{ display:'none' }} />
       <img
         src={sampleRef.current}
@@ -113,7 +118,12 @@ export function ImgBox({ url, t, editing, onImgChange, minH = 320, imgMeta, onMe
         crossOrigin="anonymous"
         style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}
       />
-      <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.08)' }}>
+      <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.08)' }}>
+        <div style={{ position:'absolute', top:12, left:0, right:0, textAlign:'center', padding:'6px 12px' }}>
+          <span style={{ fontSize:11, fontWeight:700, color:'#fff', background:'rgba(0,0,0,0.55)', padding:'4px 12px', borderRadius:20, letterSpacing:'0.02em' }}>
+            📷 판매 제품 사진으로 교체해주세요
+          </span>
+        </div>
         <div onClick={e => { e.stopPropagation(); ref.current?.click() }}
           style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10,
             cursor:'pointer', background:'rgba(255,255,255,0.9)', padding:'20px 32px',
@@ -166,9 +176,11 @@ function ET({ s, field, editing, onChange, onFocus, def = {}, style: extra = {},
   useEffect(() => {
     if (!resizing) return
     const onMove = e => {
-      const { startY, startSize, snapStyles } = rsRef.current
+      const { startX, startY, startSize, snapStyles, corner } = rsRef.current
+      const dx = e.clientX - startX
       const dy = e.clientY - startY
-      const newSize = Math.max(10, Math.min(120, Math.round(startSize + dy / 4)))
+      const delta = corner === 'se' ? (dx + dy) / 4 : corner === 'nw' ? (-dx - dy) / 4 : corner === 'ne' ? (dx - dy) / 4 : (-dx + dy) / 4
+      const newSize = Math.max(10, Math.min(120, Math.round(startSize + delta)))
       onChange('textStyles', { ...snapStyles, [field]: { ...(snapStyles[field] || {}), fontSize: newSize } })
     }
     const onUp = () => setResizing(false)
@@ -200,16 +212,21 @@ function ET({ s, field, editing, onChange, onFocus, def = {}, style: extra = {},
         style={{ ...st, display: undefined, outline: 'none', borderBottom: '1.5px dashed rgba(59,130,246,0.55)', minHeight: 20, cursor: 'text', position: 'relative', zIndex: 2 }}
         dangerouslySetInnerHTML={{ __html: val }}
       />
-      {(hovered || resizing) && (
-        <div
-          style={{ position:'absolute', bottom:-6, right:-6, width:12, height:12, borderRadius:2, background:'#3b82f6', cursor:'se-resize', zIndex:30, border:'1.5px solid #fff', boxShadow:'0 1px 4px rgba(0,0,0,0.25)' }}
+      {(hovered || resizing) && [
+        ['nw', { top: -5, left: -5 }, 'nw-resize'],
+        ['ne', { top: -5, right: -5 }, 'ne-resize'],
+        ['sw', { bottom: -5, left: -5 }, 'sw-resize'],
+        ['se', { bottom: -5, right: -5 }, 'se-resize'],
+      ].map(([corner, pos, cur]) => (
+        <div key={corner}
+          style={{ position:'absolute', ...pos, width:10, height:10, borderRadius:2, background:'#3b82f6', cursor:cur, zIndex:30, border:'1.5px solid #fff', boxShadow:'0 1px 4px rgba(0,0,0,0.25)' }}
           onMouseDown={e => {
             e.preventDefault(); e.stopPropagation()
-            rsRef.current = { startY: e.clientY, startSize: st.fontSize, snapStyles: s.textStyles || {} }
+            rsRef.current = { startX: e.clientX, startY: e.clientY, startSize: st.fontSize, snapStyles: s.textStyles || {}, corner }
             setResizing(true)
           }}
         />
-      )}
+      ))}
     </div>
   )
 }
@@ -231,9 +248,11 @@ function DragET({ s, field, editing, onChange, onFocus, def = {}, placeholder = 
   useEffect(() => {
     if (!resizing) return
     const onMove = e => {
-      const { startY, startSize, snapStyles } = rsRef.current
+      const { startX, startY, startSize, snapStyles, corner } = rsRef.current
+      const dx = e.clientX - startX
       const dy = e.clientY - startY
-      const newSize = Math.max(10, Math.min(120, Math.round(startSize + dy / 4)))
+      const delta = corner === 'se' ? (dx + dy) / 4 : corner === 'nw' ? (-dx - dy) / 4 : corner === 'ne' ? (dx - dy) / 4 : (-dx + dy) / 4
+      const newSize = Math.max(10, Math.min(120, Math.round(startSize + delta)))
       onChange('textStyles', { ...snapStyles, [field]: { ...(snapStyles[field] || {}), fontSize: newSize } })
     }
     const onUp = () => setResizing(false)
@@ -296,16 +315,21 @@ function DragET({ s, field, editing, onChange, onFocus, def = {}, placeholder = 
           </>
         : <div style={{ ...st, textShadow: '0 2px 14px rgba(0,0,0,0.9)' }}>{val}</div>
       }
-      {editing && (hdHovered || resizing) && (
-        <div
-          style={{ position:'absolute', bottom:-6, right:-6, width:12, height:12, borderRadius:2, background:'#3b82f6', cursor:'se-resize', zIndex:30, border:'1.5px solid #fff', boxShadow:'0 1px 4px rgba(0,0,0,0.25)' }}
+      {editing && (hdHovered || resizing) && [
+        ['nw', { top: -5, left: -5 }, 'nw-resize'],
+        ['ne', { top: -5, right: -5 }, 'ne-resize'],
+        ['sw', { bottom: -5, left: -5 }, 'sw-resize'],
+        ['se', { bottom: -5, right: -5 }, 'se-resize'],
+      ].map(([corner, pos, cur]) => (
+        <div key={corner}
+          style={{ position:'absolute', ...pos, width:10, height:10, borderRadius:2, background:'#3b82f6', cursor:cur, zIndex:30, border:'1.5px solid #fff', boxShadow:'0 1px 4px rgba(0,0,0,0.25)' }}
           onMouseDown={e => {
             e.preventDefault(); e.stopPropagation()
-            rsRef.current = { startY: e.clientY, startSize: st.fontSize, snapStyles: s.textStyles || {} }
+            rsRef.current = { startX: e.clientX, startY: e.clientY, startSize: st.fontSize, snapStyles: s.textStyles || {}, corner }
             setResizing(true)
           }}
         />
-      )}
+      ))}
     </div>
   )
 }
