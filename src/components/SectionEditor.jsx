@@ -130,6 +130,19 @@ export default function SectionEditor({
   const [hovered, setHovered] = useState(false)
   const ref     = useRef(null)
   const wrapRef = useRef(null)
+  const snapRef = useRef(null)
+
+  useEffect(() => {
+    const handle = e => {
+      if (e.key !== 'Delete' && e.key !== 'Backspace') return
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return
+      if (document.activeElement?.contentEditable === 'true') return
+      const snap = snapRef.current
+      if (snap?.activeOverlay) { snap.rmOverlay(snap.activeOverlay); e.preventDefault() }
+    }
+    window.addEventListener('keydown', handle)
+    return () => window.removeEventListener('keydown', handle)
+  }, [])
 
   useEffect(() => {
     const el = wrapRef.current; if (!el) return
@@ -162,6 +175,7 @@ export default function SectionEditor({
     onUpdate(idx, { ...sec, overlayTexts: (sec.overlayTexts || []).filter(ot => ot.id !== id) })
     if (activeOverlay === id) onActiveOverlayChange?.(null)
   }
+  snapRef.current = { activeOverlay, rmOverlay }
 
   const grad   = sec.gradient || {}
   const tplKey = TPL[sec.template] ? sec.template : (TPL_COMPAT[sec.template] || 'topBottom')

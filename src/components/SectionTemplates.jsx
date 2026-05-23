@@ -119,10 +119,11 @@ export function ImgBox({ url, t, editing, onImgChange, minH = 320, imgMeta, onMe
         style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}
       />
       <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.08)' }}>
-        <div style={{ position:'absolute', top:12, left:0, right:0, textAlign:'center', padding:'6px 12px' }}>
-          <span style={{ fontSize:11, fontWeight:700, color:'#fff', background:'rgba(0,0,0,0.55)', padding:'4px 12px', borderRadius:20, letterSpacing:'0.02em' }}>
-            📷 판매 제품 사진으로 교체해주세요
-          </span>
+        <div style={{ position:'absolute', top:20, left:0, right:0, display:'flex', justifyContent:'center', padding:'0 16px' }}>
+          <div style={{ background:'rgba(255,255,255,0.97)', padding:'12px 24px', borderRadius:14, boxShadow:'0 4px 20px rgba(0,0,0,0.18)', textAlign:'center', maxWidth:340 }}>
+            <div style={{ fontSize:18, fontWeight:800, color:'#111', marginBottom:4 }}>📷 판매 제품 사진으로 교체해주세요</div>
+            <div style={{ fontSize:13, color:'#555', lineHeight:1.5 }}>클릭 → 직접 찍은 제품 사진 업로드하면 완성!</div>
+          </div>
         </div>
         <div onClick={e => { e.stopPropagation(); ref.current?.click() }}
           style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10,
@@ -335,9 +336,10 @@ function DragET({ s, field, editing, onChange, onFocus, def = {}, placeholder = 
 }
 
 /* ── PointInput: 포인트 항목 textarea ── */
-function PointInput({ value, onChange }) {
+function PointInput({ value, onChange, onFocus }) {
   return (
     <textarea value={value} onChange={e => onChange(e.target.value)}
+      onFocus={onFocus}
       rows={Math.max(2, (value || '').split('\n').length)}
       style={{ flex: 1, fontSize: 14, border: '1px solid #3b82f6', borderRadius: 6, padding: '7px 10px', outline: 'none', resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.6, width: '100%' }}
     />
@@ -393,23 +395,23 @@ export function TplTopBottom({ s, img, t, editing, onChange, secMeta, onSecMeta,
     <div style={{ width: CARD_W, background: t.bg }}>
       {/* 상단: 텍스트 */}
       <div style={{ background: t.bg, minHeight: 360, padding: '72px 80px 64px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-        {(s.description || editing) && (
-          <div style={{ marginBottom: 18 }}>
-            <ET s={s} field="description" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-              def={{ fontSize: 11, color: t.ac, fontWeight: 800, letterSpacing: '0.28em' }}
-              style={{ textTransform: 'uppercase', display: 'inline-block' }}
-              placeholder="카테고리" />
-          </div>
-        )}
         <div style={{ marginBottom: 20 }}>
           <ET s={s} field="mainCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
             def={{ fontSize: 48, color: t.fg, fontWeight: 900, lineHeight: 1.22, letterSpacing: '-0.025em' }}
             placeholder="메인 제목" />
         </div>
-        <ET s={s} field="subCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-          def={{ fontSize: 28, color: t.fg, lineHeight: 1.62 }}
-          style={{ opacity: 0.73, maxWidth: 540 }}
-          placeholder="서브 제목" />
+        <div style={{ marginBottom: 18 }}>
+          <ET s={s} field="subCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
+            def={{ fontSize: 28, color: t.fg, lineHeight: 1.62 }}
+            style={{ opacity: 0.73, maxWidth: 540 }}
+            placeholder="서브 제목" />
+        </div>
+        {(s.description || editing) && (
+          <ET s={s} field="description" editing={editing} onChange={onChange} onFocus={onFieldFocus}
+            def={{ fontSize: 18, color: t.fg, lineHeight: 1.78 }}
+            style={{ opacity: 0.65, maxWidth: 540 }}
+            placeholder="본문 내용" />
+        )}
       </div>
       {/* 하단: 이미지 */}
       <div style={{ minHeight: 360 }}>
@@ -451,25 +453,25 @@ export function TplLeftRight({ s, img, t, editing, onChange, secMeta, onSecMeta,
 
   const txtPanel = (
     <div style={{ flex: 1, background: t.bg, padding: '60px 52px', display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: 520 }}>
-      {(s.description || editing) && (
-        <div style={{ marginBottom: 16 }}>
-          <ET s={s} field="description" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ fontSize: 11, color: t.ac, fontWeight: 800, letterSpacing: '0.28em' }}
-            style={{ textTransform: 'uppercase' }}
-            placeholder="카테고리" />
-        </div>
-      )}
       <div style={{ marginBottom: 16 }}>
         <ET s={s} field="mainCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
           def={{ fontSize: 48, color: t.fg, fontWeight: 900, lineHeight: 1.22, letterSpacing: '-0.025em' }}
           placeholder="메인 제목" />
       </div>
-      <div style={{ marginBottom: 28 }}>
+      <div style={{ marginBottom: 16 }}>
         <ET s={s} field="subCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
           def={{ fontSize: 28, color: t.fg, lineHeight: 1.55 }}
           style={{ opacity: 0.7 }}
           placeholder="서브 제목" />
       </div>
+      {(s.description || editing) && (
+        <div style={{ marginBottom: 22 }}>
+          <ET s={s} field="description" editing={editing} onChange={onChange} onFocus={onFieldFocus}
+            def={{ fontSize: 16, color: t.fg, lineHeight: 1.72 }}
+            style={{ opacity: 0.62 }}
+            placeholder="본문 내용" />
+        </div>
+      )}
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         {displayPts.map((p, i) => (
           <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', padding: '13px 0', borderBottom: `1px solid ${t.bd}` }}>
@@ -477,8 +479,8 @@ export function TplLeftRight({ s, img, t, editing, onChange, secMeta, onSecMeta,
               <span style={{ fontSize: 12, color: '#fff', fontWeight: 800 }}>✓</span>
             </div>
             {editing
-              ? <PointInput value={p} onChange={v => { const n = [...pts]; n[i] = v; onChange('points', n) }} />
-              : <span style={{ fontSize: 15, color: t.fg, lineHeight: 1.72, opacity: 0.85, whiteSpace: 'pre-wrap' }}>{p}</span>
+              ? <PointInput value={p} onChange={v => { const n = [...pts]; n[i] = v; onChange('points', n) }} onFocus={() => onFieldFocus?.('points')} />
+              : <span style={{ fontSize: s.textStyles?.['points']?.fontSize ?? 18, fontFamily: s.textStyles?.['points']?.fontFamily || 'inherit', color: s.textStyles?.['points']?.color || t.fg, lineHeight: 1.72, opacity: 0.85, whiteSpace: 'pre-wrap', cursor: editing ? 'default' : 'default' }} onClick={() => onFieldFocus?.('points')}>{p}</span>
             }
             {editing && <button onClick={() => delPt(i)} style={delBtnInline}>×</button>}
           </div>
@@ -542,10 +544,10 @@ export function TplPoints3Icon({ s, img, t, editing, onChange, secMeta, onSecMet
                   <span style={{ fontSize: 30, fontWeight: 700, color: '#fff' }}>{ROMAN[i % ROMAN.length]}</span>
                 </div>
                 {editing
-                  ? <PointInput value={p} onChange={v => { const n = [...pts]; n[i] = v; onChange('points', n) }} />
+                  ? <PointInput value={p} onChange={v => { const n = [...pts]; n[i] = v; onChange('points', n) }} onFocus={() => onFieldFocus?.('points')} />
                   : <>
-                      <p style={{ fontSize: 18, fontWeight: 800, color: t.fg, margin: '0 0 10px', lineHeight: 1.3, wordBreak: 'keep-all' }}>{title}</p>
-                      {desc && <p style={{ fontSize: 14, color: t.fg, opacity: 0.6, margin: 0, lineHeight: 1.68, whiteSpace: 'pre-wrap' }}>{desc}</p>}
+                      <p onClick={() => onFieldFocus?.('points')} style={{ fontSize: s.textStyles?.['points']?.fontSize ?? 18, fontFamily: s.textStyles?.['points']?.fontFamily || 'inherit', fontWeight: 800, color: s.textStyles?.['points']?.color || t.fg, margin: '0 0 10px', lineHeight: 1.3, wordBreak: 'keep-all' }}>{title}</p>
+                      {desc && <p style={{ fontSize: Math.max(13, (s.textStyles?.['points']?.fontSize ?? 18) - 4), color: s.textStyles?.['points']?.color || t.fg, opacity: 0.6, margin: 0, lineHeight: 1.68, whiteSpace: 'pre-wrap' }}>{desc}</p>}
                     </>
                 }
               </div>
@@ -673,10 +675,10 @@ export function TplHowTo({ s, img, t, editing, onChange, secMeta, onSecMeta, onF
               </div>
               <div style={{ flex: 1, paddingTop: 4 }}>
                 {editing
-                  ? <PointInput value={p} onChange={v => { const n = [...pts]; n[i] = v; onChange('points', n) }} />
+                  ? <PointInput value={p} onChange={v => { const n = [...pts]; n[i] = v; onChange('points', n) }} onFocus={() => onFieldFocus?.('points')} />
                   : <>
-                      <div style={{ fontSize: 17, fontWeight: 700, color: t.fg, lineHeight: 1.4, marginBottom: 5, wordBreak: 'keep-all' }}>{lines[0]}</div>
-                      {lines.slice(1).join('\n') && <div style={{ fontSize: 14, color: t.fg, opacity: 0.6, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{lines.slice(1).join('\n')}</div>}
+                      <div onClick={() => onFieldFocus?.('points')} style={{ fontSize: s.textStyles?.['points']?.fontSize ?? 18, fontFamily: s.textStyles?.['points']?.fontFamily || 'inherit', fontWeight: 700, color: s.textStyles?.['points']?.color || t.fg, lineHeight: 1.4, marginBottom: 5, wordBreak: 'keep-all' }}>{lines[0]}</div>
+                      {lines.slice(1).join('\n') && <div style={{ fontSize: Math.max(13, (s.textStyles?.['points']?.fontSize ?? 18) - 4), color: s.textStyles?.['points']?.color || t.fg, opacity: 0.6, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{lines.slice(1).join('\n')}</div>}
                     </>
                 }
               </div>

@@ -205,6 +205,7 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, 
       ? ((sec.overlayTexts || []).find(o => o.id === activeOverlay)?.style || {})
       : {}
 
+  const ALL_FIELDS = ['mainCopy','subCopy','description','badge','cta','compareLeft','compareRight']
   const updateTS = (key, val) => {
     if (activeField) {
       change('textStyles', {
@@ -215,6 +216,11 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, 
       change('overlayTexts', (sec.overlayTexts || []).map(ot =>
         ot.id === activeOverlay ? { ...ot, style: { ...(ot.style || {}), [key]: val } } : ot
       ))
+    } else {
+      // 선택 없으면 섹션 전체 텍스트에 적용
+      const newTS = { ...(sec.textStyles || {}) }
+      ALL_FIELDS.forEach(f => { newTS[f] = { ...(newTS[f] || {}), [key]: val } })
+      change('textStyles', newTS)
     }
   }
 
@@ -251,9 +257,9 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, 
         <p style={sLabel}>색상 테마</p>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:3, marginBottom:8 }}>
           {DS_KEYS.map(s => {
-            const on = sec.designStyle === s; const d = DS[s]
+            const on = sec.designStyle === s && !Object.keys(sec.customColors || {}).length; const d = DS[s]
             return (
-              <button key={s} onClick={() => change('designStyle', s)}
+              <button key={s} onClick={() => onUpdate(idx, { ...sec, designStyle: s, customColors: {} })}
                 style={{ borderRadius:7, border:`2px solid ${on?'#3b82f6':'transparent'}`, cursor:'pointer', padding:0, overflow:'hidden', background:'none', outline:'none' }}>
                 <div style={{ height:22, background:d.bg, display:'flex', alignItems:'center', justifyContent:'center', gap:3 }}>
                   <div style={{ width:7, height:7, borderRadius:'50%', background:d.ac }} />
@@ -326,7 +332,17 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, 
         </div>
 
         {/* 폰트 */}
-        <p style={sLabel}>폰트</p>
+        <p style={sLabel}>폰트 {!hasActive && <span style={{ fontWeight:400, letterSpacing:0, textTransform:'none', color:'#a0a09a' }}>(선택 없으면 전체 적용)</span>}</p>
+        {activeOverlay && (
+          <div style={{ fontSize:10, color:'#1d4ed8', background:'#EFF6FF', padding:'3px 8px', borderRadius:5, marginBottom:5 }}>
+            📌 추가 텍스트 블록 편집 중
+          </div>
+        )}
+        {activeField === 'points' && (
+          <div style={{ fontSize:10, color:'#059669', background:'#f0fdf4', padding:'3px 8px', borderRadius:5, marginBottom:5 }}>
+            📋 항목 리스트 편집 중
+          </div>
+        )}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:3, marginBottom:3 }}>
           {FONT_OPTS.map(f => {
             const on = currentStyle.fontFamily === f.v
@@ -374,6 +390,32 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, 
             </div>
           </>
         )}
+
+        {/* 항목 리스트 스타일 */}
+        <div style={{ borderTop:`1px solid ${C.bd}`, margin:'4px 0 8px' }} />
+        <p style={sLabel}>항목 리스트 크기</p>
+        <div style={{ marginBottom:4 }}>
+          <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
+            <span style={{ fontSize:10, color:C.mu }}>크기</span>
+            <span style={{ fontSize:10, fontWeight:700, color:C.tx }}>{sec.textStyles?.['points']?.fontSize ?? 18}px</span>
+          </div>
+          <input type="range" min={14} max={36} step={1}
+            value={sec.textStyles?.['points']?.fontSize ?? 18}
+            onChange={e => change('textStyles', { ...(sec.textStyles||{}), points: { ...(sec.textStyles?.['points']||{}), fontSize: +e.target.value } })}
+            style={{ width:'100%', accentColor:'#3b82f6' }} />
+        </div>
+        <div style={{ marginBottom:8 }}>
+          <span style={{ fontSize:10, color:C.mu, display:'block', marginBottom:4 }}>글자색</span>
+          <div style={{ display:'flex', gap:3, flexWrap:'wrap', alignItems:'center' }}>
+            {PRESET_COLORS.map(c => (
+              <button key={c} onClick={() => change('textStyles', { ...(sec.textStyles||{}), points: { ...(sec.textStyles?.['points']||{}), color: c } })}
+                style={{ width:20, height:20, borderRadius:3, background:c, border: sec.textStyles?.['points']?.color===c ? '2px solid #3b82f6' : '1px solid #ccc', cursor:'pointer', flexShrink:0 }} />
+            ))}
+            <input type="color" value={sec.textStyles?.['points']?.color || '#111111'}
+              onChange={e => change('textStyles', { ...(sec.textStyles||{}), points: { ...(sec.textStyles?.['points']||{}), color: e.target.value } })}
+              style={{ width:26, height:20, border:'1px solid #ccc', padding:0, cursor:'pointer', borderRadius:3, flexShrink:0 }} />
+          </div>
+        </div>
 
         {/* 텍스트 추가 */}
         <button onClick={onAddOverlay}
@@ -719,7 +761,7 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
               onClick={() => setSelectedIdx(null)}
             >
               <div
-                style={{ maxWidth:640, margin:'0 auto', boxShadow:'0 8px 48px rgba(0,0,0,0.15)' }}
+                style={{ boxShadow:'0 8px 48px rgba(0,0,0,0.15)' }}
                 onClick={e => e.stopPropagation()}
               >
                 {sects.map((s, i) => (
