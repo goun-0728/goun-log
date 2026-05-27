@@ -196,7 +196,7 @@ function AddBlockBtn({ onAddText, onAddImg, editing }) {
 /* ══════════════════════════════════════════════════
    SectionEditor 메인
 ══════════════════════════════════════════════════ */
-export default function SectionEditor({ sec, idx, onUpdate, onDelete, onSavedChange }) {
+export default function SectionEditor({ sec, idx, onUpdate, onDelete, onSavedChange, isSelected, onSelect, activeField: extActiveField, onActiveFieldChange, activeOverlay: extActiveOverlay, onActiveOverlayChange }) {
   const [editing, setEditing]           = useState(true)
   const [dr, setDr]                     = useState(sec)
   const [saved, setSaved]               = useState(true)
@@ -207,6 +207,7 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete, onSavedCha
   const [blocks, setBlocks]             = useState([])
   const [selectedBlockId, setSelectedBlockId] = useState(null)
   const [selectedField, setSelectedField]     = useState(null)
+  const [hovered, setHovered]                 = useState(false)
 
   useEffect(() => { onSavedChange?.(idx, saved) }, [idx, saved])
 
