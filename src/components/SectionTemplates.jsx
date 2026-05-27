@@ -67,7 +67,7 @@ export function EditText({ value, onChange, editing, style, fieldKey, extraStyle
   )
 }
 
-export function ImageAdjust({ url, editing, imgMeta, onMetaChange, fixedH, fitMode = 'cover' }) {
+export function ImageAdjust({ url, editing, imgMeta, onMetaChange, fixedH, fitMode = 'cover', onError }) {
   const [dragging, setDragging] = useState(false)
   const [start, setStart]       = useState({ x: 0, y: 0 })
   const meta    = imgMeta || { scale: 1, x: 0, y: 0 }
@@ -107,26 +107,35 @@ export function ImageAdjust({ url, editing, imgMeta, onMetaChange, fixedH, fitMo
           transformOrigin: 'center center',
           cursor: editing ? (dragging ? 'grabbing' : 'grab') : 'default',
           transition: dragging ? 'none' : 'transform 0.1s' }}
-        onMouseDown={handleMouseDown} />
+        onMouseDown={handleMouseDown}
+        onError={onError} />
     </div>
   )
 }
 
 export function ImgBox({ url, t, label, editing = false, onImgChange, minH = 320, imgMeta, onMetaChange, fixedH, fitMode, fill }) {
   const ref = useRef(null)
+  const [imgError, setImgError] = useState(false)
+
+  useEffect(() => { setImgError(false) }, [url])
+
   const handleFile = e => {
     const f = e.target.files[0]; if (!f || !onImgChange) return
     const fr = new FileReader()
     fr.onload = ev => onImgChange(ev.target.result)
     fr.readAsDataURL(f); e.target.value = ''
   }
+
+  const slotStyle = { ...(fill ? { height: '100%' } : fixedH ? { height: fixedH } : { minHeight: minH }), background: t.sub, border: `2px dashed ${t.bd}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, cursor: editing ? 'pointer' : 'default' }
+
   if (!url) return null
-  if (url === 'slot') return (
-    <div onClick={() => ref.current?.click()}
-      style={{ ...(fill ? { height: '100%' } : fixedH ? { height: fixedH } : { minHeight: minH }), background: t.sub, border: `2px dashed ${t.bd}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, cursor: 'pointer' }}>
+  if (url === 'slot' || imgError) return (
+    <div onClick={() => editing && ref.current?.click()} style={slotStyle}>
       <input ref={ref} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
       <span style={{ fontSize: 40, opacity: 0.3 }}>📷</span>
-      <span style={{ fontSize: 14, color: '#222222', fontWeight: 600, background: '#e0e0e0', padding: '6px 18px', borderRadius: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>클릭해서 사진 업로드</span>
+      <span style={{ fontSize: 14, color: '#222222', fontWeight: 600, background: '#e0e0e0', padding: '6px 18px', borderRadius: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+        {editing ? '클릭해서 사진 업로드' : label || '이미지'}
+      </span>
     </div>
   )
   return (
@@ -138,7 +147,7 @@ export function ImgBox({ url, t, label, editing = false, onImgChange, minH = 320
           📷 교체
         </button>
       )}
-      <ImageAdjust url={url} editing={editing} imgMeta={imgMeta} onMetaChange={onMetaChange || (() => {})} fixedH={fill ? '100%' : fixedH} fitMode={fitMode} />
+      <ImageAdjust url={url} editing={editing} imgMeta={imgMeta} onMetaChange={onMetaChange || (() => {})} fixedH={fill ? '100%' : fixedH} fitMode={fitMode} onError={() => setImgError(true)} />
       {editing && <div style={{ position: 'absolute', inset: 0, border: `2px dashed ${t?.bd || '#ccc'}`, pointerEvents: 'none', zIndex: 5 }} />}
     </div>
   )

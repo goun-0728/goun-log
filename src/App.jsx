@@ -4,7 +4,7 @@ import { C, DS, DS_KEYS, TPL_LABELS, TPL_COMPAT, TASKS, BLOG_TONES, getSys, EXTR
 import { parseBlocks, parseSections, capturePNG, downloadURL } from './utils'
 import { generateContent } from './api/generate'
 import SectionEditor from './components/SectionEditor'
-import { FONT_OPTS, SHAPE_DEFS } from './components/SectionTemplates'
+import { FONT_OPTS, SHAPE_DEFS, ICON_SETS } from './components/SectionTemplates'
 import CardNewsView from './components/CardNewsEditor'
 import BlogKeywords from './components/BlogKeywords'
 import BlogThumbnail from './components/BlogThumbnail'
@@ -452,6 +452,36 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, 
             </button>
           </>
         )}
+
+        {/* 아이콘 세트 */}
+        <div style={{ borderTop:`1px solid ${C.bd}`, margin:'4px 0 8px' }} />
+        <p style={sLabel}>아이콘 세트</p>
+        <select value={sec.iconSet||''} onChange={e => change('iconSet', e.target.value || undefined)}
+          style={{ width:'100%', fontSize:11, border:`1px solid ${C.bd}`, borderRadius:7, padding:'7px 9px', marginBottom:8, cursor:'pointer', background:C.sur, color:C.tx, outline:'none' }}>
+          <option value="">자동 (섹션마다 다름)</option>
+          {ICON_SETS.map(({k,l}) => <option key={k} value={k}>{l}</option>)}
+        </select>
+
+        {/* 추가 사진 슬롯 */}
+        <p style={sLabel}>추가 사진 슬롯</p>
+        <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:8 }}>
+          <button onClick={() => change('secImg2', sec.secImg2 ? null : 'slot')}
+            style={{ padding:'5px 9px', fontSize:11, borderRadius:7, border:`1px solid ${sec.secImg2?'#3b82f6':C.bd}`, background:sec.secImg2?'#EFF6FF':C.sur, color:sec.secImg2?'#1d4ed8':C.mu, cursor:'pointer', fontWeight:600 }}>
+            {sec.secImg2 ? '📷2 제거' : '+ 사진2'}
+          </button>
+          {tplKey === 'leftRight' && (
+            <button onClick={() => change('secImg3', sec.secImg3 ? null : 'slot')}
+              style={{ padding:'5px 9px', fontSize:11, borderRadius:7, border:`1px solid ${sec.secImg3?'#3b82f6':C.bd}`, background:sec.secImg3?'#EFF6FF':C.sur, color:sec.secImg3?'#1d4ed8':C.mu, cursor:'pointer', fontWeight:600 }}>
+              {sec.secImg3 ? '📷3 제거' : '+ 사진3'}
+            </button>
+          )}
+          {tplKey === 'leftRight' && sec.secImg3 && (
+            <button onClick={() => change('secImg4', sec.secImg4 ? null : 'slot')}
+              style={{ padding:'5px 9px', fontSize:11, borderRadius:7, border:`1px solid ${sec.secImg4?'#3b82f6':C.bd}`, background:sec.secImg4?'#EFF6FF':C.sur, color:sec.secImg4?'#1d4ed8':C.mu, cursor:'pointer', fontWeight:600 }}>
+              {sec.secImg4 ? '📷4 제거' : '+ 사진4'}
+            </button>
+          )}
+        </div>
 
         {/* 섹션 추가 / 삭제 */}
         <div style={{ borderTop:`1px solid ${C.bd}`, margin:'6px 0 8px' }} />
