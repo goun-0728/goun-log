@@ -4,7 +4,7 @@ import { C, DS, DS_KEYS, TPL_LABELS, TPL_COMPAT, TASKS, BLOG_TONES, getSys, EXTR
 import { parseBlocks, parseSections, capturePNG, downloadURL } from './utils'
 import { generateContent } from './api/generate'
 import SectionEditor from './components/SectionEditor'
-import { FONT_OPTS, SHAPE_DEFS } from './components/SectionTemplates'
+import { FONT_OPTS, SHAPE_DEFS, selectionStore } from './components/SectionTemplates'
 import CardNewsView from './components/CardNewsEditor'
 import BlogKeywords from './components/BlogKeywords'
 import BlogThumbnail from './components/BlogThumbnail'
@@ -173,7 +173,7 @@ function AddBetweenHover({ onClick, loading }) {
 }
 
 /* ── Canva 우측 편집 패널 ────────────────────────────── */
-function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, onAddOverlay, onAddSection, dlAll, onDlAll, onDlSection }) {
+function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeBlockId, onAddFreeBlock, onAddSection, dlAll, onDlAll, onDlSection }) {
   const panelStyle = { width:'100%', height:'calc(100vh - 52px)', background:'#fff', boxShadow:'-4px 0 24px rgba(0,0,0,0.1)', display:'flex', flexDirection:'column', overflow:'hidden' }
 
   if (sec === null || idx === null) {
@@ -198,26 +198,41 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, 
   const change  = (key, val) => onUpdate(idx, { ...sec, [key]: val })
   const setGrad = (key, val) => change('gradient', { ...grad, [key]: val })
 
-  const hasActive    = activeField || activeOverlay
+  const activeBlock  = activeBlockId ? (sec.freeBlocks || []).find(b => b.id === activeBlockId) : null
+  const hasActive    = activeField || activeBlock
   const currentStyle = activeField
     ? (sec.textStyles?.[activeField] || {})
-    : activeOverlay
-      ? ((sec.overlayTexts || []).find(o => o.id === activeOverlay)?.style || {})
+    : activeBlock
+      ? { fontFamily: activeBlock.fontFamily, fontSize: activeBlock.fontSize, color: activeBlock.color, bold: (activeBlock.fontWeight || 400) >= 700 }
       : {}
 
-  const ALL_FIELDS = ['mainCopy','subCopy','description','badge','cta','compareLeft','compareRight']
+  const ALL_FIELDS = ['mainCopy','subCopy','description','cta','compareLeft','compareRight']
   const updateTS = (key, val) => {
+    // 부분 선택(드래그)이 있으면 execCommand로 선택 영역에만 적용
+    if (selectionStore.range) {
+      try {
+        const sel = window.getSelection()
+        sel.removeAllRanges()
+        sel.addRange(selectionStore.range)
+        if (key === 'bold') document.execCommand('bold', false, null)
+        else if (key === 'color') document.execCommand('foreColor', false, val)
+        else if (key === 'fontFamily') document.execCommand('fontName', false, val)
+      } catch(e) {}
+      selectionStore.range = null
+      return
+    }
     if (activeField) {
       change('textStyles', {
         ...(sec.textStyles || {}),
         [activeField]: { ...(sec.textStyles?.[activeField] || {}), [key]: val },
       })
-    } else if (activeOverlay) {
-      change('overlayTexts', (sec.overlayTexts || []).map(ot =>
-        ot.id === activeOverlay ? { ...ot, style: { ...(ot.style || {}), [key]: val } } : ot
+    } else if (activeBlock) {
+      const mappedKey = key === 'bold' ? 'fontWeight' : key
+      const mappedVal = key === 'bold' ? (val ? 700 : 400) : val
+      change('freeBlocks', (sec.freeBlocks || []).map(b =>
+        b.id === activeBlockId ? { ...b, [mappedKey]: mappedVal } : b
       ))
     } else {
-      // 선택 없으면 섹션 전체 텍스트에 적용
       const newTS = { ...(sec.textStyles || {}) }
       ALL_FIELDS.forEach(f => { newTS[f] = { ...(newTS[f] || {}), [key]: val } })
       change('textStyles', newTS)
@@ -333,7 +348,7 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, 
 
         {/* 폰트 */}
         <p style={sLabel}>폰트 {!hasActive && <span style={{ fontWeight:400, letterSpacing:0, textTransform:'none', color:'#a0a09a' }}>(선택 없으면 전체 적용)</span>}</p>
-        {activeOverlay && (
+        {activeBlock && (
           <div style={{ fontSize:10, color:'#1d4ed8', background:'#EFF6FF', padding:'3px 8px', borderRadius:5, marginBottom:5 }}>
             📌 추가 텍스트 블록 편집 중
           </div>
@@ -347,14 +362,18 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, 
           {FONT_OPTS.map(f => {
             const on = currentStyle.fontFamily === f.v
             return (
-              <button key={f.v} onClick={() => updateTS('fontFamily', f.v)}
+              <button key={f.v}
+                onMouseDown={e => e.preventDefault()}
+                onClick={() => updateTS('fontFamily', f.v)}
                 style={{ padding:'6px 8px', fontSize:11, borderRadius:6, border:`1.5px solid ${on?'#3b82f6':C.bd}`, background:on?'#EFF6FF':C.sur, color:on?'#1d4ed8':C.mu, cursor:'pointer', fontWeight:on?700:400, textAlign:'left', fontFamily:f.v, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                 {f.l}
               </button>
             )
           })}
         </div>
-        <button onClick={() => updateTS('bold', !currentStyle.bold)}
+        <button
+          onMouseDown={e => e.preventDefault()}
+          onClick={() => updateTS('bold', !currentStyle.bold)}
           style={{ width:'100%', padding:'5px 0', fontSize:11, borderRadius:6, border:`1.5px solid ${currentStyle.bold?'#3b82f6':C.bd}`, background:currentStyle.bold?'#EFF6FF':C.sur, color:currentStyle.bold?'#1d4ed8':C.mu, cursor:'pointer', fontWeight:currentStyle.bold?700:400, marginBottom:8 }}>
           <strong>B</strong> 굵게
         </button>
@@ -365,25 +384,18 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, 
             <div style={{ borderTop:`1px solid ${C.bd}`, margin:'4px 0 12px' }} />
             <p style={sLabel}>선택된 텍스트</p>
             <div style={{ marginBottom:12 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
-                <span style={{ fontSize:10, color:C.mu }}>크기</span>
-                <span style={{ fontSize:10, fontWeight:700, color:C.tx }}>{currentStyle.fontSize ?? 24}px</span>
-              </div>
-              <input type="range" min={12} max={80} step={1}
-                value={currentStyle.fontSize ?? 24}
-                onChange={e => updateTS('fontSize', +e.target.value)}
-                style={{ width:'100%', accentColor:'#3b82f6' }} />
-            </div>
-            <div style={{ marginBottom:12 }}>
               <span style={{ fontSize:10, color:C.mu, display:'block', marginBottom:5 }}>글자색</span>
               <div style={{ display:'flex', gap:4, flexWrap:'wrap', alignItems:'center' }}>
                 {PRESET_COLORS.map(c => (
-                  <button key={c} onClick={() => updateTS('color', c)}
+                  <button key={c}
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={() => updateTS('color', c)}
                     style={{ width:22, height:22, borderRadius:4, background:c,
                       border: currentStyle.color===c ? '2px solid #3b82f6' : '1px solid #ccc',
                       cursor:'pointer', flexShrink:0 }} />
                 ))}
                 <input type="color" value={currentStyle.color || '#111111'}
+                  onMouseDown={e => e.preventDefault()}
                   onChange={e => updateTS('color', e.target.value)}
                   style={{ width:28, height:22, border:'1px solid #ccc', padding:0, cursor:'pointer', borderRadius:4, flexShrink:0 }} />
               </div>
@@ -391,34 +403,9 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeOverlay, 
           </>
         )}
 
-        {/* 항목 리스트 스타일 */}
-        <div style={{ borderTop:`1px solid ${C.bd}`, margin:'4px 0 8px' }} />
-        <p style={sLabel}>항목 리스트 크기</p>
-        <div style={{ marginBottom:4 }}>
-          <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
-            <span style={{ fontSize:10, color:C.mu }}>크기</span>
-            <span style={{ fontSize:10, fontWeight:700, color:C.tx }}>{sec.textStyles?.['points']?.fontSize ?? 18}px</span>
-          </div>
-          <input type="range" min={14} max={36} step={1}
-            value={sec.textStyles?.['points']?.fontSize ?? 18}
-            onChange={e => change('textStyles', { ...(sec.textStyles||{}), points: { ...(sec.textStyles?.['points']||{}), fontSize: +e.target.value } })}
-            style={{ width:'100%', accentColor:'#3b82f6' }} />
-        </div>
-        <div style={{ marginBottom:8 }}>
-          <span style={{ fontSize:10, color:C.mu, display:'block', marginBottom:4 }}>글자색</span>
-          <div style={{ display:'flex', gap:3, flexWrap:'wrap', alignItems:'center' }}>
-            {PRESET_COLORS.map(c => (
-              <button key={c} onClick={() => change('textStyles', { ...(sec.textStyles||{}), points: { ...(sec.textStyles?.['points']||{}), color: c } })}
-                style={{ width:20, height:20, borderRadius:3, background:c, border: sec.textStyles?.['points']?.color===c ? '2px solid #3b82f6' : '1px solid #ccc', cursor:'pointer', flexShrink:0 }} />
-            ))}
-            <input type="color" value={sec.textStyles?.['points']?.color || '#111111'}
-              onChange={e => change('textStyles', { ...(sec.textStyles||{}), points: { ...(sec.textStyles?.['points']||{}), color: e.target.value } })}
-              style={{ width:26, height:20, border:'1px solid #ccc', padding:0, cursor:'pointer', borderRadius:3, flexShrink:0 }} />
-          </div>
-        </div>
 
         {/* 텍스트 추가 */}
-        <button onClick={onAddOverlay}
+        <button onClick={onAddFreeBlock}
           style={{ width:'100%', padding:'8px 0', fontSize:12, fontWeight:700, borderRadius:7, border:'1.5px dashed #3b82f6', background:'#EFF6FF', color:'#1d4ed8', cursor:'pointer', marginBottom:8 }}>
           + 텍스트 추가
         </button>
@@ -571,8 +558,8 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
     const s = savedSects ?? parseSections(result)
     return s.length > 0 ? 0 : null
   })
-  const [activeField,  setActiveField]  = useState(null)
-  const [activeOverlay,setActiveOverlay]= useState(null)
+  const [activeField,    setActiveField]    = useState(null)
+  const [activeBlockId,  setActiveBlockId]  = useState(null)
   const sectsInit = useRef(false)
 
   useEffect(() => {
@@ -585,7 +572,7 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
   const selectSection = useCallback((idx) => {
     setSelectedIdx(idx)
     setActiveField(null)
-    setActiveOverlay(null)
+    setActiveBlockId(null)
   }, [])
 
   const deleteSection = useCallback(i => {
@@ -593,7 +580,7 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
     setPlanOpen({})
     setSelectedIdx(prev => {
       if (prev === null) return null
-      if (prev === i) { setActiveField(null); setActiveOverlay(null); return null }
+      if (prev === i) { setActiveField(null); setActiveBlockId(null); return null }
       return prev > i ? prev - 1 : prev
     })
   }, [])
@@ -620,13 +607,13 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
     }
   }, [productInput])
 
-  const addOverlay = useCallback(() => {
+  const addFreeBlock = useCallback(() => {
     if (selectedIdx === null) return
-    const id  = Math.random().toString(36).slice(2, 9)
-    const newOt = { id, text: '텍스트', x: 10, y: 20, style: { fontSize: 28, color: '#ffffff', fontFamily: "'Nanum Gothic', sans-serif" } }
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2)
+    const newBlock = { id, type:'text', content:'텍스트를 입력하세요', fontSize:28, color:'#ffffff', fontFamily:'', fontWeight:700, align:'center', x:230, y:80, w:400 }
     const sec = sects[selectedIdx]
-    upd(selectedIdx, { ...sec, overlayTexts: [...(sec.overlayTexts || []), newOt] })
-    setActiveOverlay(id)
+    upd(selectedIdx, { ...sec, freeBlocks: [...(sec.freeBlocks || []), newBlock] })
+    setActiveBlockId(id)
     setActiveField(null)
   }, [selectedIdx, sects, upd])
 
@@ -770,10 +757,9 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
                     sec={s} idx={i} onUpdate={upd}
                     isSelected={selectedIdx === i}
                     onSelect={selectSection}
-                    activeField={selectedIdx === i ? activeField : null}
-                    onActiveFieldChange={f => { setActiveField(f); setActiveOverlay(null) }}
-                    activeOverlay={selectedIdx === i ? activeOverlay : null}
-                    onActiveOverlayChange={id => { setActiveOverlay(id); setActiveField(null) }}
+                    onActiveFieldChange={f => { setActiveField(f); setActiveBlockId(null) }}
+                    activeBlockId={selectedIdx === i ? activeBlockId : null}
+                    onBlockSelect={id => { setActiveBlockId(id); setActiveField(null) }}
                   />
                 ))}
               </div>
@@ -787,8 +773,8 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
                 onDelete={() => selectedIdx !== null && setDeleteConfirm(selectedIdx)}
                 onAddSection={() => setAddModal(selectedIdx ?? sects.length - 1)}
                 activeField={activeField}
-                activeOverlay={activeOverlay}
-                onAddOverlay={addOverlay}
+                activeBlockId={activeBlockId}
+                onAddFreeBlock={addFreeBlock}
                 dlAll={dlAll}
                 onDlAll={dlAllPNG}
                 onDlSection={dlSectionPNG}

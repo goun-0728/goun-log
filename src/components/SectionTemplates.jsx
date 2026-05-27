@@ -1,45 +1,11 @@
 // src/components/SectionTemplates.jsx
-import React, { useRef, useState, useEffect, useCallback } from 'react'
+import React, { useRef, useState, useEffect, useContext } from 'react'
 
 const CARD_W = 860
+const SERIF  = "'Noto Serif KR', 'Noto Serif', Georgia, serif"
 
-const SAMPLE_IMGS = [
-  'https://images.unsplash.com/photo-1490818387583-1baba5e638af?w=800',
-  'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800',
-  'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800',
-  'https://images.unsplash.com/photo-1498654896293-37aacf113fd9?w=800',
-  'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800',
-  'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800',
-  'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800',
-  'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800',
-  'https://images.unsplash.com/photo-1551218808-94e220e084d2?w=800',
-  'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800',
-]
-
-export const FONT_OPTS = [
-  { l: '나눔고딕', v: "'Nanum Gothic', sans-serif" },
-  { l: '나눔명조', v: "'Nanum Myeongjo', serif" },
-  { l: '고딕A1',   v: "'Gothic A1', sans-serif" },
-  { l: '도현',     v: "'Do Hyeon', sans-serif" },
-  { l: '제주고딕', v: "'Jeju Gothic', sans-serif" },
-  { l: '검은고딕', v: "'Black Han Sans', sans-serif" },
-]
-
-export const SHAPE_DEFS = [
-  { k: 'circle',   l: '원형' },
-  { k: 'square',   l: '네모' },
-  { k: 'triangle', l: '삼각형' },
-  { k: 'pentagon', l: '오각형' },
-  { k: 'hexagon',  l: '육각형' },
-]
-
-function shapeCSS(k) {
-  if (k === 'square')   return { borderRadius: 10 }
-  if (k === 'triangle') return { borderRadius: 0, clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }
-  if (k === 'pentagon') return { borderRadius: 0, clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)' }
-  if (k === 'hexagon')  return { borderRadius: 0, clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)' }
-  return { borderRadius: '50%' }
-}
+export const TextSelectCtx = React.createContext(null)
+export const selectionStore = { range: null, fieldKey: null }
 
 export function mkGrad(dir, alpha) {
   const a = (alpha ?? 70) / 100
@@ -51,9 +17,74 @@ export function mkGrad(dir, alpha) {
 }
 
 const ROMAN = ['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ','Ⅶ','Ⅷ','Ⅸ','Ⅹ']
+const ICON_FONTS = ["'Georgia', serif","'Palatino Linotype', serif","'Times New Roman', serif","'Garamond', serif"]
+export const sectionRoman = i => ROMAN[i % ROMAN.length]
+export const sectionFont  = i => ICON_FONTS[i % ICON_FONTS.length]
 
-/* ── ImageAdjust: 이미지 드래그+휠 조작 ── */
-export function ImageAdjust({ url, editing, imgMeta, onMetaChange, fixedH, fitMode = 'cover' }) {
+export const ICON_SETS = [
+  { k: 'roman',    l: 'Ⅰ 로마자',     fn: i => ['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ','Ⅶ','Ⅷ','Ⅸ','Ⅹ'][i%10] },
+  { k: 'check',    l: '✓ 체크',        fn: _ => '✓' },
+  { k: 'star',     l: '★ 별',          fn: _ => '★' },
+  { k: 'circnum',  l: '① 원형숫자',    fn: i => ['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩'][i%10] },
+  { k: 'arrow',    l: '→ 화살표',      fn: _ => '→' },
+  { k: 'diamond',  l: '◆ 다이아몬드',  fn: _ => '◆' },
+  { k: 'crown',    l: '👑 왕관',        fn: _ => '👑' },
+  { k: 'heart',    l: '♥ 하트',        fn: _ => '♥' },
+  { k: 'bolt',     l: '⚡ 번개',        fn: _ => '⚡' },
+  { k: 'fire',     l: '🔥 불꽃',        fn: _ => '🔥' },
+  { k: 'leaf',     l: '🌿 리프',        fn: _ => '🌿' },
+  { k: 'drop',     l: '💧 물방울',      fn: _ => '💧' },
+  { k: 'sun',      l: '☀ 태양',         fn: _ => '☀' },
+  { k: 'moon',     l: '◐ 달',           fn: i => ['◐','◑','◒','◓'][i%4] },
+  { k: 'plus',     l: '✚ 플러스',       fn: _ => '✚' },
+  { k: 'negnum',   l: '❶ 굵은숫자',     fn: i => ['❶','❷','❸','❹','❺','❻','❼','❽','❾','❿'][i%10] },
+  { k: 'sqnum',    l: '⑴ 괄호숫자',     fn: i => ['⑴','⑵','⑶','⑷','⑸','⑹','⑺','⑻','⑼','⑽'][i%10] },
+  { k: 'alpha',    l: 'Ⓐ 알파벳',       fn: i => ['Ⓐ','Ⓑ','Ⓒ','Ⓓ','Ⓔ','Ⓕ','Ⓖ','Ⓗ','Ⓘ','Ⓙ'][i%10] },
+  { k: 'triangle', l: '▲ 삼각형',       fn: _ => '▲' },
+  { k: 'square',   l: '■ 큐브',         fn: _ => '■' },
+]
+const _iconHash = s => { const str = String(s._id || s.sectionType || ''); return str.split('').reduce((n, c) => n + c.charCodeAt(0), 0) }
+export const getSecIcon = (s, pointIdx) => { const set = s.iconSet ? ICON_SETS.find(x => x.k === s.iconSet) : ICON_SETS[_iconHash(s) % ICON_SETS.length]; return (set || ICON_SETS[0]).fn(pointIdx) }
+
+export function CardWrapper({ children, bg = '#fff' }) {
+  return (
+    <div style={{ width: CARD_W, background: bg, overflow: 'hidden', position: 'relative' }}>
+      {children}
+    </div>
+  )
+}
+
+/* ── EditText: contentEditable with X button + selection save ── */
+export function EditText({ value, onChange, editing, style, fieldKey, extraStyle }) {
+  const ctx    = useContext(TextSelectCtx)
+  const merged = extraStyle ? { ...style, ...extraStyle } : style
+  if (!editing) return <div style={merged}>{value || ''}</div>
+  return (
+    <div style={{ position: 'relative' }}>
+      <div contentEditable suppressContentEditableWarning
+        onFocus={() => fieldKey && ctx?.setField(fieldKey)}
+        onBlur={e => onChange(e.currentTarget.innerText)}
+        onMouseUp={() => {
+          const sel = window.getSelection()
+          if (sel?.rangeCount > 0 && !sel.isCollapsed) {
+            selectionStore.range = sel.getRangeAt(0).cloneRange()
+            selectionStore.fieldKey = fieldKey
+          } else { selectionStore.range = null }
+        }}
+        style={{ ...merged, outline: 'none', borderBottom: '2px solid #3b82f6', cursor: 'text', minWidth: 40 }}
+        dangerouslySetInnerHTML={{ __html: value || '' }}
+      />
+      <button
+        onMouseDown={e => e.preventDefault()}
+        onClick={e => { e.stopPropagation(); onChange('') }}
+        style={{ position: 'absolute', top: -8, right: -8, zIndex: 30, width: 20, height: 20, borderRadius: '50%', border: 'none', background: '#ef4444', color: '#fff', fontSize: 12, cursor: 'pointer', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
+        ×
+      </button>
+    </div>
+  )
+}
+
+export function ImageAdjust({ url, editing, imgMeta, onMetaChange, fixedH, fitMode = 'cover', onError }) {
   const [dragging, setDragging] = useState(false)
   const [start, setStart]       = useState({ x: 0, y: 0 })
   const meta    = imgMeta || { scale: 1, x: 0, y: 0 }
@@ -71,7 +102,8 @@ export function ImageAdjust({ url, editing, imgMeta, onMetaChange, fixedH, fitMo
   const handleMouseUp   = () => setDragging(false)
 
   useEffect(() => {
-    const el = divRef.current; if (!el) return
+    const el = divRef.current
+    if (!el) return
     const handler = e => {
       const { editing, meta, onMetaChange } = snapRef.current
       if (!editing) return
@@ -92,864 +124,558 @@ export function ImageAdjust({ url, editing, imgMeta, onMetaChange, fixedH, fitMo
           transformOrigin: 'center center',
           cursor: editing ? (dragging ? 'grabbing' : 'grab') : 'default',
           transition: dragging ? 'none' : 'transform 0.1s' }}
-        onMouseDown={handleMouseDown} />
+        onMouseDown={handleMouseDown}
+        onError={onError} />
     </div>
   )
 }
 
-/* ── ImgBox: 이미지 슬롯 (업로드 + ImageAdjust 통합) ── */
-export function ImgBox({ url, t, editing, onImgChange, minH = 320, imgMeta, onMetaChange, fixedH, fitMode }) {
+export function ImgBox({ url, t, label, editing = false, onImgChange, minH = 320, imgMeta, onMetaChange, fixedH, fitMode, fill }) {
   const ref = useRef(null)
-  const sampleRef = useRef(SAMPLE_IMGS[Math.floor(Math.random() * SAMPLE_IMGS.length)])
+  const [imgError, setImgError] = useState(false)
+
+  useEffect(() => { setImgError(false) }, [url])
+
   const handleFile = e => {
     const f = e.target.files[0]; if (!f || !onImgChange) return
     const fr = new FileReader()
     fr.onload = ev => onImgChange(ev.target.result)
     fr.readAsDataURL(f); e.target.value = ''
   }
+
+  const slotStyle = { ...(fill ? { height: '100%' } : fixedH ? { height: fixedH } : { minHeight: minH }), background: t.sub, border: `2px dashed ${t.bd}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, cursor: editing ? 'pointer' : 'default' }
+
   if (!url) return null
-  if (url === 'slot') return (
-    <div style={{ position: 'relative', ...(fixedH ? { height: fixedH } : { aspectRatio: '3/4' }), overflow: 'hidden' }}>
+  if (url === 'slot' || imgError) return (
+    <div onClick={() => editing && ref.current?.click()} style={slotStyle}>
       <input ref={ref} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
-      <img
-        src={sampleRef.current}
-        alt=""
-        crossOrigin="anonymous"
-        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-      />
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.08)' }}>
-        <div style={{ position: 'absolute', top: 20, left: 0, right: 0, display: 'flex', justifyContent: 'center', padding: '0 16px' }}>
-          <div style={{ background: 'rgba(255,255,255,0.97)', padding: '12px 24px', borderRadius: 14, boxShadow: '0 4px 20px rgba(0,0,0,0.18)', textAlign: 'center', maxWidth: 340 }}>
-            <div style={{ fontSize: 18, fontWeight: 800, color: '#111', marginBottom: 4 }}>📷 판매 제품 사진으로 교체해주세요</div>
-            <div style={{ fontSize: 13, color: '#555', lineHeight: 1.5 }}>클릭 → 직접 찍은 제품 사진 업로드하면 완성!</div>
-          </div>
-        </div>
-        <div onClick={e => { e.stopPropagation(); ref.current?.click() }}
-          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-            cursor: 'pointer', background: 'rgba(255,255,255,0.9)', padding: '20px 32px',
-            borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.2)', backdropFilter: 'blur(4px)' }}>
-          <span style={{ fontSize: 36 }}>📷</span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>클릭해서 사진 교체</span>
-        </div>
-      </div>
+      <span style={{ fontSize: 40, opacity: 0.3 }}>📷</span>
+      <span style={{ fontSize: 14, color: '#222222', fontWeight: 600, background: '#e0e0e0', padding: '6px 18px', borderRadius: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+        {editing ? '클릭해서 사진 업로드' : label || '이미지'}
+      </span>
     </div>
   )
   return (
-    <div style={{ position: 'relative' }}>
+    <div style={{ position: 'relative', ...(fill ? { height: '100%' } : {}) }}>
       <input ref={ref} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
       {editing && (
-        <button onClick={e => { e.stopPropagation(); ref.current?.click() }}
-          style={{ position: 'absolute', top: 10, left: 10, zIndex: 10, padding: '8px 18px', fontSize: 13, fontWeight: 700, background: 'rgba(0,0,0,0.65)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}>
-          📷 교체
+        <button onClick={() => ref.current?.click()}
+          style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 10, padding: '12px 28px', fontSize: 15, fontWeight: 700, background: '#333333', color: '#ffffff', border: 'none', borderRadius: 10, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          📷 사진 교체
         </button>
       )}
-      <ImageAdjust url={url} editing={editing} imgMeta={imgMeta} onMetaChange={onMetaChange || (() => {})} fixedH={fixedH} fitMode={fitMode} />
+      <ImageAdjust url={url} editing={editing} imgMeta={imgMeta} onMetaChange={onMetaChange || (() => {})} fixedH={fill ? '100%' : fixedH} fitMode={fitMode} onError={() => setImgError(true)} />
       {editing && <div style={{ position: 'absolute', inset: 0, border: `2px dashed ${t?.bd || '#ccc'}`, pointerEvents: 'none', zIndex: 5 }} />}
     </div>
   )
 }
 
-/* ── 텍스트 스타일 읽기 helper ── */
-function getTS(s, field, def = {}) {
-  const stored = s.textStyles?.[field] || {}
-  return {
-    fontSize:      stored.fontSize      ?? def.fontSize      ?? 18,
-    color:         stored.color         ?? def.color         ?? '#111',
-    fontFamily:    stored.fontFamily    ?? def.fontFamily    ?? "'Nanum Gothic', sans-serif",
-    fontWeight:    stored.bold ? 700 : (def.fontWeight ?? 400),
-    lineHeight:    def.lineHeight    || 1.6,
-    letterSpacing: def.letterSpacing || 'normal',
-    wordBreak: 'keep-all',
-    whiteSpace: 'pre-wrap',
-  }
-}
-
-/* ── ET: 클릭하면 인라인 편집 + placeholder + 모서리 리사이즈 핸들 ── */
-function ET({ s, field, editing, onChange, onFocus, def = {}, style: extra = {}, placeholder = '' }) {
-  const st  = { ...getTS(s, field, def), ...extra }
-  const val = s[field] || ''
-  const [hovered,  setHovered]  = useState(false)
-  const [resizing, setResizing] = useState(false)
-  const [focused,  setFocused]  = useState(false)
-  const rsRef = useRef(null)
-
-  useEffect(() => {
-    if (!resizing) return
-    const onMove = e => {
-      const { startX, startY, startSize, snapStyles, corner } = rsRef.current
-      const dx = e.clientX - startX
-      const dy = e.clientY - startY
-      const delta = corner === 'se' ? (dx + dy) / 4 : corner === 'nw' ? (-dx - dy) / 4 : corner === 'ne' ? (dx - dy) / 4 : (-dx + dy) / 4
-      const newSize = Math.max(10, Math.min(120, Math.round(startSize + delta)))
-      onChange('textStyles', { ...snapStyles, [field]: { ...(snapStyles[field] || {}), fontSize: newSize } })
-    }
-    const onUp = () => setResizing(false)
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup', onUp)
-    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
-  }, [resizing]) // eslint-disable-line
-
-  if (!editing) {
-    const display = val || placeholder
-    if (!display) return null
-    return <div style={{ ...st, opacity: val ? 1 : 0.35 }}>{display}</div>
-  }
-  const showPH = !!placeholder && !val && !focused
-  return (
-    <div
-      style={{ position: 'relative', display: extra.display || 'block' }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      {showPH && (
-        <div style={{ ...st, display: undefined, opacity: 0.32, position: 'absolute', top: 0, left: 0, right: 0, pointerEvents: 'none', zIndex: 1 }}>
-          {placeholder}
-        </div>
-      )}
-      <div contentEditable suppressContentEditableWarning
-        onFocus={e => { setFocused(true); onFocus?.(field) }}
-        onBlur={e => { setFocused(false); onChange(field, e.currentTarget.innerText) }}
-        style={{ ...st, display: undefined, outline: 'none', borderBottom: '1.5px dashed rgba(59,130,246,0.55)', minHeight: 20, cursor: 'text', position: 'relative', zIndex: 2 }}
-        dangerouslySetInnerHTML={{ __html: val }}
-      />
-      {(hovered || resizing) && [
-        ['nw', { top: -5, left: -5 }, 'nw-resize'],
-        ['ne', { top: -5, right: -5 }, 'ne-resize'],
-        ['sw', { bottom: -5, left: -5 }, 'sw-resize'],
-        ['se', { bottom: -5, right: -5 }, 'se-resize'],
-      ].map(([corner, pos, cur]) => (
-        <div key={corner}
-          style={{ position:'absolute', ...pos, width:10, height:10, borderRadius:2, background:'#3b82f6', cursor:cur, zIndex:30, border:'1.5px solid #fff', boxShadow:'0 1px 4px rgba(0,0,0,0.25)' }}
-          onMouseDown={e => {
-            e.preventDefault(); e.stopPropagation()
-            rsRef.current = { startX: e.clientX, startY: e.clientY, startSize: st.fontSize, snapStyles: s.textStyles || {}, corner }
-            setResizing(true)
-          }}
-        />
-      ))}
-    </div>
-  )
-}
-
-/* ── DragET: 이미지 위 절대좌표 드래그 가능 텍스트 ── */
-function DragET({ s, field, editing, onChange, onFocus, def = {}, placeholder = '' }) {
-  const stored  = s.textStyles?.[field] || {}
-  const xp      = stored.x ?? def.x ?? 6
-  const yp      = stored.y ?? def.y ?? 60
-  const st      = getTS(s, field, def)
-  const val     = s[field] || ''
-  const dragRef = useRef(null)
-  const [dragging,  setDragging]  = useState(false)
-  const [hdHovered, setHdHovered] = useState(false)
-  const [resizing,  setResizing]  = useState(false)
-  const startRef = useRef(null)
-  const rsRef    = useRef(null)
-
-  useEffect(() => {
-    if (!resizing) return
-    const onMove = e => {
-      const { startX, startY, startSize, snapStyles, corner } = rsRef.current
-      const dx = e.clientX - startX
-      const dy = e.clientY - startY
-      const delta = corner === 'se' ? (dx + dy) / 4 : corner === 'nw' ? (-dx - dy) / 4 : corner === 'ne' ? (dx - dy) / 4 : (-dx + dy) / 4
-      const newSize = Math.max(10, Math.min(120, Math.round(startSize + delta)))
-      onChange('textStyles', { ...snapStyles, [field]: { ...(snapStyles[field] || {}), fontSize: newSize } })
-    }
-    const onUp = () => setResizing(false)
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup', onUp)
-    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
-  }, [resizing]) // eslint-disable-line
-
-  const setPos = useCallback((x, y) => {
-    onChange('textStyles', {
-      ...(s.textStyles || {}),
-      [field]: { ...(s.textStyles?.[field] || {}), x: Math.max(0, Math.min(88, x)), y: Math.max(0, Math.min(92, y)) }
-    })
-  }, [s.textStyles, field, onChange])
-
-  useEffect(() => {
-    if (!dragging) return
-    const onMove = e => {
-      const container = dragRef.current?.parentElement
-      if (!container || !startRef.current) return
-      const rect = container.getBoundingClientRect()
-      const { mx, my, ox, oy } = startRef.current
-      setPos(ox + (e.clientX - mx) / rect.width * 100, oy + (e.clientY - my) / rect.height * 100)
-    }
-    const onUp = () => setDragging(false)
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup', onUp)
-    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
-  }, [dragging, setPos])
-
-  const onMD = e => {
-    if (!editing || e.target.getAttribute('contenteditable') === 'true') return
-    startRef.current = { mx: e.clientX, my: e.clientY, ox: xp, oy: yp }
-    setDragging(true)
-    e.preventDefault()
-  }
-
-  return (
-    <div ref={dragRef}
-      style={{ position: 'absolute', left: `${xp}%`, top: `${yp}%`, zIndex: 5, maxWidth: '82%',
-        cursor: editing ? (dragging ? 'grabbing' : 'grab') : 'default',
-        padding: editing ? '4px 8px' : 0,
-        outline: editing ? '1px dashed rgba(255,255,255,0.45)' : 'none' }}
-      onMouseDown={onMD}
-      onClick={() => editing && onFocus?.(field)}
-      onMouseEnter={() => setHdHovered(true)}
-      onMouseLeave={() => setHdHovered(false)}
-    >
-      {editing
-        ? <>
-            {!val && !!placeholder && (
-              <div style={{ ...st, opacity: 0.38, pointerEvents: 'none', textShadow: '0 2px 14px rgba(0,0,0,0.9)' }}>{placeholder}</div>
-            )}
-            <div contentEditable suppressContentEditableWarning
-              onFocus={() => onFocus?.(field)}
-              onBlur={e => onChange(field, e.currentTarget.innerText)}
-              style={{ ...st, outline: 'none', cursor: 'text', textShadow: '0 2px 14px rgba(0,0,0,0.9)', position: 'relative' }}
-              dangerouslySetInnerHTML={{ __html: val }}
-            />
-          </>
-        : <div style={{ ...st, textShadow: '0 2px 14px rgba(0,0,0,0.9)' }}>{val}</div>
-      }
-      {editing && (hdHovered || resizing) && [
-        ['nw', { top: -5, left: -5 }, 'nw-resize'],
-        ['ne', { top: -5, right: -5 }, 'ne-resize'],
-        ['sw', { bottom: -5, left: -5 }, 'sw-resize'],
-        ['se', { bottom: -5, right: -5 }, 'se-resize'],
-      ].map(([corner, pos, cur]) => (
-        <div key={corner}
-          style={{ position:'absolute', ...pos, width:10, height:10, borderRadius:2, background:'#3b82f6', cursor:cur, zIndex:30, border:'1.5px solid #fff', boxShadow:'0 1px 4px rgba(0,0,0,0.25)' }}
-          onMouseDown={e => {
-            e.preventDefault(); e.stopPropagation()
-            rsRef.current = { startX: e.clientX, startY: e.clientY, startSize: st.fontSize, snapStyles: s.textStyles || {}, corner }
-            setResizing(true)
-          }}
-        />
-      ))}
-    </div>
-  )
-}
-
-/* ── PointInput: 포인트 항목 textarea ── */
-function PointInput({ value, onChange, onFocus }) {
+function PointInput({ value, onChange, placeholder }) {
   return (
     <textarea value={value} onChange={e => onChange(e.target.value)}
-      onFocus={onFocus}
+      placeholder={placeholder || '텍스트 입력 (엔터로 줄바꿈)'}
       rows={Math.max(2, (value || '').split('\n').length)}
-      style={{ flex: 1, fontSize: 14, border: '1px solid #3b82f6', borderRadius: 6, padding: '7px 10px', outline: 'none', resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.6, width: '100%' }}
+      style={{ flex: 1, fontSize: 21, border: '1px solid #3b82f6', borderRadius: 6, padding: '8px 10px', outline: 'none', resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.65, width: '100%' }}
     />
   )
 }
 
-const delBtnInline   = { width: 26, height: 26, borderRadius: 6, border: '1px solid #fca5a5', background: '#fef2f2', color: '#ef4444', fontSize: 14, cursor: 'pointer', flexShrink: 0, fontWeight: 700, lineHeight: 1 }
-const delBtnAbsolute = { position: 'absolute', top: 8, right: 8, width: 22, height: 22, borderRadius: '50%', border: '1px solid #fca5a5', background: '#fef2f2', color: '#ef4444', fontSize: 12, cursor: 'pointer', fontWeight: 700, lineHeight: 1, zIndex: 2 }
-const addBtnStyle    = { padding: '12px 32px', fontSize: 13, fontWeight: 600, border: '1.5px dashed #bbb', borderRadius: 8, background: 'transparent', color: '#888', cursor: 'pointer' }
+function NoBg({ t, minH = 400, children }) {
+  return (
+    <div style={{ minHeight: minH, background: `linear-gradient(135deg, ${t.ac}28 0%, ${t.bg} 60%, ${t.ac}14 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', inset: 0, backgroundImage: `radial-gradient(circle, ${t.ac}18 1px, transparent 1px)`, backgroundSize: '32px 32px' }} />
+      {children || <span style={{ fontSize: 72, opacity: 0.1 }}>🛍</span>}
+    </div>
+  )
+}
 
-/* ══════════════════════════════════════════════════
-   1. 풀이미지형 (fullHero)
-   전체 배경이미지 + 하단 그라데이션
-   상단 서브카피 / 중앙 메인타이틀 / 하단 포인트 3개 가로배치
-══════════════════════════════════════════════════ */
-export function TplFullHero({ s, img, t, editing, onChange, secMeta, onSecMeta, onFieldFocus }) {
-  const imgNode = img || (editing ? 'slot' : null)
-  const pts = s.points || []
-  const displayPts = editing ? (pts.length ? pts : ['', '', '']) : pts.slice(0, 3).filter(p => p && p.trim())
+function BodyText({ s, t, editing, onChange, fieldStyles = {}, light = false }) {
+  if (!s.bodyText && !editing) return null
+  const fs = fieldStyles.bodyText
+  return (
+    <EditText fieldKey="bodyText" editing={editing} value={s.bodyText} onChange={v => onChange('bodyText', v)}
+      style={{ fontSize: 22, color: light ? 'rgba(255,255,255,0.82)' : t.fg, opacity: light ? 1 : 0.72,
+        lineHeight: 1.85, wordBreak: 'keep-all', whiteSpace: 'pre-wrap', marginBottom: 24 }}
+      extraStyle={fs} />
+  )
+}
+
+/* ── 텍스트 오버레이 드래그 훅 ── */
+function useOverlayDrag(editing, secMeta, onSecMeta) {
+  const [dragState, setDragState] = useState(null)
+  const textPos = secMeta?.textPos || { x: 0, y: 0 }
+
+  const handleMouseDown = e => {
+    if (!editing || e.target.closest('[contenteditable]') || e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return
+    setDragState({ startMx: e.clientX, startMy: e.clientY, baseX: textPos.x, baseY: textPos.y })
+    e.preventDefault()
+  }
+
+  useEffect(() => {
+    if (!dragState) return
+    const onMove = e => onSecMeta?.('textPos', {
+      x: dragState.baseX + (e.clientX - dragState.startMx),
+      y: dragState.baseY + (e.clientY - dragState.startMy),
+    })
+    const onUp = () => setDragState(null)
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
+  }, [dragState]) // eslint-disable-line
+
+  return { textPos, dragState, handleMouseDown }
+}
+
+/* ── Hero: 전체 배경 이미지 + 텍스트 오버레이 ── */
+export function TplHero({ s, img, t, editing, onChange, secMeta, onSecMeta, fieldStyles = {} }) {
+  const logoRef = useRef(null)
+  const { textPos, dragState, handleMouseDown } = useOverlayDrag(editing, secMeta, onSecMeta)
+  const pts        = s.points || []
+  const displayPts = editing ? (pts.length ? pts : ['', '', '']) : pts.filter(p => p && p.trim())
+  const cols       = Math.max(1, Math.min(displayPts.length, 3))
+  const delPt      = i => onChange('points', pts.filter((_, j) => j !== i))
+
+  const handleLogoImg = e => {
+    const f = e.target.files[0]; if (!f) return
+    const fr = new FileReader()
+    fr.onload = ev => onChange('logoImg', ev.target.result)
+    fr.readAsDataURL(f); e.target.value = ''
+  }
+
+  const gradStyle = s.gradDir
+    ? mkGrad(s.gradDir, s.gradAlpha)
+    : 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.2) 55%, transparent 80%)'
 
   return (
-    <div style={{ width: CARD_W, background: '#000', overflow: 'hidden' }}>
-      <div style={{ position: 'relative', height: 1529 }}>
-        {imgNode
-          ? <ImgBox url={imgNode} t={t} editing={editing} onImgChange={v => onChange('secImg', v)}
-              imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} fixedH={1529} fitMode="cover" />
-          : <div style={{ height: 1529, background: `linear-gradient(160deg, ${t.ac}44 0%, ${t.bg} 100%)` }} />
+    <CardWrapper bg={t.bg}>
+      <input ref={logoRef} type="file" accept="image/*" onChange={handleLogoImg} style={{ display: 'none' }} />
+
+      {/* 전체 배경 이미지 영역 */}
+      <div style={{ position: 'relative', minHeight: 680 }}>
+        {img
+          ? <ImgBox url={img} t={t} label="메인 이미지" editing={editing}
+              onImgChange={v => onChange('secImg', v)}
+              imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)}
+              minH={680} fill />
+          : <div style={{ height: 680, background: `linear-gradient(135deg, ${t.ac}55 0%, ${t.bg} 60%, ${t.ac}22 100%)` }} />
         }
-        {/* 전체 그라데이션 오버레이 */}
-        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: 'linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0) 25%, rgba(0,0,0,0.45) 55%, rgba(0,0,0,0.85) 78%, rgba(0,0,0,0.96) 100%)' }} />
 
-        {/* 드래그 텍스트: 서브카피 (상단) */}
-        <DragET s={s} field="subCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-          def={{ x: 6, y: 5, fontSize: 22, color: 'rgba(255,255,255,0.82)', lineHeight: 1.5, letterSpacing: '0.05em' }}
-          placeholder="서브 카피" />
+        {/* 그라데이션 오버레이 */}
+        <div style={{ position: 'absolute', inset: 0, background: gradStyle, pointerEvents: 'none' }} />
 
-        {/* 드래그 텍스트: 메인카피 (중앙 하단) */}
-        <DragET s={s} field="mainCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-          def={{ x: 6, y: 52, fontSize: 66, color: '#fff', fontWeight: 900, lineHeight: 1.1, letterSpacing: '-0.03em' }}
-          placeholder="메인 타이틀" />
-
-        {/* 하단 포인트 바 */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0,
-          padding: '20px 40px 36px', display: 'flex',
-          borderTop: '1px solid rgba(255,255,255,0.15)' }}>
-          {[0, 1, 2].map(i => {
-            const p = displayPts[i]
-            return (
-              <div key={i} style={{ flex: 1, textAlign: 'center', padding: '0 16px',
-                borderLeft: i > 0 ? '1px solid rgba(255,255,255,0.2)' : 'none' }}>
-                <div style={{ width: 40, height: 40, borderRadius: '50%', background: t.ac,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px' }}>
-                  <span style={{ fontSize: 16, fontWeight: 800, color: '#fff' }}>{ROMAN[i]}</span>
-                </div>
-                {editing
-                  ? <PointInput value={p ?? ''} onChange={v => { const n = [...pts]; n[i] = v; onChange('points', n) }} onFocus={() => onFieldFocus?.('points')} />
-                  : p ? <div style={{ fontSize: s.textStyles?.['points']?.fontSize ?? 15, fontFamily: s.textStyles?.['points']?.fontFamily || 'inherit', color: 'rgba(255,255,255,0.9)', lineHeight: 1.5, fontWeight: 600, wordBreak: 'keep-all' }}>{p}</div> : null
-                }
+        {/* 로고 (이미지 위 상단) */}
+        <div style={{ position: 'absolute', top: 36, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 5 }}>
+          {s.logoImg
+            ? <div style={{ position: 'relative', display: 'inline-block' }}>
+                <img src={s.logoImg} alt="" style={{ maxHeight: 72, maxWidth: 280, objectFit: 'contain', display: 'block', filter: 'brightness(0) invert(1)' }} />
+                {editing && (
+                  <div style={{ position: 'absolute', top: -10, right: -10, display: 'flex', gap: 4 }}>
+                    <button onClick={() => logoRef.current?.click()} style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.5)', background: 'rgba(0,0,0,0.55)', color: '#fff', cursor: 'pointer', fontWeight: 600 }}>교체</button>
+                    <button onClick={() => onChange('logoImg', null)} style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, border: 'none', background: 'rgba(220,38,38,0.7)', color: '#fff', cursor: 'pointer', fontWeight: 600 }}>제거</button>
+                  </div>
+                )}
               </div>
-            )
-          })}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/* ══════════════════════════════════════════════════
-   2. 상하분할형 (topBottom)
-   상단 60% 제품이미지 / 하단 40% 배경색+제목/서브/내용
-══════════════════════════════════════════════════ */
-export function TplTopBottom({ s, img, t, editing, onChange, secMeta, onSecMeta, onFieldFocus }) {
-  const imgNode = img || (editing ? 'slot' : null)
-  return (
-    <div style={{ width: CARD_W, background: t.bg }}>
-      {/* 상단: 이미지 60% */}
-      <div>
-        {imgNode
-          ? <ImgBox url={imgNode} t={t} editing={editing} onImgChange={v => onChange('secImg', v)}
-              imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} fixedH={920} fitMode="cover" />
-          : <div style={{ height: 920, background: `linear-gradient(135deg, ${t.ac}44 0%, ${t.sub} 100%)`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontSize: 64, opacity: 0.15 }}>📷</span>
-            </div>
-        }
-      </div>
-      {/* 하단: 텍스트 40% */}
-      <div style={{ background: t.bg, padding: '64px 80px 72px', display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: 520 }}>
-        <div style={{ marginBottom: 22 }}>
-          <ET s={s} field="mainCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ fontSize: 54, color: t.fg, fontWeight: 900, lineHeight: 1.18, letterSpacing: '-0.028em' }}
-            placeholder="메인 제목" />
-        </div>
-        {(s.subCopy || editing) && (
-          <div style={{ marginBottom: 20 }}>
-            <ET s={s} field="subCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-              def={{ fontSize: 26, color: t.fg, lineHeight: 1.6 }}
-              style={{ opacity: 0.72 }}
-              placeholder="서브 제목" />
-          </div>
-        )}
-        {(s.description || editing) && (
-          <ET s={s} field="description" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ fontSize: 18, color: t.fg, lineHeight: 1.82 }}
-            style={{ opacity: 0.6, maxWidth: 580 }}
-            placeholder="본문 내용" />
-        )}
-      </div>
-    </div>
-  )
-}
-
-/* ══════════════════════════════════════════════════
-   3. 좌우분할형 (leftRight)
-   좌 45% 이미지 / 우 55% 제목+설명+포인트
-══════════════════════════════════════════════════ */
-export function TplLeftRight({ s, img, t, editing, onChange, secMeta, onSecMeta, onFieldFocus }) {
-  const imgNode = img || (editing ? 'slot' : null)
-  const pts = s.points || []
-  const displayPts = editing ? (pts.length ? pts : ['']) : pts.filter(p => p && p.trim())
-  const addPt = () => onChange('points', [...pts, ''])
-  const delPt = i => onChange('points', pts.filter((_, j) => j !== i))
-  const flipped = s.flipped || false
-
-  const imgPanel = (
-    <div style={{ flex: '0 0 387px', overflow: 'hidden', minHeight: 900 }}>
-      {imgNode
-        ? <ImgBox url={imgNode} t={t} editing={editing} onImgChange={v => onChange('secImg', v)}
-            imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} fixedH={900} fitMode="cover" />
-        : <div style={{ height: 900, background: t.sub, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: 48, opacity: 0.15 }}>📷</span>
-          </div>
-      }
-    </div>
-  )
-
-  const txtPanel = (
-    <div style={{ flex: '0 0 473px', background: t.bg, padding: '72px 60px 72px 52px',
-      display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: 900, boxSizing: 'border-box' }}>
-      <div style={{ marginBottom: 20 }}>
-        <ET s={s} field="mainCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-          def={{ fontSize: 42, color: t.fg, fontWeight: 900, lineHeight: 1.22, letterSpacing: '-0.025em' }}
-          placeholder="메인 제목" />
-      </div>
-      {(s.subCopy || editing) && (
-        <div style={{ marginBottom: 20 }}>
-          <ET s={s} field="subCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ fontSize: 22, color: t.fg, lineHeight: 1.55 }}
-            style={{ opacity: 0.7 }}
-            placeholder="서브 제목" />
-        </div>
-      )}
-      {(s.description || editing) && (
-        <div style={{ marginBottom: 28 }}>
-          <ET s={s} field="description" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ fontSize: 16, color: t.fg, lineHeight: 1.8 }}
-            style={{ opacity: 0.62 }}
-            placeholder="본문 내용" />
-        </div>
-      )}
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        {displayPts.map((p, i) => (
-          <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start',
-            padding: '16px 0', borderBottom: `1px solid ${t.bd}` }}>
-            <div style={{ width: 28, height: 28, borderRadius: '50%', background: t.ac,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
-              <span style={{ fontSize: 13, color: '#fff', fontWeight: 800 }}>✓</span>
-            </div>
-            {editing
-              ? <PointInput value={p} onChange={v => { const n = [...pts]; n[i] = v; onChange('points', n) }} onFocus={() => onFieldFocus?.('points')} />
-              : <span style={{ fontSize: s.textStyles?.['points']?.fontSize ?? 17, fontFamily: s.textStyles?.['points']?.fontFamily || 'inherit', color: s.textStyles?.['points']?.color || t.fg, lineHeight: 1.72, opacity: 0.85, whiteSpace: 'pre-wrap', wordBreak: 'keep-all' }}>{p}</span>
-            }
-            {editing && <button onClick={() => delPt(i)} style={delBtnInline}>×</button>}
-          </div>
-        ))}
-      </div>
-      {editing && (
-        <div style={{ paddingTop: 16 }}>
-          <button onClick={addPt} style={addBtnStyle}>+ 항목 추가</button>
-        </div>
-      )}
-    </div>
-  )
-
-  return (
-    <div style={{ width: CARD_W, display: 'flex', overflow: 'hidden' }}>
-      {flipped ? <>{txtPanel}{imgPanel}</> : <>{imgPanel}{txtPanel}</>}
-    </div>
-  )
-}
-
-/* ══════════════════════════════════════════════════
-   4. 포인트3단형 (points3icon)
-   상단 제목+서브 / 하단 아이콘+제목+설명 3단 (이미지 없음)
-   아이콘 크게 (96×96)
-══════════════════════════════════════════════════ */
-export function TplPoints3Icon({ s, img, t, editing, onChange, secMeta, onSecMeta, onFieldFocus }) {
-  const pts = s.points || []
-  const displayPts = pts.length ? pts : (editing ? ['', '', ''] : [])
-  const cols = Math.max(1, Math.min(displayPts.length || 1, 3))
-  const addPt = () => onChange('points', [...pts, ''])
-  const delPt = i => onChange('points', pts.filter((_, j) => j !== i))
-  const shape = s.pointShape || 'circle'
-
-  return (
-    <div style={{ width: CARD_W, background: t.bg }}>
-      {/* 상단: 제목 + 서브 */}
-      <div style={{ padding: '80px 72px 52px', textAlign: 'center' }}>
-        <div style={{ marginBottom: 18 }}>
-          <ET s={s} field="mainCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ fontSize: 52, color: t.fg, fontWeight: 900, lineHeight: 1.2, letterSpacing: '-0.025em' }}
-            placeholder="메인 제목" />
-        </div>
-        {(s.subCopy || editing) && (
-          <ET s={s} field="subCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ fontSize: 24, color: t.fg, lineHeight: 1.6 }}
-            style={{ opacity: 0.64 }}
-            placeholder="서브 제목" />
-        )}
-        <div style={{ width: 48, height: 4, background: t.ac, borderRadius: 2, margin: '28px auto 0' }} />
-      </div>
-
-      {/* 하단: 3단 아이콘 카드 */}
-      <div style={{ padding: '0 48px 88px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 28 }}>
-          {displayPts.map((p, i) => {
-            const lines = p.split('\n')
-            const title = lines[0]?.trim() || `포인트 ${i + 1}`
-            const desc  = lines.slice(1).join('\n').trim()
-            return (
-              <div key={i} style={{ position: 'relative', textAlign: 'center', background: t.sub,
-                borderRadius: 24, padding: '52px 28px 48px',
-                boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
-                {editing && <button onClick={() => delPt(i)} style={delBtnAbsolute}>×</button>}
-                <div style={{ width: 96, height: 96, background: t.ac, margin: '0 auto 28px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  ...shapeCSS(shape), boxShadow: `0 8px 24px ${t.ac}55` }}>
-                  <span style={{ fontSize: 38, fontWeight: 800, color: '#fff' }}>{ROMAN[i % ROMAN.length]}</span>
-                </div>
-                {editing
-                  ? <PointInput value={p} onChange={v => { const n = [...pts]; n[i] = v; onChange('points', n) }} onFocus={() => onFieldFocus?.('points')} />
-                  : <>
-                      <p style={{ fontSize: s.textStyles?.['points']?.fontSize ?? 20, fontFamily: s.textStyles?.['points']?.fontFamily || 'inherit', fontWeight: 800, color: s.textStyles?.['points']?.color || t.fg, margin: '0 0 12px', lineHeight: 1.3, wordBreak: 'keep-all' }}>{title}</p>
-                      {desc && <p style={{ fontSize: Math.max(14, (s.textStyles?.['points']?.fontSize ?? 20) - 5), fontFamily: s.textStyles?.['points']?.fontFamily || 'inherit', color: s.textStyles?.['points']?.color || t.fg, opacity: 0.62, margin: 0, lineHeight: 1.72, whiteSpace: 'pre-wrap', wordBreak: 'keep-all' }}>{desc}</p>}
-                    </>
-                }
-              </div>
-            )
-          })}
-        </div>
-        {editing && (
-          <div style={{ textAlign: 'center', paddingTop: 24 }}>
-            <button onClick={addPt} style={addBtnStyle}>+ 항목 추가</button>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-/* ══════════════════════════════════════════════════
-   5. 스토리형 (story)
-   상단 큰타이틀 / 중단 3컬럼(텍스트|이미지|포인트) / 하단 강조문구
-══════════════════════════════════════════════════ */
-export function TplStory({ s, img, t, editing, onChange, secMeta, onSecMeta, onFieldFocus }) {
-  const imgNode = img || (editing ? 'slot' : null)
-  const pts = s.points || []
-  const displayPts = editing ? (pts.length ? pts : ['', '']) : pts.filter(p => p && p.trim())
-  const addPt = () => onChange('points', [...pts, ''])
-  const delPt = i => onChange('points', pts.filter((_, j) => j !== i))
-
-  return (
-    <div style={{ width: CARD_W, background: t.bg }}>
-      {/* 상단: 큰 타이틀 */}
-      <div style={{ padding: '80px 72px 32px' }}>
-        <ET s={s} field="mainCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-          def={{ fontSize: 56, color: t.fg, fontWeight: 900, lineHeight: 1.15, letterSpacing: '-0.028em' }}
-          placeholder="메인 제목" />
-        <div style={{ marginTop: 22, height: 4, width: 56, background: t.ac, borderRadius: 2 }} />
-      </div>
-
-      {/* 중단: 3컬럼 매거진 레이아웃 */}
-      <div style={{ display: 'flex', alignItems: 'stretch', minHeight: 520 }}>
-        {/* 왼쪽 텍스트 */}
-        <div style={{ flex: '0 0 210px', padding: '32px 28px 32px 72px',
-          display: 'flex', flexDirection: 'column', borderRight: `1px solid ${t.bd}` }}>
-          <ET s={s} field="subCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ fontSize: 17, color: t.fg, lineHeight: 1.84 }}
-            style={{ opacity: 0.75 }}
-            placeholder="보조 설명 텍스트" />
-        </div>
-        {/* 중앙 이미지 */}
-        <div style={{ flex: 1, overflow: 'hidden' }}>
-          {imgNode
-            ? <ImgBox url={imgNode} t={t} editing={editing} onImgChange={v => onChange('secImg', v)}
-                imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} fixedH={520} fitMode="cover" />
-            : <div style={{ height: 520, background: t.sub }} />
+            : editing
+              ? <button onClick={() => logoRef.current?.click()} style={{ padding: '6px 18px', fontSize: 12, borderRadius: 7, border: '1.5px dashed rgba(255,255,255,0.45)', background: 'rgba(0,0,0,0.25)', color: 'rgba(255,255,255,0.75)', cursor: 'pointer', fontWeight: 600 }}>+ 로고 업로드</button>
+              : s.logoText
+                ? <div style={{ fontSize: 16, fontWeight: 700, color: 'rgba(255,255,255,0.9)', letterSpacing: '0.28em', textTransform: 'uppercase' }}>{s.logoText}</div>
+                : null
           }
         </div>
-        {/* 오른쪽 포인트 */}
-        <div style={{ flex: '0 0 210px', padding: '32px 72px 32px 28px',
-          display: 'flex', flexDirection: 'column', gap: 0, borderLeft: `1px solid ${t.bd}` }}>
-          {displayPts.map((p, i) => (
-            <div key={i} style={{
-              paddingBottom: 20, marginBottom: i < displayPts.length - 1 ? 20 : 0,
-              borderBottom: i < displayPts.length - 1 ? `1px solid ${t.bd}` : 'none'
-            }}>
-              {editing
-                ? <PointInput value={p} onChange={v => { const n = [...pts]; n[i] = v; onChange('points', n) }} onFocus={() => onFieldFocus?.('points')} />
-                : <div style={{ fontSize: s.textStyles?.['points']?.fontSize ?? 16, fontFamily: s.textStyles?.['points']?.fontFamily || 'inherit', color: s.textStyles?.['points']?.color || t.fg, lineHeight: 1.76, opacity: 0.82, wordBreak: 'keep-all', whiteSpace: 'pre-wrap' }}>{p}</div>
-              }
+
+        {/* 텍스트 오버레이 (드래그 가능) */}
+        <div
+          onMouseDown={handleMouseDown}
+          style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0,
+            padding: '0 72px 60px', textAlign: 'center',
+            transform: `translate(${textPos.x}px, ${textPos.y}px)`,
+            cursor: editing ? (dragState ? 'grabbing' : 'grab') : 'default',
+            userSelect: dragState ? 'none' : 'auto',
+            pointerEvents: editing ? 'auto' : 'none',
+            zIndex: 4,
+          }}
+        >
+          {(s.description || editing) && (
+            <div style={{ marginBottom: 22 }}>
+              <EditText fieldKey="description" editing={editing} value={s.description} onChange={v => onChange('description', v)}
+                style={{ display: 'inline-block', fontSize: 14, fontWeight: 800, color: 'rgba(255,255,255,0.9)', letterSpacing: '0.32em', textTransform: 'uppercase', border: '1.5px solid rgba(255,255,255,0.55)', padding: '6px 24px', borderRadius: 40 }} extraStyle={fieldStyles.description} />
             </div>
-          ))}
-          {editing && (
-            <button onClick={addPt} style={{ ...addBtnStyle, padding: '8px 16px', fontSize: 12, marginTop: 8 }}>+ 추가</button>
+          )}
+          <EditText fieldKey="mainCopy" editing={editing} value={s.mainCopy} onChange={v => onChange('mainCopy', v)}
+            style={{ fontSize: 88, fontWeight: 900, color: '#fff', lineHeight: 1.18, letterSpacing: '-0.03em', marginBottom: 20, wordBreak: 'keep-all', fontFamily: SERIF, textShadow: '0 4px 28px rgba(0,0,0,0.45)' }} extraStyle={fieldStyles.mainCopy} />
+          <EditText fieldKey="subCopy" editing={editing} value={s.subCopy} onChange={v => onChange('subCopy', v)}
+            style={{ fontSize: 30, color: 'rgba(255,255,255,0.85)', lineHeight: 1.82, wordBreak: 'keep-all', maxWidth: 540, textShadow: '0 2px 12px rgba(0,0,0,0.3)' }} extraStyle={fieldStyles.subCopy} />
+          {(s.bodyText || editing) && (
+            <EditText fieldKey="bodyText" editing={editing} value={s.bodyText} onChange={v => onChange('bodyText', v)}
+              style={{ fontSize: 22, color: 'rgba(255,255,255,0.72)', lineHeight: 1.85, marginTop: 14, whiteSpace: 'pre-wrap' }} extraStyle={fieldStyles.bodyText} />
           )}
         </div>
       </div>
 
-      {/* 하단: 강조 문구 */}
-      {(s.description || editing) && (
-        <div style={{ margin: '40px 72px 72px', padding: '32px 40px', background: t.ac, borderRadius: 14 }}>
-          <ET s={s} field="description" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ fontSize: 24, color: '#fff', lineHeight: 1.6, fontWeight: 700 }}
-            placeholder="강조 문구" />
+      {/* KEY POINT 섹션 */}
+      <div style={{ position: 'relative', background: '#fff', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%) translateY(-50%)', width: '130%', height: 130, background: t.bg, borderRadius: '0 0 50% 50%' }} />
+        <div style={{ position: 'relative', padding: '80px 60px 88px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <span style={{ fontSize: 19, fontWeight: 800, letterSpacing: '0.32em', color: t.ac, textTransform: 'uppercase', borderBottom: `3px solid ${t.ac}`, paddingBottom: 7 }}>KEY POINT</span>
+            <div style={{ marginTop: 18, fontSize: 40, fontWeight: 900, color: '#111', fontFamily: SERIF, letterSpacing: '-0.02em' }}>이 제품이 특별한 이유</div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 36 }}>
+            {displayPts.map((raw, i) => {
+              const lines = raw.split('\n'); const title = lines[0]?.trim() || `포인트 ${i + 1}`; const desc = lines.slice(1).join('\n').trim()
+              return (
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 18, position: 'relative' }}>
+                  {editing && <button onClick={() => delPt(i)} style={delBtnAbsolute}>×</button>}
+                  <div style={{ width: 92, height: 92, borderRadius: '50%', background: t.ac, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 14px 36px ${t.ac}44`, flexShrink: 0 }}>
+                    <span style={{ fontSize: 36, fontWeight: 700, color: '#fff', fontFamily: SERIF, lineHeight: 1 }}>{getSecIcon(s, i)}</span>
+                  </div>
+                  {editing
+                    ? <PointInput value={raw} onChange={v => { const n=[...pts]; n[i]=v; onChange('points',n) }} placeholder={'제목\n설명(엔터로 구분)'} />
+                    : <>
+                        <p style={{ fontSize: 30, fontWeight: 800, color: '#111', margin: 0, lineHeight: 1.3, wordBreak: 'keep-all', fontFamily: SERIF }}>{title}</p>
+                        {desc && <p style={{ fontSize: 22, color: '#777', margin: 0, lineHeight: 1.72, wordBreak: 'keep-all', whiteSpace: 'pre-wrap' }}>{desc}</p>}
+                      </>
+                  }
+                </div>
+              )
+            })}
+          </div>
         </div>
-      )}
-    </div>
+      </div>
+    </CardWrapper>
   )
 }
 
-/* ══════════════════════════════════════════════════
-   6. 활용법형 (howTo)
-   상단 제목박스(대비색 배경) / 중단 큰이미지 / 하단 번호+항목리스트
-══════════════════════════════════════════════════ */
-export function TplHowTo({ s, img, t, editing, onChange, secMeta, onSecMeta, onFieldFocus }) {
-  const imgNode = img || (editing ? 'slot' : null)
-  const pts = s.points || []
-  const displayPts = editing ? (pts.length ? pts : ['', '', '']) : pts.filter(p => p && p.trim())
-  const addPt = () => onChange('points', [...pts, ''])
-  const delPt = i => onChange('points', pts.filter((_, j) => j !== i))
+export function TplMaterial({ s, img, t, editing, onChange, secMeta, onSecMeta, fieldStyles = {} }) {
+  const pts        = s.points || []
+  const displayPts = editing ? (pts.length ? pts : ['']) : pts.filter(p => p && p.trim())
+  const delPt      = i => onChange('points', pts.filter((_, j) => j !== i))
+  const { textPos, dragState, handleMouseDown } = useOverlayDrag(editing, secMeta, onSecMeta)
 
   return (
-    <div style={{ width: CARD_W, background: t.bg }}>
-      {/* 상단: 대비색 배경 헤더 */}
-      <div style={{ padding: '60px 80px 52px', background: t.fg, textAlign: 'center' }}>
-        {(s.description || editing) && (
-          <div style={{ marginBottom: 16 }}>
-            <ET s={s} field="description" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-              def={{ fontSize: 13, color: t.ac, fontWeight: 800, letterSpacing: '0.28em' }}
-              style={{ textTransform: 'uppercase', display: 'inline-block' }}
-              placeholder="카테고리" />
-          </div>
-        )}
-        <ET s={s} field="mainCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-          def={{ fontSize: 52, color: t.bg, fontWeight: 900, lineHeight: 1.2, letterSpacing: '-0.025em' }}
-          placeholder="메인 제목" />
-      </div>
-
-      {/* 중단: 큰 이미지 */}
-      {imgNode && (
-        <ImgBox url={imgNode} t={t} editing={editing} onImgChange={v => onChange('secImg', v)}
-          imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} fixedH={540} fitMode="cover" />
-      )}
-
-      {/* 서브타이틀 */}
-      {(s.subCopy || editing) && (
-        <div style={{ padding: '48px 80px 16px' }}>
-          <ET s={s} field="subCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ fontSize: 30, color: t.fg, fontWeight: 700, lineHeight: 1.4, letterSpacing: '-0.015em' }}
-            placeholder="서브 제목" />
+    <CardWrapper bg={t.bg}>
+      <div style={{ position: 'relative', minHeight: 480 }}>
+        {img ? <ImgBox url={img} t={t} label="소재 이미지" editing={editing} onImgChange={v => onChange('secImg', v)} imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} minH={480} /> : <NoBg t={t} minH={480} />}
+        {(() => { const g = s.gradDir ? mkGrad(s.gradDir, s.gradAlpha) : 'linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.32) 52%, transparent 100%)'; return g && <div style={{ position: 'absolute', inset: 0, background: g, pointerEvents: 'none' }} /> })()}
+        <div
+          onMouseDown={handleMouseDown}
+          style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0, padding: '36px 60px 52px',
+            transform: `translate(${textPos.x}px, ${textPos.y}px)`,
+            cursor: editing ? (dragState ? 'grabbing' : 'grab') : 'default',
+            userSelect: dragState ? 'none' : 'auto',
+            pointerEvents: editing ? 'auto' : 'none',
+          }}
+        >
+          <EditText fieldKey="mainCopy" editing={editing} value={s.mainCopy} onChange={v => onChange('mainCopy', v)}
+            style={{ fontSize: 62, fontWeight: 900, color: '#fff', lineHeight: 1.24, wordBreak: 'keep-all', fontFamily: SERIF, textShadow: '0 3px 18px rgba(0,0,0,0.55)', marginBottom: 10 }} extraStyle={fieldStyles.mainCopy} />
+          <EditText fieldKey="subCopy" editing={editing} value={s.subCopy} onChange={v => onChange('subCopy', v)}
+            style={{ fontSize: 26, color: 'rgba(255,255,255,0.86)', lineHeight: 1.68, wordBreak: 'keep-all' }} extraStyle={fieldStyles.subCopy} />
+          {(s.bodyText || editing) && (
+            <EditText fieldKey="bodyText" editing={editing} value={s.bodyText} onChange={v => onChange('bodyText', v)}
+              style={{ fontSize: 20, color: 'rgba(255,255,255,0.75)', lineHeight: 1.75, marginTop: 8, whiteSpace: 'pre-wrap' }} extraStyle={fieldStyles.bodyText} />
+          )}
         </div>
-      )}
-
-      {/* 하단: 번호 항목 리스트 */}
-      <div style={{ padding: '16px 80px 80px' }}>
-        {displayPts.map((p, i) => {
-          const lines = p.split('\n')
-          return (
-            <div key={i} style={{ display: 'flex', gap: 24, alignItems: 'flex-start',
-              padding: '24px 0', borderBottom: `1px solid ${t.bd}` }}>
-              <div style={{ width: 52, height: 52, borderRadius: 14, background: t.ac,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <span style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>{i + 1}</span>
-              </div>
-              <div style={{ flex: 1, paddingTop: 6 }}>
-                {editing
-                  ? <PointInput value={p} onChange={v => { const n = [...pts]; n[i] = v; onChange('points', n) }} onFocus={() => onFieldFocus?.('points')} />
-                  : <>
-                      <div style={{ fontSize: s.textStyles?.['points']?.fontSize ?? 20, fontFamily: s.textStyles?.['points']?.fontFamily || 'inherit', fontWeight: 700, color: s.textStyles?.['points']?.color || t.fg, lineHeight: 1.4, marginBottom: 6, wordBreak: 'keep-all' }}>{lines[0]}</div>
-                      {lines.slice(1).join('\n') && <div style={{ fontSize: Math.max(14, (s.textStyles?.['points']?.fontSize ?? 20) - 4), fontFamily: s.textStyles?.['points']?.fontFamily || 'inherit', color: s.textStyles?.['points']?.color || t.fg, opacity: 0.6, lineHeight: 1.72, whiteSpace: 'pre-wrap', wordBreak: 'keep-all' }}>{lines.slice(1).join('\n')}</div>}
-                    </>
-                }
-              </div>
-              {editing && <button onClick={() => delPt(i)} style={delBtnInline}>×</button>}
-            </div>
-          )
-        })}
-        {editing && (
-          <div style={{ paddingTop: 16 }}>
-            <button onClick={addPt} style={addBtnStyle}>+ 항목 추가</button>
-          </div>
-        )}
       </div>
-    </div>
-  )
-}
-
-/* ══════════════════════════════════════════════════
-   7. 비교형 (compare)
-   상단 타이틀 / 중단 비교표(✗/✓ 아이콘) / 하단 이미지
-══════════════════════════════════════════════════ */
-export function TplCompare({ s, img, t, editing, onChange, secMeta, onSecMeta, onFieldFocus }) {
-  const imgNode = img || (editing ? 'slot' : null)
-  const pts = s.points || []
-  const displayPts = pts.length ? pts : (editing ? ['', '', ''] : [])
-  const addPt = () => onChange('points', [...pts, ''])
-  const delPt = i => onChange('points', pts.filter((_, j) => j !== i))
-
-  return (
-    <div style={{ width: CARD_W, background: t.bg }}>
-      {/* 상단 타이틀 */}
-      <div style={{ padding: '64px 64px 48px', textAlign: 'center' }}>
-        <div style={{ marginBottom: 14 }}>
-          <ET s={s} field="mainCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ fontSize: 50, color: t.fg, fontWeight: 900, lineHeight: 1.2, letterSpacing: '-0.025em' }}
-            placeholder="메인 제목" />
-        </div>
-        {(s.subCopy || editing) && (
-          <ET s={s} field="subCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ fontSize: 24, color: t.fg, lineHeight: 1.55 }}
-            style={{ opacity: 0.6 }}
-            placeholder="서브 제목" />
-        )}
-      </div>
-
-      {/* 비교표 */}
-      <div style={{ padding: '0 56px 48px' }}>
-        <div style={{ border: `2.5px solid ${t.ac}`, borderRadius: 18, overflow: 'hidden' }}>
-          {/* 헤더 행 */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
-            <div style={{ padding: '22px 32px', textAlign: 'center', background: '#f2f0ea', borderRight: `2.5px solid ${t.ac}` }}>
-              <ET s={s} field="compareLeft" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-                def={{ fontSize: 16, color: '#888', fontWeight: 700 }}
-                style={{ textAlign: 'center' }} placeholder="기존 제품" />
-            </div>
-            <div style={{ padding: '22px 32px', textAlign: 'center', background: t.ac }}>
-              <ET s={s} field="compareRight" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-                def={{ fontSize: 16, color: '#fff', fontWeight: 800 }}
-                style={{ textAlign: 'center' }} placeholder="이 제품" />
-            </div>
-          </div>
-          {/* 비교 행들 */}
+      <div style={{ padding: '60px 60px 72px', background: '#fff' }}>
+        <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: '0.3em', color: t.ac, textTransform: 'uppercase', marginBottom: 32 }}>MATERIAL DETAIL</div>
+        {s.secImg2 && <div style={{ marginBottom: 40, borderRadius: 12, overflow: 'hidden' }}><ImgBox url={s.secImg2} t={t} label="소재 클로즈업" editing={editing} onImgChange={v => onChange('secImg2', v)} imgMeta={secMeta?.img2} onMetaChange={m => onSecMeta?.('img2', m)} minH={240} /></div>}
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
           {displayPts.map((p, i) => {
-            const sep = p.indexOf('/')
-            const a = sep >= 0 ? p.slice(0, sep).trim() : p.trim()
-            const b = sep >= 0 ? p.slice(sep + 1).trim() : ''
-            return editing ? (
-              <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', borderTop: `1px solid ${t.bd}` }}>
-                <div style={{ padding: '12px 16px', borderRight: `2.5px solid ${t.ac}` }}>
-                  <input value={a} onChange={e => { const n=[...pts]; n[i]=e.target.value+' / '+b; onChange('points',n) }}
-                    placeholder="일반 제품"
-                    style={{ width:'100%',fontSize:14,border:'1px solid #3b82f6',borderRadius:6,padding:'6px 10px',outline:'none',fontFamily:'inherit',boxSizing:'border-box' }} />
+            const lines = p.split('\n')
+            return (
+              <div key={i} style={{ display: 'flex', gap: 22, alignItems: 'flex-start', padding: '24px 0', borderBottom: `1px solid ${t.bd}` }}>
+                <div style={{ width: 52, height: 52, borderRadius: 14, background: t.ac, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <span style={{ fontSize: 22, fontWeight: 700, color: '#fff', fontFamily: SERIF, lineHeight: 1 }}>{getSecIcon(s, i)}</span>
                 </div>
-                <div style={{ padding: '12px 16px' }}>
-                  <input value={b} onChange={e => { const n=[...pts]; n[i]=a+' / '+e.target.value; onChange('points',n) }}
-                    placeholder="이 제품"
-                    style={{ width:'100%',fontSize:14,border:'1px solid #3b82f6',borderRadius:6,padding:'6px 10px',outline:'none',fontFamily:'inherit',boxSizing:'border-box' }} />
+                <div style={{ flex: 1 }}>
+                  {editing
+                    ? <PointInput value={p} onChange={v => { const n=[...pts]; n[i]=v; onChange('points',n) }} placeholder={'특징 제목\n상세 설명'} />
+                    : <>
+                        <div style={{ fontSize: 26, fontWeight: 700, color: t.fg, lineHeight: 1.4, marginBottom: 5, fontFamily: SERIF }}>{lines[0]}</div>
+                        {lines.slice(1).join('\n') && <div style={{ fontSize: 24, color: t.fg, opacity: 0.62, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{lines.slice(1).join('\n')}</div>}
+                      </>
+                  }
                 </div>
-                <div style={{ display:'flex',alignItems:'center',padding:'0 10px' }}>
-                  <button onClick={() => delPt(i)} style={delBtnInline}>×</button>
-                </div>
-              </div>
-            ) : (
-              <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderTop: `1px solid ${t.bd}`, background: i % 2 === 0 ? '#fafaf8' : '#fff' }}>
-                <div style={{ padding: '20px 32px', display: 'flex', alignItems: 'center', gap: 12, borderRight: `2.5px solid ${t.ac}` }}>
-                  <span style={{ fontSize: 22, color: '#ef4444', flexShrink: 0, lineHeight: 1 }}>✗</span>
-                  <span style={{ fontSize: 15, color: '#aaa', lineHeight: 1.5 }}>{a}</span>
-                </div>
-                <div style={{ padding: '20px 32px', display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span style={{ fontSize: 22, color: '#22c55e', flexShrink: 0, lineHeight: 1 }}>✓</span>
-                  <span style={{ fontSize: 15, color: t.ac, fontWeight: 700, lineHeight: 1.5 }}>{b || '—'}</span>
-                </div>
+                {editing && <button onClick={() => delPt(i)} style={delBtnInline}>×</button>}
               </div>
             )
           })}
         </div>
-        {editing && (
-          <div style={{ textAlign: 'center', paddingTop: 16 }}>
-            <button onClick={addPt} style={addBtnStyle}>+ 비교 항목 추가</button>
-          </div>
-        )}
       </div>
-
-      {/* 하단 제품 이미지 */}
-      {imgNode && (
-        <div style={{ padding: '0 56px 64px' }}>
-          <ImgBox url={imgNode} t={t} editing={editing} onImgChange={v => onChange('secImg', v)}
-            imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} />
-        </div>
-      )}
-    </div>
+    </CardWrapper>
   )
 }
 
-/* ══════════════════════════════════════════════════
-   8. 제품상세표시 (specTable)
-   표 형태, 깔끔한 줄무늬
-══════════════════════════════════════════════════ */
-const SPEC_CATS = {
-  food:   { label: '식품',    rows: ['제품명::','식품유형::','원산지::','유통기한::','중량::','원재료::','영양성분::','보관방법::','주의사항::'] },
-  beauty: { label: '뷰티',    rows: ['제품명::','내용물::','사용기한::','사용방법::','주의사항::','제조사::','원산지::'] },
-  living: { label: '생활용품', rows: ['제품명::','소재::','크기::','무게::','제조국::','인증::','주의사항::'] },
-}
-
-export function TplSpecTable({ s, img, t, editing, onChange, onFieldFocus }) {
-  const cat = s.specCategory || 'food'
-  const pts = s.points || []
-  const displayPts = editing ? (pts.length ? pts : [...SPEC_CATS[cat].rows]) : pts.filter(p => p && p.trim())
-  const addRow = () => onChange('points', [...pts, '항목::'])
-  const delRow = i => onChange('points', pts.filter((_, j) => j !== i))
-  const switchCat = k => { onChange('specCategory', k); onChange('points', [...SPEC_CATS[k].rows]) }
+export function TplDetail2col({ s, img, t, editing, onChange, secMeta, onSecMeta, fieldStyles = {} }) {
+  const pts = s.points || []; const displayPts = editing ? (pts.length ? pts : ['']) : pts.filter(p => p && p.trim())
+  const delPt = i => onChange('points', pts.filter((_, j) => j !== i))
+  const img2 = s.secImg2; const img3 = s.secImg3; const img4 = s.secImg4; const imgH = s.detailImgH || 320
 
   return (
-    <div style={{ width: CARD_W, background: t.bg }}>
-      <div style={{ padding: '56px 64px 36px', borderBottom: `3px solid ${t.fg}` }}>
-        {editing && (
-          <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-            {Object.entries(SPEC_CATS).map(([k, v]) => (
-              <button key={k} onClick={() => switchCat(k)}
-                style={{ padding: '6px 18px', fontSize: 12, borderRadius: 20,
-                  border: `1.5px solid ${cat===k ? t.ac : '#ccc'}`,
-                  background: cat===k ? t.ac : '#fff',
-                  color: cat===k ? '#fff' : '#666',
-                  cursor: 'pointer', fontWeight: cat===k ? 700 : 400 }}>
-                {v.label}
-              </button>
+    <CardWrapper bg={t.bg}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', background: t.ac }}>
+          <div style={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 200 }}>
+            {img ? <><ImgBox url={img} t={t} label="이미지 1" editing={editing} onImgChange={v => onChange('secImg', v)} imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} minH={imgH} fitMode='contain' fill /><div style={{ position: 'absolute', inset: 0, background: `${t.ac}22`, pointerEvents: 'none' }} /></>
+              : editing ? <ImgBox url="slot" t={t} label="이미지 1 업로드" editing={editing} onImgChange={v => onChange('secImg', v)} imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} minH={imgH} fitMode='contain' fill />
+              : <div style={{ height: '100%', minHeight: 200, background: `linear-gradient(160deg, ${t.ac} 0%, ${t.ac}cc 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 60, opacity: 0.15 }}>📷</span></div>}
+          </div>
+          <div style={{ height: 20, background: `${t.bg}55`, flexShrink: 0 }} />
+          <div style={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 200 }}>
+            {img2 ? <><ImgBox url={img2} t={t} label="이미지 2" editing={editing} onImgChange={v => onChange('secImg2', v)} imgMeta={secMeta?.img2} onMetaChange={m => onSecMeta?.('img2', m)} minH={imgH} fitMode='contain' fill /><div style={{ position: 'absolute', inset: 0, background: `${t.ac}22`, pointerEvents: 'none' }} /></>
+              : editing ? <ImgBox url="slot" t={t} label="이미지 2 업로드" editing={editing} onImgChange={v => onChange('secImg2', v)} imgMeta={secMeta?.img2} onMetaChange={m => onSecMeta?.('img2', m)} minH={imgH} fitMode='contain' fill />
+              : <div style={{ height: '100%', minHeight: 200, background: `linear-gradient(160deg, ${t.ac}cc 0%, ${t.ac}88 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 60, opacity: 0.10 }}>📷</span></div>}
+          </div>
+        </div>
+        <div style={{ padding: '68px 52px', display: 'flex', flexDirection: 'column', justifyContent: 'center', background: '#fff' }}>
+          {(s.description || editing) && <EditText fieldKey="description" editing={editing} value={s.description} onChange={v => onChange('description', v)} style={{ fontSize: 14, fontWeight: 800, color: t.ac, letterSpacing: '0.3em', textTransform: 'uppercase', marginBottom: 20 }} extraStyle={fieldStyles.description} />}
+          <EditText fieldKey="mainCopy" editing={editing} value={s.mainCopy} onChange={v => onChange('mainCopy', v)} style={{ fontSize: 52, fontWeight: 900, color: '#111', lineHeight: 1.3, letterSpacing: '-0.02em', marginBottom: 16, wordBreak: 'keep-all', fontFamily: SERIF }} extraStyle={fieldStyles.mainCopy} />
+          <EditText fieldKey="subCopy" editing={editing} value={s.subCopy} onChange={v => onChange('subCopy', v)} style={{ fontSize: 24, color: '#666', lineHeight: 1.82, marginBottom: 16, wordBreak: 'keep-all' }} extraStyle={fieldStyles.subCopy} />
+          <BodyText s={s} t={t} editing={editing} onChange={onChange} fieldStyles={fieldStyles} />
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {displayPts.map((p, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 16, padding: '16px 0', borderBottom: `1px solid ${t.bd}` }}>
+                <div style={{ width: 30, height: 30, borderRadius: '50%', background: t.ac, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}><span style={{ fontSize: 15, color: '#fff', fontWeight: 800 }}>✓</span></div>
+                {editing ? <PointInput value={p} onChange={v => { const n=[...pts]; n[i]=v; onChange('points',n) }} /> : <span style={{ fontSize: 25, color: '#333', lineHeight: 1.74, whiteSpace: 'pre-wrap' }}>{p}</span>}
+                {editing && <button onClick={() => delPt(i)} style={delBtnInline}>×</button>}
+              </div>
             ))}
           </div>
-        )}
-        <div style={{ marginBottom: 10 }}>
-          <ET s={s} field="mainCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ fontSize: 50, color: t.fg, fontWeight: 900, letterSpacing: '-0.025em' }}
-            placeholder="제품명" />
         </div>
-        {(s.subCopy || editing) && (
-          <ET s={s} field="subCopy" editing={editing} onChange={onChange} onFocus={onFieldFocus}
-            def={{ fontSize: 16, color: t.fg, lineHeight: 1.65 }}
-            style={{ opacity: 0.6 }}
-            placeholder="제품 설명" />
-        )}
       </div>
-      <div style={{ padding: '0 64px 80px' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 36 }}>
-          <thead>
-            <tr style={{ background: t.sub, borderBottom: `2.5px solid ${t.fg}` }}>
-              <th style={{ padding: '16px 24px', fontSize: 14, fontWeight: 700, color: t.fg, textAlign: 'left', width: '28%', borderRight: `1px solid ${t.bd}` }}>항목</th>
-              <th style={{ padding: '16px 24px', fontSize: 14, fontWeight: 700, color: t.fg, textAlign: 'left' }}>내용</th>
-              {editing && <th style={{ width: 44 }} />}
-            </tr>
-          </thead>
+      {(img3 || img4) && (
+        <div style={{ display: 'grid', gridTemplateColumns: (img3 && img4) ? '1fr 1fr' : '1fr' }}>
+          {img3 && <ImgBox url={img3} t={t} label="이미지 3" editing={editing} onImgChange={v => onChange('secImg3', v)} imgMeta={secMeta?.img3} onMetaChange={m => onSecMeta?.('img3', m)} />}
+          {img4 && <ImgBox url={img4} t={t} label="이미지 4" editing={editing} onImgChange={v => onChange('secImg4', v)} imgMeta={secMeta?.img4} onMetaChange={m => onSecMeta?.('img4', m)} />}
+        </div>
+      )}
+    </CardWrapper>
+  )
+}
+
+export function TplScene({ s, img, t, editing, onChange, secMeta, onSecMeta, fieldStyles = {} }) {
+  const { textPos, dragState, handleMouseDown } = useOverlayDrag(editing, secMeta, onSecMeta)
+
+  return (
+    <CardWrapper bg={t.bg}>
+      <div style={{ position: 'relative', minHeight: 640 }}>
+        {img ? <ImgBox url={img} t={t} label="라이프스타일 이미지" editing={editing} onImgChange={v => onChange('secImg', v)} imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} minH={640} /> : <NoBg t={t} minH={640} />}
+        {(() => { const g = s.gradDir ? mkGrad(s.gradDir, s.gradAlpha) : 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.5) 35%, rgba(0,0,0,0.1) 65%, transparent 100%)'; return g && <div style={{ position: 'absolute', inset: 0, background: g, pointerEvents: 'none' }} /> })()}
+        <div
+          onMouseDown={handleMouseDown}
+          style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0, padding: '36px 60px 56px',
+            transform: `translate(${textPos.x}px, ${textPos.y}px)`,
+            cursor: editing ? (dragState ? 'grabbing' : 'grab') : 'default',
+            userSelect: dragState ? 'none' : 'auto',
+            pointerEvents: editing ? 'auto' : 'none',
+          }}
+        >
+          <EditText fieldKey="mainCopy" editing={editing} value={s.mainCopy} onChange={v => onChange('mainCopy', v)}
+            style={{ fontSize: 60, fontWeight: 900, color: '#fff', lineHeight: 1.26, wordBreak: 'keep-all', fontFamily: SERIF, textShadow: '0 4px 24px rgba(0,0,0,0.65)', marginBottom: 10 }} extraStyle={fieldStyles.mainCopy} />
+          <EditText fieldKey="subCopy" editing={editing} value={s.subCopy} onChange={v => onChange('subCopy', v)}
+            style={{ fontSize: 26, color: 'rgba(255,255,255,0.84)', lineHeight: 1.68, wordBreak: 'keep-all' }} extraStyle={fieldStyles.subCopy} />
+          {(s.bodyText || editing) && (
+            <EditText fieldKey="bodyText" editing={editing} value={s.bodyText} onChange={v => onChange('bodyText', v)}
+              style={{ fontSize: 19, color: 'rgba(255,255,255,0.72)', lineHeight: 1.75, marginTop: 8, whiteSpace: 'pre-wrap' }} extraStyle={fieldStyles.bodyText} />
+          )}
+        </div>
+      </div>
+      {s.secImg2 && <ImgBox url={s.secImg2} t={t} label="이미지 2" editing={editing} onImgChange={v => onChange('secImg2', v)} imgMeta={secMeta?.img2} onMetaChange={m => onSecMeta?.('img2', m)} />}
+    </CardWrapper>
+  )
+}
+
+export function TplCompare({ s, img, t, editing, onChange, secMeta, onSecMeta, fieldStyles = {} }) {
+  const pts = s.points || []; const displayPts = pts.length ? pts : (editing ? ['', '', ''] : [])
+  const addPt = () => onChange('points', [...pts, '']); const delPt = i => onChange('points', pts.filter((_, j) => j !== i))
+
+  return (
+    <CardWrapper bg={t.bg}>
+      <div style={{ background: t.ac, padding: '64px 64px 60px', textAlign: 'center' }}>
+        <EditText fieldKey="mainCopy" editing={editing} value={s.mainCopy} onChange={v => onChange('mainCopy', v)} style={{ fontSize: 75, fontWeight: 900, color: '#fff', lineHeight: 1.24, letterSpacing: '-0.028em', marginBottom: 14, wordBreak: 'keep-all', fontFamily: SERIF }} extraStyle={fieldStyles.mainCopy} />
+        <EditText fieldKey="subCopy" editing={editing} value={s.subCopy} onChange={v => onChange('subCopy', v)} style={{ fontSize: 30, color: 'rgba(255,255,255,0.8)', lineHeight: 1.68, marginBottom: 10 }} extraStyle={fieldStyles.subCopy} />
+        <BodyText s={s} t={t} editing={editing} onChange={onChange} fieldStyles={fieldStyles} light />
+      </div>
+      <div style={{ padding: '52px 48px 68px', background: '#fff' }}>
+        <div style={{ border: `2.5px solid ${t.ac}`, borderRadius: 18, overflow: 'hidden' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+            <div style={{ padding: '22px 28px', borderRight: `2.5px solid ${t.ac}`, background: '#f5f5f7', textAlign: 'center' }}>
+              <EditText fieldKey="compareLeft" editing={editing} value={s.compareLeft || '일반 제품'} onChange={v => onChange('compareLeft', v)} style={{ fontSize: 25, fontWeight: 700, color: '#999' }} extraStyle={fieldStyles.compareLeft} />
+            </div>
+            <div style={{ padding: '22px 28px', background: t.ac, textAlign: 'center' }}>
+              <EditText fieldKey="compareRight" editing={editing} value={s.compareRight || ''} onChange={v => onChange('compareRight', v)} style={{ fontSize: 25, fontWeight: 800, color: '#fff' }} extraStyle={fieldStyles.compareRight} />
+            </div>
+          </div>
+          {displayPts.map((p, i) => {
+            const [a, ...r] = p.split('/'); const b = r.join('/').trim()
+            return editing ? (
+              <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', borderTop: `1px solid ${t.bd}` }}>
+                <div style={{ padding: '12px 14px', borderRight: `2.5px solid ${t.ac}` }}><input value={a.replace(/일반제품:/i,'').trim()} onChange={e=>{const n=[...pts];n[i]=e.target.value+' / '+r.join('/').trim();onChange('points',n)}} placeholder="일반 제품" style={cmpInput} /></div>
+                <div style={{ padding: '12px 14px' }}><input value={b} onChange={e=>{const n=[...pts];n[i]=a.replace(/일반제품:/i,'').trim()+' / '+e.target.value;onChange('points',n)}} placeholder="이 제품" style={cmpInput} /></div>
+                <div style={{ display:'flex',alignItems:'center',padding:'0 10px' }}><button onClick={()=>delPt(i)} style={delBtnInline}>×</button></div>
+              </div>
+            ) : (
+              <div key={i} style={{ display:'grid',gridTemplateColumns:'1fr 1fr',borderTop:`1px solid ${t.bd}`,background:i%2===0?'#fafafa':'#fff' }}>
+                <div style={{ padding:'22px 28px',fontSize:25,color:'#bbb',textAlign:'center',borderRight:`2.5px solid ${t.ac}`,textDecoration:'line-through' }}>{a.replace(/일반제품:/i,'').trim()}</div>
+                <div style={{ padding:'22px 28px',fontSize:25,color:t.ac,fontWeight:700,textAlign:'center' }}>{b||'—'}</div>
+              </div>
+            )
+          })}
+          {editing && <button onClick={addPt} style={{ width:'100%',padding:'16px 0',fontSize:13,fontWeight:600,border:'none',borderTop:`1px dashed ${t.bd}`,background:'#fafafa',color:t.ac,cursor:'pointer' }}>+ 행 추가</button>}
+        </div>
+        {img && <div style={{ marginTop:44 }}><ImgBox url={img} t={t} label="비교 이미지" editing={editing} onImgChange={v=>onChange('secImg',v)} imgMeta={secMeta?.img1} onMetaChange={m=>onSecMeta?.('img1',m)} /></div>}
+      </div>
+    </CardWrapper>
+  )
+}
+
+export function TplPoints3({ s, img, t, editing, onChange, secMeta, onSecMeta, fieldStyles = {} }) {
+  const pts = s.points || []; const displayPts = pts.length ? pts : (editing ? ['','',''] : [])
+  const cols = Math.max(1, Math.min(displayPts.length || 1, 3))
+  const addPt = () => onChange('points', [...pts, '']); const delPt = i => onChange('points', pts.filter((_,j) => j !== i))
+
+  return (
+    <CardWrapper bg={t.bg}>
+      {img ? <ImgBox url={img} t={t} label="이미지" editing={editing} onImgChange={v=>onChange('secImg',v)} imgMeta={secMeta?.img1} onMetaChange={m=>onSecMeta?.('img1',m)} minH={420} /> : <NoBg t={t} minH={320} />}
+      <div style={{ padding: '68px 64px 0', textAlign: 'center' }}>
+        <EditText fieldKey="mainCopy" editing={editing} value={s.mainCopy} onChange={v=>onChange('mainCopy',v)} style={{ fontSize:68,fontWeight:900,color:t.fg,lineHeight:1.28,letterSpacing:'-0.025em',marginBottom:14,wordBreak:'keep-all',fontFamily:SERIF }} extraStyle={fieldStyles.mainCopy} />
+        <EditText fieldKey="subCopy" editing={editing} value={s.subCopy} onChange={v=>onChange('subCopy',v)} style={{ fontSize:30,color:t.fg,opacity:0.62,lineHeight:1.75,marginBottom:10 }} extraStyle={fieldStyles.subCopy} />
+        <BodyText s={s} t={t} editing={editing} onChange={onChange} fieldStyles={fieldStyles} />
+      </div>
+      <div style={{ padding: '52px 40px 80px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 20 }}>
+          {displayPts.map((p, i) => {
+            const lines = p.split('\n'); const title = lines[0]?.trim()||`포인트 ${i+1}`; const desc = lines.slice(1).join('\n').trim()
+            const isDark = i % 2 === 0
+            return (
+              <div key={i} style={{ position:'relative',background:isDark?t.ac:t.sub,borderRadius:22,padding:'48px 28px 44px',textAlign:'center',boxShadow:isDark?`0 10px 36px ${t.ac}40`:'0 2px 10px rgba(0,0,0,0.06)' }}>
+                {editing && <button onClick={()=>delPt(i)} style={delBtnAbsolute}>×</button>}
+                <div style={{ width:76,height:76,borderRadius:'50%',background:isDark?'rgba(255,255,255,0.2)':t.ac,border:isDark?'2px solid rgba(255,255,255,0.45)':'none',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 26px',boxShadow:isDark?'none':`0 6px 20px ${t.ac}44` }}>
+                  <span style={{ fontSize:30,fontWeight:800,color:'#fff',fontFamily:SERIF,lineHeight:1 }}>{getSecIcon(s,i)}</span>
+                </div>
+                {editing ? <PointInput value={p} onChange={v=>{const n=[...pts];n[i]=v;onChange('points',n)}} placeholder={'제목\n설명'} />
+                  : <><p style={{ fontSize:30,fontWeight:800,color:isDark?'#fff':t.fg,margin:'0 0 10px',lineHeight:1.3,fontFamily:SERIF }}>{title}</p>{desc&&<p style={{ fontSize:22,color:isDark?'rgba(255,255,255,0.78)':t.fg,margin:0,lineHeight:1.68,opacity:isDark?1:0.65,whiteSpace:'pre-wrap' }}>{desc}</p>}</>}
+              </div>
+            )
+          })}
+        </div>
+        {s.secImg2 && <div style={{ marginTop:44 }}><ImgBox url={s.secImg2} t={t} label="이미지 2" editing={editing} onImgChange={v=>onChange('secImg2',v)} imgMeta={secMeta?.img2} onMetaChange={m=>onSecMeta?.('img2',m)} /></div>}
+      </div>
+    </CardWrapper>
+  )
+}
+
+export function TplTarget({ s, img, t, editing, onChange, secMeta, onSecMeta, fieldStyles = {} }) {
+  const pts = s.points || []; const displayPts = pts.length ? pts : (editing ? ['','',''] : [])
+  const delPt = i => onChange('points', pts.filter((_,j) => j !== i))
+
+  return (
+    <CardWrapper bg={'#fff'}>
+      <div style={{ background: t.ac, padding: '64px 64px 60px', textAlign: 'center' }}>
+        <div style={{ fontSize:20,fontWeight:800,letterSpacing:'0.3em',color:'rgba(255,255,255,0.65)',textTransform:'uppercase',marginBottom:18 }}>RECOMMENDED FOR</div>
+        <EditText fieldKey="mainCopy" editing={editing} value={s.mainCopy} onChange={v=>onChange('mainCopy',v)} style={{ fontSize:68,fontWeight:900,color:'#fff',lineHeight:1.28,letterSpacing:'-0.025em',marginBottom:14,wordBreak:'keep-all',fontFamily:SERIF }} extraStyle={fieldStyles.mainCopy} />
+        <EditText fieldKey="subCopy" editing={editing} value={s.subCopy} onChange={v=>onChange('subCopy',v)} style={{ fontSize:30,color:'rgba(255,255,255,0.78)',lineHeight:1.65,marginBottom:10 }} extraStyle={fieldStyles.subCopy} />
+        <BodyText s={s} t={t} editing={editing} onChange={onChange} fieldStyles={fieldStyles} light />
+      </div>
+      <div style={{ paddingBottom: 56 }}>
+        {displayPts.map((p, i) => (
+          <div key={i} style={{ display:'flex',alignItems:'center',gap:24,padding:'30px 64px',background:i%2===0?'#fff':`${t.ac}0E` }}>
+            <div style={{ width:46,height:46,borderRadius:'50%',background:t.ac,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:`0 4px 14px ${t.ac}44` }}><span style={{ fontSize:22,color:'#fff',fontWeight:800 }}>✓</span></div>
+            {editing ? <PointInput value={p} onChange={v=>{const n=[...pts];n[i]=v;onChange('points',n)}} /> : <span style={{ fontSize:31,color:'#1a1a1a',lineHeight:1.68,fontWeight:500,whiteSpace:'pre-wrap' }}>{p.replace(/이런 분께 추천\d*:/i,'').trim()}</span>}
+            {editing && <button onClick={()=>delPt(i)} style={delBtnInline}>×</button>}
+          </div>
+        ))}
+      </div>
+      {img && <ImgBox url={img} t={t} label="이미지" editing={editing} onImgChange={v=>onChange('secImg',v)} imgMeta={secMeta?.img1} onMetaChange={m=>onSecMeta?.('img1',m)} />}
+    </CardWrapper>
+  )
+}
+
+export function TplCTA({ s, img, t, editing, onChange, secMeta, onSecMeta, fieldStyles = {} }) {
+  return (
+    <CardWrapper bg={t.ac}>
+      {img && <div style={{ position:'relative' }}>
+        <ImgBox url={img} t={t} label="CTA 이미지" editing={editing} onImgChange={v=>onChange('secImg',v)} imgMeta={secMeta?.img1} onMetaChange={m=>onSecMeta?.('img1',m)} minH={440} />
+        {(() => { const g=s.gradDir?mkGrad(s.gradDir,s.gradAlpha):`linear-gradient(to bottom, transparent 60%, ${t.ac} 100%)`; return g&&<div style={{ position:'absolute',inset:0,background:g,pointerEvents:'none' }} /> })()}
+      </div>}
+      {!img && <div style={{ minHeight:160,background:`linear-gradient(135deg, ${t.ac} 0%, ${t.ac}cc 100%)` }} />}
+      <div style={{ padding:'76px 80px 96px',textAlign:'center',background:t.ac }}>
+        <EditText fieldKey="mainCopy" editing={editing} value={s.mainCopy} onChange={v=>onChange('mainCopy',v)} style={{ fontSize:80,fontWeight:900,color:'#fff',lineHeight:1.24,letterSpacing:'-0.03em',marginBottom:24,wordBreak:'keep-all',fontFamily:SERIF }} extraStyle={fieldStyles.mainCopy} />
+        <EditText fieldKey="subCopy" editing={editing} value={s.subCopy} onChange={v=>onChange('subCopy',v)} style={{ fontSize:32,color:'rgba(255,255,255,0.8)',lineHeight:1.78,wordBreak:'keep-all',marginBottom:10 }} extraStyle={fieldStyles.subCopy} />
+        <BodyText s={s} t={t} editing={editing} onChange={onChange} fieldStyles={fieldStyles} light />
+      </div>
+    </CardWrapper>
+  )
+}
+
+const DEFAULT_SPEC_ROWS = ['제품명::','식품유형::','업소명::','소재지::','유통기한::','중량::','원재료::','보관방법::','주의사항::']
+
+export function TplSpecTable({ s, img, t, editing, onChange, fieldStyles = {} }) {
+  const pts = s.points || []; const displayPts = editing ? (pts.length ? pts : [...DEFAULT_SPEC_ROWS]) : pts.filter(p => p && p.trim())
+  const addRow = () => onChange('points', [...pts, '항목::']); const delRow = i => onChange('points', pts.filter((_,j) => j !== i))
+
+  return (
+    <CardWrapper bg="#fff">
+      <div style={{ padding:'52px 64px 36px',textAlign:'center',borderBottom:'2.5px solid #111' }}>
+        <EditText fieldKey="mainCopy" editing={editing} value={s.mainCopy||'제품 상세 정보'} onChange={v=>onChange('mainCopy',v)} style={{ fontSize:50,fontWeight:900,color:'#111',letterSpacing:'-0.025em',marginBottom:10,fontFamily:SERIF }} extraStyle={fieldStyles.mainCopy} />
+        {(s.subCopy||editing) && <EditText fieldKey="subCopy" editing={editing} value={s.subCopy} onChange={v=>onChange('subCopy',v)} style={{ fontSize:24,color:'#888',lineHeight:1.65 }} extraStyle={fieldStyles.subCopy} />}
+      </div>
+      <div style={{ padding:'0 64px 72px' }}>
+        <table style={{ width:'100%',borderCollapse:'collapse',marginTop:36 }}>
+          <thead><tr style={{ background:'#f5f4f0',borderBottom:'2px solid #333' }}>
+            <th style={{ padding:'14px 20px',fontSize:16,fontWeight:700,color:'#333',textAlign:'left',width:'28%',borderRight:'1px solid #e4e2dc' }}>항목</th>
+            <th style={{ padding:'14px 20px',fontSize:16,fontWeight:700,color:'#333',textAlign:'left' }}>내용</th>
+            {editing && <th style={{ width:44 }} />}
+          </tr></thead>
           <tbody>
             {displayPts.map((p, i) => {
-              const sep = p.indexOf('::')
-              const key = sep >= 0 ? p.slice(0, sep) : p
-              const val = sep >= 0 ? p.slice(sep + 2) : ''
+              const sep=p.indexOf('::'); const key=sep>=0?p.slice(0,sep):p; const val=sep>=0?p.slice(sep+2):''
               return (
-                <tr key={i} style={{ borderBottom: `1px solid ${t.bd}`, background: i % 2 === 0 ? t.bg : t.sub }}>
-                  <td style={{ padding: '14px 24px', fontSize: 15, fontWeight: 600, color: t.fg, opacity: 0.75, borderRight: `1px solid ${t.bd}`, verticalAlign: 'middle' }}>
-                    {editing
-                      ? <input value={key} onChange={e => { const n=[...pts]; n[i]=e.target.value+'::'+val; onChange('points',n) }}
-                          style={{ width:'100%',border:'1px solid #3b82f6',borderRadius:5,padding:'5px 8px',fontSize:13,fontFamily:'inherit',outline:'none',boxSizing:'border-box' }} />
-                      : key
-                    }
+                <tr key={i} style={{ borderBottom:'1px solid #e4e2dc',background:i%2===0?'#fff':'#fafaf8' }}>
+                  <td style={{ padding:'14px 20px',fontSize:17,fontWeight:600,color:'#555',borderRight:'1px solid #e4e2dc',verticalAlign:'middle' }}>
+                    {editing ? <input value={key} onChange={e=>{const n=[...pts];n[i]=e.target.value+'::'+val;onChange('points',n)}} style={{ width:'100%',border:'1px solid #3b82f6',borderRadius:5,padding:'5px 8px',fontSize:13,fontFamily:'inherit',outline:'none',boxSizing:'border-box' }} /> : key}
                   </td>
-                  <td style={{ padding: '14px 24px', fontSize: 15, color: t.fg, verticalAlign: 'middle' }}>
-                    {editing
-                      ? <input value={val} onChange={e => { const n=[...pts]; n[i]=key+'::'+e.target.value; onChange('points',n) }}
-                          style={{ width:'100%',border:'1px solid #3b82f6',borderRadius:5,padding:'5px 8px',fontSize:13,fontFamily:'inherit',outline:'none',boxSizing:'border-box' }} />
-                      : val ? <span style={{ whiteSpace:'pre-wrap' }}>{val}</span> : <span style={{ color:'#ccc' }}>—</span>
-                    }
+                  <td style={{ padding:'14px 20px',fontSize:17,color:'#222',verticalAlign:'middle' }}>
+                    {editing ? <input value={val} onChange={e=>{const n=[...pts];n[i]=key+'::'+e.target.value;onChange('points',n)}} style={{ width:'100%',border:'1px solid #3b82f6',borderRadius:5,padding:'5px 8px',fontSize:13,fontFamily:'inherit',outline:'none',boxSizing:'border-box' }} /> : val?<span style={{ whiteSpace:'pre-wrap' }}>{val}</span>:<span style={{ color:'#ccc' }}>—</span>}
                   </td>
-                  {editing && (
-                    <td style={{ textAlign:'center',padding:'0 8px',verticalAlign:'middle' }}>
-                      <button onClick={() => delRow(i)}
-                        style={{ width:24,height:24,borderRadius:6,border:'1px solid #fca5a5',background:'#fef2f2',color:'#ef4444',fontSize:13,cursor:'pointer',fontWeight:700,lineHeight:1 }}>×</button>
-                    </td>
-                  )}
+                  {editing && <td style={{ textAlign:'center',padding:'0 8px',verticalAlign:'middle' }}><button onClick={()=>delRow(i)} style={{ width:24,height:24,borderRadius:6,border:'1px solid #fca5a5',background:'#fef2f2',color:'#ef4444',fontSize:13,cursor:'pointer',fontWeight:700,lineHeight:1 }}>×</button></td>}
                 </tr>
               )
             })}
           </tbody>
         </table>
-        {editing && (
-          <div style={{ textAlign: 'center', paddingTop: 20 }}>
-            <button onClick={addRow} style={addBtnStyle}>+ 행 추가</button>
-          </div>
-        )}
       </div>
-    </div>
+    </CardWrapper>
   )
 }
 
+const delBtnAbsolute = { position:'absolute',top:8,right:8,width:32,height:32,borderRadius:8,border:'1px solid #fca5a5',background:'#fef2f2',color:'#ef4444',fontSize:18,cursor:'pointer',fontWeight:800,lineHeight:1,zIndex:2,display:'flex',alignItems:'center',justifyContent:'center' }
+const delBtnInline   = { width:32,height:32,borderRadius:8,border:'1px solid #fca5a5',background:'#fef2f2',color:'#ef4444',fontSize:18,cursor:'pointer',flexShrink:0,fontWeight:800,lineHeight:1,display:'flex',alignItems:'center',justifyContent:'center' }
+const cmpInput       = { width:'100%',fontSize:24,border:'1px solid #3b82f6',borderRadius:6,padding:'7px 10px',outline:'none',fontFamily:'inherit',boxSizing:'border-box' }
+
 export const TPL = {
-  fullHero:    TplFullHero,
-  topBottom:   TplTopBottom,
-  leftRight:   TplLeftRight,
-  points3icon: TplPoints3Icon,
-  story:       TplStory,
-  howTo:       TplHowTo,
-  compare:     TplCompare,
-  specTable:   TplSpecTable,
+  hero: TplHero, material: TplMaterial, detail2col: TplDetail2col, scene: TplScene,
+  compare: TplCompare, points3: TplPoints3, target: TplTarget, cta: TplCTA, specTable: TplSpecTable,
+  fullHero: TplHero, topBottom: TplMaterial, leftRight: TplDetail2col,
+  points3icon: TplPoints3, story: TplMaterial, howTo: TplTarget,
 }
+
+export const FONT_OPTS = [
+  { v: 'Noto Sans KR', l: '기본체' },
+  { v: 'Black Han Sans', l: '블랙한산스' },
+  { v: 'Nanum Myeongjo', l: '나눔명조' },
+  { v: 'Nanum Gothic', l: '나눔고딕' },
+  { v: 'Gaegu', l: '가에구' },
+  { v: 'Jua', l: '주아체' },
+]
+
+export const SHAPE_DEFS = [
+  { k: 'circle',  l: '● 원형' },
+  { k: 'square',  l: '■ 사각' },
+  { k: 'diamond', l: '◆ 다이아' },
+  { k: 'star',    l: '★ 별' },
+  { k: 'check',   l: '✓ 체크' },
+]
