@@ -5,6 +5,7 @@ const CARD_W = 860
 const SERIF  = "'Noto Serif KR', 'Noto Serif', Georgia, serif"
 
 export const TextSelectCtx = React.createContext(null)
+export const selectionStore = { range: null, fieldKey: null }
 
 export function mkGrad(dir, alpha) {
   const a = (alpha ?? 70) / 100
@@ -53,17 +54,33 @@ export function CardWrapper({ children, bg = '#fff' }) {
   )
 }
 
+/* ── EditText: contentEditable with X button + selection save ── */
 export function EditText({ value, onChange, editing, style, fieldKey, extraStyle }) {
   const ctx    = useContext(TextSelectCtx)
   const merged = extraStyle ? { ...style, ...extraStyle } : style
   if (!editing) return <div style={merged}>{value || ''}</div>
   return (
-    <div contentEditable suppressContentEditableWarning
-      onFocus={() => fieldKey && ctx?.setField(fieldKey)}
-      onBlur={e => onChange(e.currentTarget.innerText.trim())}
-      style={{ ...merged, outline: 'none', borderBottom: '2px solid #3b82f6', cursor: 'text', minWidth: 40 }}
-      dangerouslySetInnerHTML={{ __html: value || '' }}
-    />
+    <div style={{ position: 'relative' }}>
+      <div contentEditable suppressContentEditableWarning
+        onFocus={() => fieldKey && ctx?.setField(fieldKey)}
+        onBlur={e => onChange(e.currentTarget.innerText)}
+        onMouseUp={() => {
+          const sel = window.getSelection()
+          if (sel?.rangeCount > 0 && !sel.isCollapsed) {
+            selectionStore.range = sel.getRangeAt(0).cloneRange()
+            selectionStore.fieldKey = fieldKey
+          } else { selectionStore.range = null }
+        }}
+        style={{ ...merged, outline: 'none', borderBottom: '2px solid #3b82f6', cursor: 'text', minWidth: 40 }}
+        dangerouslySetInnerHTML={{ __html: value || '' }}
+      />
+      <button
+        onMouseDown={e => e.preventDefault()}
+        onClick={e => { e.stopPropagation(); onChange('') }}
+        style={{ position: 'absolute', top: -8, right: -8, zIndex: 30, width: 20, height: 20, borderRadius: '50%', border: 'none', background: '#ef4444', color: '#fff', fontSize: 12, cursor: 'pointer', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
+        ×
+      </button>
+    </div>
   )
 }
 
@@ -143,8 +160,8 @@ export function ImgBox({ url, t, label, editing = false, onImgChange, minH = 320
       <input ref={ref} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
       {editing && (
         <button onClick={() => ref.current?.click()}
-          style={{ position: 'absolute', top: 10, left: 10, zIndex: 10, padding: '8px 18px', fontSize: 13, fontWeight: 700, background: 'rgba(0,0,0,0.65)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}>
-          📷 교체
+          style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 10, padding: '12px 28px', fontSize: 15, fontWeight: 700, background: '#333333', color: '#ffffff', border: 'none', borderRadius: 10, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          📷 사진 교체
         </button>
       )}
       <ImageAdjust url={url} editing={editing} imgMeta={imgMeta} onMetaChange={onMetaChange || (() => {})} fixedH={fill ? '100%' : fixedH} fitMode={fitMode} onError={() => setImgError(true)} />
@@ -183,13 +200,40 @@ function BodyText({ s, t, editing, onChange, fieldStyles = {}, light = false }) 
   )
 }
 
+/* ── 텍스트 오버레이 드래그 훅 ── */
+function useOverlayDrag(editing, secMeta, onSecMeta) {
+  const [dragState, setDragState] = useState(null)
+  const textPos = secMeta?.textPos || { x: 0, y: 0 }
+
+  const handleMouseDown = e => {
+    if (!editing || e.target.closest('[contenteditable]') || e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return
+    setDragState({ startMx: e.clientX, startMy: e.clientY, baseX: textPos.x, baseY: textPos.y })
+    e.preventDefault()
+  }
+
+  useEffect(() => {
+    if (!dragState) return
+    const onMove = e => onSecMeta?.('textPos', {
+      x: dragState.baseX + (e.clientX - dragState.startMx),
+      y: dragState.baseY + (e.clientY - dragState.startMy),
+    })
+    const onUp = () => setDragState(null)
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
+  }, [dragState]) // eslint-disable-line
+
+  return { textPos, dragState, handleMouseDown }
+}
+
+/* ── Hero: 전체 배경 이미지 + 텍스트 오버레이 ── */
 export function TplHero({ s, img, t, editing, onChange, secMeta, onSecMeta, fieldStyles = {} }) {
-  const logoRef    = useRef(null)
+  const logoRef = useRef(null)
+  const { textPos, dragState, handleMouseDown } = useOverlayDrag(editing, secMeta, onSecMeta)
   const pts        = s.points || []
   const displayPts = editing ? (pts.length ? pts : ['', '', '']) : pts.filter(p => p && p.trim())
   const cols       = Math.max(1, Math.min(displayPts.length, 3))
-  const addPt      = () => onChange('points', [...pts, ''])
-  const delPt      = i  => onChange('points', pts.filter((_, j) => j !== i))
+  const delPt      = i => onChange('points', pts.filter((_, j) => j !== i))
 
   const handleLogoImg = e => {
     const f = e.target.files[0]; if (!f) return
@@ -198,51 +242,78 @@ export function TplHero({ s, img, t, editing, onChange, secMeta, onSecMeta, fiel
     fr.readAsDataURL(f); e.target.value = ''
   }
 
+  const gradStyle = s.gradDir
+    ? mkGrad(s.gradDir, s.gradAlpha)
+    : 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.2) 55%, transparent 80%)'
+
   return (
     <CardWrapper bg={t.bg}>
       <input ref={logoRef} type="file" accept="image/*" onChange={handleLogoImg} style={{ display: 'none' }} />
-      <div style={{ padding: '72px 72px 52px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        {(s.logoImg || s.logoText || editing) && (
-          <div style={{ marginBottom: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-            {s.logoImg
-              ? <div style={{ position: 'relative', display: 'inline-block' }}>
-                  <img src={s.logoImg} alt="" style={{ maxHeight: 80, maxWidth: 300, objectFit: 'contain', display: 'block' }} />
-                  {editing && (
-                    <div style={{ position: 'absolute', top: -10, right: -10, display: 'flex', gap: 4 }}>
-                      <button onClick={() => logoRef.current?.click()} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 5, border: '1px solid #3b82f6', background: '#EFF6FF', color: '#1d4ed8', cursor: 'pointer', fontWeight: 600 }}>교체</button>
-                      <button onClick={() => onChange('logoImg', null)} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 5, border: '1px solid #fca5a5', background: '#fef2f2', color: '#ef4444', cursor: 'pointer', fontWeight: 600 }}>제거</button>
-                    </div>
-                  )}
-                </div>
-              : editing
-                ? <button onClick={() => logoRef.current?.click()} style={{ padding: '9px 22px', fontSize: 13, borderRadius: 8, border: `2px dashed ${t.bd}`, background: 'rgba(255,255,255,0.55)', color: t.fg, opacity: 0.55, cursor: 'pointer', fontWeight: 600 }}>+ 로고 이미지 업로드</button>
+
+      {/* 전체 배경 이미지 영역 */}
+      <div style={{ position: 'relative', minHeight: 680 }}>
+        {img
+          ? <ImgBox url={img} t={t} label="메인 이미지" editing={editing}
+              onImgChange={v => onChange('secImg', v)}
+              imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)}
+              minH={680} fill />
+          : <div style={{ height: 680, background: `linear-gradient(135deg, ${t.ac}55 0%, ${t.bg} 60%, ${t.ac}22 100%)` }} />
+        }
+
+        {/* 그라데이션 오버레이 */}
+        <div style={{ position: 'absolute', inset: 0, background: gradStyle, pointerEvents: 'none' }} />
+
+        {/* 로고 (이미지 위 상단) */}
+        <div style={{ position: 'absolute', top: 36, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 5 }}>
+          {s.logoImg
+            ? <div style={{ position: 'relative', display: 'inline-block' }}>
+                <img src={s.logoImg} alt="" style={{ maxHeight: 72, maxWidth: 280, objectFit: 'contain', display: 'block', filter: 'brightness(0) invert(1)' }} />
+                {editing && (
+                  <div style={{ position: 'absolute', top: -10, right: -10, display: 'flex', gap: 4 }}>
+                    <button onClick={() => logoRef.current?.click()} style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.5)', background: 'rgba(0,0,0,0.55)', color: '#fff', cursor: 'pointer', fontWeight: 600 }}>교체</button>
+                    <button onClick={() => onChange('logoImg', null)} style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, border: 'none', background: 'rgba(220,38,38,0.7)', color: '#fff', cursor: 'pointer', fontWeight: 600 }}>제거</button>
+                  </div>
+                )}
+              </div>
+            : editing
+              ? <button onClick={() => logoRef.current?.click()} style={{ padding: '6px 18px', fontSize: 12, borderRadius: 7, border: '1.5px dashed rgba(255,255,255,0.45)', background: 'rgba(0,0,0,0.25)', color: 'rgba(255,255,255,0.75)', cursor: 'pointer', fontWeight: 600 }}>+ 로고 업로드</button>
+              : s.logoText
+                ? <div style={{ fontSize: 16, fontWeight: 700, color: 'rgba(255,255,255,0.9)', letterSpacing: '0.28em', textTransform: 'uppercase' }}>{s.logoText}</div>
                 : null
-            }
-            {!s.logoImg && (
-              <EditText fieldKey="logoText" editing={editing} value={s.logoText || ''} onChange={v => onChange('logoText', v)}
-                style={{ fontSize: 16, fontWeight: 700, color: t.ac, letterSpacing: '0.28em', textTransform: 'uppercase', minWidth: 60 }} extraStyle={fieldStyles.logoText} />
-            )}
-          </div>
-        )}
-        {(s.description || editing) && (
-          <div style={{ marginBottom: 26 }}>
-            <EditText fieldKey="description" editing={editing} value={s.description} onChange={v => onChange('description', v)}
-              style={{ display: 'inline-block', fontSize: 14, fontWeight: 800, color: t.ac, letterSpacing: '0.32em', textTransform: 'uppercase', border: `1.5px solid ${t.ac}`, padding: '6px 24px', borderRadius: 40 }} extraStyle={fieldStyles.description} />
-          </div>
-        )}
-        <EditText fieldKey="mainCopy" editing={editing} value={s.mainCopy} onChange={v => onChange('mainCopy', v)}
-          style={{ fontSize: 90, fontWeight: 900, color: t.fg, lineHeight: 1.18, letterSpacing: '-0.03em', marginBottom: 20, wordBreak: 'keep-all', fontFamily: SERIF }} extraStyle={fieldStyles.mainCopy} />
-        <EditText fieldKey="subCopy" editing={editing} value={s.subCopy} onChange={v => onChange('subCopy', v)}
-          style={{ fontSize: 31, color: t.fg, opacity: 0.68, lineHeight: 1.82, wordBreak: 'keep-all', maxWidth: 540 }} extraStyle={fieldStyles.subCopy} />
-        <BodyText s={s} t={t} editing={editing} onChange={onChange} fieldStyles={fieldStyles} />
+          }
+        </div>
+
+        {/* 텍스트 오버레이 (드래그 가능) */}
+        <div
+          onMouseDown={handleMouseDown}
+          style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0,
+            padding: '0 72px 60px', textAlign: 'center',
+            transform: `translate(${textPos.x}px, ${textPos.y}px)`,
+            cursor: editing ? (dragState ? 'grabbing' : 'grab') : 'default',
+            userSelect: dragState ? 'none' : 'auto',
+            pointerEvents: editing ? 'auto' : 'none',
+            zIndex: 4,
+          }}
+        >
+          {(s.description || editing) && (
+            <div style={{ marginBottom: 22 }}>
+              <EditText fieldKey="description" editing={editing} value={s.description} onChange={v => onChange('description', v)}
+                style={{ display: 'inline-block', fontSize: 14, fontWeight: 800, color: 'rgba(255,255,255,0.9)', letterSpacing: '0.32em', textTransform: 'uppercase', border: '1.5px solid rgba(255,255,255,0.55)', padding: '6px 24px', borderRadius: 40 }} extraStyle={fieldStyles.description} />
+            </div>
+          )}
+          <EditText fieldKey="mainCopy" editing={editing} value={s.mainCopy} onChange={v => onChange('mainCopy', v)}
+            style={{ fontSize: 88, fontWeight: 900, color: '#fff', lineHeight: 1.18, letterSpacing: '-0.03em', marginBottom: 20, wordBreak: 'keep-all', fontFamily: SERIF, textShadow: '0 4px 28px rgba(0,0,0,0.45)' }} extraStyle={fieldStyles.mainCopy} />
+          <EditText fieldKey="subCopy" editing={editing} value={s.subCopy} onChange={v => onChange('subCopy', v)}
+            style={{ fontSize: 30, color: 'rgba(255,255,255,0.85)', lineHeight: 1.82, wordBreak: 'keep-all', maxWidth: 540, textShadow: '0 2px 12px rgba(0,0,0,0.3)' }} extraStyle={fieldStyles.subCopy} />
+          {(s.bodyText || editing) && (
+            <EditText fieldKey="bodyText" editing={editing} value={s.bodyText} onChange={v => onChange('bodyText', v)}
+              style={{ fontSize: 22, color: 'rgba(255,255,255,0.72)', lineHeight: 1.85, marginTop: 14, whiteSpace: 'pre-wrap' }} extraStyle={fieldStyles.bodyText} />
+          )}
+        </div>
       </div>
-      {img
-        ? <div style={{ position: 'relative' }}>
-            <ImgBox url={img} t={t} label="메인 제품 이미지" editing={editing} onImgChange={v => onChange('secImg', v)} imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} minH={500} />
-            {s.gradDir && (() => { const g = mkGrad(s.gradDir, s.gradAlpha); return g && <div style={{ position: 'absolute', inset: 0, background: g, pointerEvents: 'none' }} /> })()}
-          </div>
-        : <NoBg t={t} minH={500} />
-      }
+
+      {/* KEY POINT 섹션 */}
       <div style={{ position: 'relative', background: '#fff', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%) translateY(-50%)', width: '130%', height: 130, background: t.bg, borderRadius: '0 0 50% 50%' }} />
         <div style={{ position: 'relative', padding: '80px 60px 88px' }}>
@@ -279,27 +350,32 @@ export function TplHero({ s, img, t, editing, onChange, secMeta, onSecMeta, fiel
 export function TplMaterial({ s, img, t, editing, onChange, secMeta, onSecMeta, fieldStyles = {} }) {
   const pts        = s.points || []
   const displayPts = editing ? (pts.length ? pts : ['']) : pts.filter(p => p && p.trim())
-  const addPt      = () => onChange('points', [...pts, ''])
-  const delPt      = i  => onChange('points', pts.filter((_, j) => j !== i))
+  const delPt      = i => onChange('points', pts.filter((_, j) => j !== i))
+  const { textPos, dragState, handleMouseDown } = useOverlayDrag(editing, secMeta, onSecMeta)
 
   return (
     <CardWrapper bg={t.bg}>
       <div style={{ position: 'relative', minHeight: 480 }}>
         {img ? <ImgBox url={img} t={t} label="소재 이미지" editing={editing} onImgChange={v => onChange('secImg', v)} imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} minH={480} /> : <NoBg t={t} minH={480} />}
         {(() => { const g = s.gradDir ? mkGrad(s.gradDir, s.gradAlpha) : 'linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.32) 52%, transparent 100%)'; return g && <div style={{ position: 'absolute', inset: 0, background: g, pointerEvents: 'none' }} /> })()}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '36px 60px 52px', pointerEvents: editing ? 'auto' : 'none' }}>
-          {editing
-            ? <>
-                <input value={s.mainCopy || ''} onChange={e => onChange('mainCopy', e.target.value)} placeholder="소재명 / 헤드라인" style={{ ...overlayInput, fontSize: 62, fontFamily: SERIF, marginBottom: 10, ...(fieldStyles.mainCopy||{}) }} />
-                <input value={s.subCopy || ''} onChange={e => onChange('subCopy', e.target.value)} placeholder="소재 설명" style={{ ...overlayInput, fontSize: 26, ...(fieldStyles.subCopy||{}) }} />
-                <input value={s.bodyText || ''} onChange={e => onChange('bodyText', e.target.value)} placeholder="본문 포인트" style={{ ...overlayInput, fontSize: 20, marginTop: 8, ...(fieldStyles.bodyText||{}) }} />
-              </>
-            : <>
-                <div style={{ fontSize: 72, fontWeight: 900, color: '#fff', lineHeight: 1.24, wordBreak: 'keep-all', fontFamily: SERIF, textShadow: '0 3px 18px rgba(0,0,0,0.55)', marginBottom: 10, ...(fieldStyles.mainCopy||{}) }}>{s.mainCopy}</div>
-                <div style={{ fontSize: 30, color: 'rgba(255,255,255,0.86)', lineHeight: 1.68, wordBreak: 'keep-all', ...(fieldStyles.subCopy||{}) }}>{s.subCopy}</div>
-                {s.bodyText && <div style={{ fontSize: 22, color: 'rgba(255,255,255,0.75)', lineHeight: 1.75, marginTop: 10, whiteSpace: 'pre-wrap', ...(fieldStyles.bodyText||{}) }}>{s.bodyText}</div>}
-              </>
-          }
+        <div
+          onMouseDown={handleMouseDown}
+          style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0, padding: '36px 60px 52px',
+            transform: `translate(${textPos.x}px, ${textPos.y}px)`,
+            cursor: editing ? (dragState ? 'grabbing' : 'grab') : 'default',
+            userSelect: dragState ? 'none' : 'auto',
+            pointerEvents: editing ? 'auto' : 'none',
+          }}
+        >
+          <EditText fieldKey="mainCopy" editing={editing} value={s.mainCopy} onChange={v => onChange('mainCopy', v)}
+            style={{ fontSize: 62, fontWeight: 900, color: '#fff', lineHeight: 1.24, wordBreak: 'keep-all', fontFamily: SERIF, textShadow: '0 3px 18px rgba(0,0,0,0.55)', marginBottom: 10 }} extraStyle={fieldStyles.mainCopy} />
+          <EditText fieldKey="subCopy" editing={editing} value={s.subCopy} onChange={v => onChange('subCopy', v)}
+            style={{ fontSize: 26, color: 'rgba(255,255,255,0.86)', lineHeight: 1.68, wordBreak: 'keep-all' }} extraStyle={fieldStyles.subCopy} />
+          {(s.bodyText || editing) && (
+            <EditText fieldKey="bodyText" editing={editing} value={s.bodyText} onChange={v => onChange('bodyText', v)}
+              style={{ fontSize: 20, color: 'rgba(255,255,255,0.75)', lineHeight: 1.75, marginTop: 8, whiteSpace: 'pre-wrap' }} extraStyle={fieldStyles.bodyText} />
+          )}
         </div>
       </div>
       <div style={{ padding: '60px 60px 72px', background: '#fff' }}>
@@ -334,7 +410,7 @@ export function TplMaterial({ s, img, t, editing, onChange, secMeta, onSecMeta, 
 
 export function TplDetail2col({ s, img, t, editing, onChange, secMeta, onSecMeta, fieldStyles = {} }) {
   const pts = s.points || []; const displayPts = editing ? (pts.length ? pts : ['']) : pts.filter(p => p && p.trim())
-  const addPt = () => onChange('points', [...pts, '']); const delPt = i => onChange('points', pts.filter((_, j) => j !== i))
+  const delPt = i => onChange('points', pts.filter((_, j) => j !== i))
   const img2 = s.secImg2; const img3 = s.secImg3; const img4 = s.secImg4; const imgH = s.detailImgH || 320
 
   return (
@@ -380,24 +456,31 @@ export function TplDetail2col({ s, img, t, editing, onChange, secMeta, onSecMeta
 }
 
 export function TplScene({ s, img, t, editing, onChange, secMeta, onSecMeta, fieldStyles = {} }) {
+  const { textPos, dragState, handleMouseDown } = useOverlayDrag(editing, secMeta, onSecMeta)
+
   return (
     <CardWrapper bg={t.bg}>
       <div style={{ position: 'relative', minHeight: 640 }}>
         {img ? <ImgBox url={img} t={t} label="라이프스타일 이미지" editing={editing} onImgChange={v => onChange('secImg', v)} imgMeta={secMeta?.img1} onMetaChange={m => onSecMeta?.('img1', m)} minH={640} /> : <NoBg t={t} minH={640} />}
         {(() => { const g = s.gradDir ? mkGrad(s.gradDir, s.gradAlpha) : 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.5) 35%, rgba(0,0,0,0.1) 65%, transparent 100%)'; return g && <div style={{ position: 'absolute', inset: 0, background: g, pointerEvents: 'none' }} /> })()}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '36px 60px 56px', pointerEvents: editing ? 'auto' : 'none' }}>
-          {editing
-            ? <>
-                <input value={s.mainCopy || ''} onChange={e => onChange('mainCopy', e.target.value)} placeholder="메인 카피" style={{ ...overlayInput, fontSize: 60, fontFamily: SERIF, marginBottom: 10, ...(fieldStyles.mainCopy||{}) }} />
-                <input value={s.subCopy || ''} onChange={e => onChange('subCopy', e.target.value)} placeholder="서브 카피" style={{ ...overlayInput, fontSize: 26, ...(fieldStyles.subCopy||{}) }} />
-                <input value={s.bodyText || ''} onChange={e => onChange('bodyText', e.target.value)} placeholder="본문 포인트" style={{ ...overlayInput, fontSize: 19, marginTop: 8, ...(fieldStyles.bodyText||{}) }} />
-              </>
-            : <>
-                <div style={{ fontSize: 68, fontWeight: 900, color: '#fff', lineHeight: 1.26, wordBreak: 'keep-all', fontFamily: SERIF, textShadow: '0 4px 24px rgba(0,0,0,0.65)', marginBottom: 12, ...(fieldStyles.mainCopy||{}) }}>{s.mainCopy}</div>
-                <div style={{ fontSize: 30, color: 'rgba(255,255,255,0.84)', lineHeight: 1.68, wordBreak: 'keep-all', ...(fieldStyles.subCopy||{}) }}>{s.subCopy}</div>
-                {s.bodyText && <div style={{ fontSize: 21, color: 'rgba(255,255,255,0.72)', lineHeight: 1.75, marginTop: 10, whiteSpace: 'pre-wrap', ...(fieldStyles.bodyText||{}) }}>{s.bodyText}</div>}
-              </>
-          }
+        <div
+          onMouseDown={handleMouseDown}
+          style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0, padding: '36px 60px 56px',
+            transform: `translate(${textPos.x}px, ${textPos.y}px)`,
+            cursor: editing ? (dragState ? 'grabbing' : 'grab') : 'default',
+            userSelect: dragState ? 'none' : 'auto',
+            pointerEvents: editing ? 'auto' : 'none',
+          }}
+        >
+          <EditText fieldKey="mainCopy" editing={editing} value={s.mainCopy} onChange={v => onChange('mainCopy', v)}
+            style={{ fontSize: 60, fontWeight: 900, color: '#fff', lineHeight: 1.26, wordBreak: 'keep-all', fontFamily: SERIF, textShadow: '0 4px 24px rgba(0,0,0,0.65)', marginBottom: 10 }} extraStyle={fieldStyles.mainCopy} />
+          <EditText fieldKey="subCopy" editing={editing} value={s.subCopy} onChange={v => onChange('subCopy', v)}
+            style={{ fontSize: 26, color: 'rgba(255,255,255,0.84)', lineHeight: 1.68, wordBreak: 'keep-all' }} extraStyle={fieldStyles.subCopy} />
+          {(s.bodyText || editing) && (
+            <EditText fieldKey="bodyText" editing={editing} value={s.bodyText} onChange={v => onChange('bodyText', v)}
+              style={{ fontSize: 19, color: 'rgba(255,255,255,0.72)', lineHeight: 1.75, marginTop: 8, whiteSpace: 'pre-wrap' }} extraStyle={fieldStyles.bodyText} />
+          )}
         </div>
       </div>
       {s.secImg2 && <ImgBox url={s.secImg2} t={t} label="이미지 2" editing={editing} onImgChange={v => onChange('secImg2', v)} imgMeta={secMeta?.img2} onMetaChange={m => onSecMeta?.('img2', m)} />}
@@ -487,7 +570,7 @@ export function TplPoints3({ s, img, t, editing, onChange, secMeta, onSecMeta, f
 
 export function TplTarget({ s, img, t, editing, onChange, secMeta, onSecMeta, fieldStyles = {} }) {
   const pts = s.points || []; const displayPts = pts.length ? pts : (editing ? ['','',''] : [])
-  const addPt = () => onChange('points', [...pts, '']); const delPt = i => onChange('points', pts.filter((_,j) => j !== i))
+  const delPt = i => onChange('points', pts.filter((_,j) => j !== i))
 
   return (
     <CardWrapper bg={'#fff'}>
@@ -571,8 +654,6 @@ export function TplSpecTable({ s, img, t, editing, onChange, fieldStyles = {} })
 
 const delBtnAbsolute = { position:'absolute',top:8,right:8,width:32,height:32,borderRadius:8,border:'1px solid #fca5a5',background:'#fef2f2',color:'#ef4444',fontSize:18,cursor:'pointer',fontWeight:800,lineHeight:1,zIndex:2,display:'flex',alignItems:'center',justifyContent:'center' }
 const delBtnInline   = { width:32,height:32,borderRadius:8,border:'1px solid #fca5a5',background:'#fef2f2',color:'#ef4444',fontSize:18,cursor:'pointer',flexShrink:0,fontWeight:800,lineHeight:1,display:'flex',alignItems:'center',justifyContent:'center' }
-const addBtnStyle    = { padding:'14px 36px',fontSize:15,fontWeight:700,border:'1.5px dashed #ccc',borderRadius:8,background:'transparent',color:'#888',cursor:'pointer' }
-const overlayInput   = { display:'block',width:'100%',background:'rgba(255,255,255,0.92)',border:'2px solid #3b82f6',borderRadius:8,padding:'8px 14px',outline:'none',fontFamily:'inherit',color:'#111',boxSizing:'border-box',fontWeight:700 }
 const cmpInput       = { width:'100%',fontSize:24,border:'1px solid #3b82f6',borderRadius:6,padding:'7px 10px',outline:'none',fontFamily:'inherit',boxSizing:'border-box' }
 
 export const TPL = {

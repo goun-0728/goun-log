@@ -4,7 +4,7 @@ import { C, DS, DS_KEYS, TPL_LABELS, TPL_COMPAT, TASKS, BLOG_TONES, getSys, EXTR
 import { parseBlocks, parseSections, capturePNG, downloadURL } from './utils'
 import { generateContent } from './api/generate'
 import SectionEditor from './components/SectionEditor'
-import { FONT_OPTS, SHAPE_DEFS } from './components/SectionTemplates'
+import { FONT_OPTS, SHAPE_DEFS, selectionStore } from './components/SectionTemplates'
 import CardNewsView from './components/CardNewsEditor'
 import BlogKeywords from './components/BlogKeywords'
 import BlogThumbnail from './components/BlogThumbnail'
@@ -208,20 +208,31 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeBlockId, 
 
   const ALL_FIELDS = ['mainCopy','subCopy','description','cta','compareLeft','compareRight']
   const updateTS = (key, val) => {
+    // 부분 선택(드래그)이 있으면 execCommand로 선택 영역에만 적용
+    if (selectionStore.range) {
+      try {
+        const sel = window.getSelection()
+        sel.removeAllRanges()
+        sel.addRange(selectionStore.range)
+        if (key === 'bold') document.execCommand('bold', false, null)
+        else if (key === 'color') document.execCommand('foreColor', false, val)
+        else if (key === 'fontFamily') document.execCommand('fontName', false, val)
+      } catch(e) {}
+      selectionStore.range = null
+      return
+    }
     if (activeField) {
       change('textStyles', {
         ...(sec.textStyles || {}),
         [activeField]: { ...(sec.textStyles?.[activeField] || {}), [key]: val },
       })
     } else if (activeBlock) {
-      // free block: map key/val to block fields
       const mappedKey = key === 'bold' ? 'fontWeight' : key
       const mappedVal = key === 'bold' ? (val ? 700 : 400) : val
       change('freeBlocks', (sec.freeBlocks || []).map(b =>
         b.id === activeBlockId ? { ...b, [mappedKey]: mappedVal } : b
       ))
     } else {
-      // 선택 없으면 섹션 전체 텍스트에 적용
       const newTS = { ...(sec.textStyles || {}) }
       ALL_FIELDS.forEach(f => { newTS[f] = { ...(newTS[f] || {}), [key]: val } })
       change('textStyles', newTS)
@@ -369,16 +380,6 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeBlockId, 
             <div style={{ borderTop:`1px solid ${C.bd}`, margin:'4px 0 12px' }} />
             <p style={sLabel}>선택된 텍스트</p>
             <div style={{ marginBottom:12 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
-                <span style={{ fontSize:10, color:C.mu }}>크기</span>
-                <span style={{ fontSize:10, fontWeight:700, color:C.tx }}>{currentStyle.fontSize ?? 24}px</span>
-              </div>
-              <input type="range" min={12} max={80} step={1}
-                value={currentStyle.fontSize ?? 24}
-                onChange={e => updateTS('fontSize', +e.target.value)}
-                style={{ width:'100%', accentColor:'#3b82f6' }} />
-            </div>
-            <div style={{ marginBottom:12 }}>
               <span style={{ fontSize:10, color:C.mu, display:'block', marginBottom:5 }}>글자색</span>
               <div style={{ display:'flex', gap:4, flexWrap:'wrap', alignItems:'center' }}>
                 {PRESET_COLORS.map(c => (
@@ -395,31 +396,6 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeBlockId, 
           </>
         )}
 
-        {/* 항목 리스트 스타일 */}
-        <div style={{ borderTop:`1px solid ${C.bd}`, margin:'4px 0 8px' }} />
-        <p style={sLabel}>항목 리스트 크기</p>
-        <div style={{ marginBottom:4 }}>
-          <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
-            <span style={{ fontSize:10, color:C.mu }}>크기</span>
-            <span style={{ fontSize:10, fontWeight:700, color:C.tx }}>{sec.textStyles?.['points']?.fontSize ?? 18}px</span>
-          </div>
-          <input type="range" min={14} max={36} step={1}
-            value={sec.textStyles?.['points']?.fontSize ?? 18}
-            onChange={e => change('textStyles', { ...(sec.textStyles||{}), points: { ...(sec.textStyles?.['points']||{}), fontSize: +e.target.value } })}
-            style={{ width:'100%', accentColor:'#3b82f6' }} />
-        </div>
-        <div style={{ marginBottom:8 }}>
-          <span style={{ fontSize:10, color:C.mu, display:'block', marginBottom:4 }}>글자색</span>
-          <div style={{ display:'flex', gap:3, flexWrap:'wrap', alignItems:'center' }}>
-            {PRESET_COLORS.map(c => (
-              <button key={c} onClick={() => change('textStyles', { ...(sec.textStyles||{}), points: { ...(sec.textStyles?.['points']||{}), color: c } })}
-                style={{ width:20, height:20, borderRadius:3, background:c, border: sec.textStyles?.['points']?.color===c ? '2px solid #3b82f6' : '1px solid #ccc', cursor:'pointer', flexShrink:0 }} />
-            ))}
-            <input type="color" value={sec.textStyles?.['points']?.color || '#111111'}
-              onChange={e => change('textStyles', { ...(sec.textStyles||{}), points: { ...(sec.textStyles?.['points']||{}), color: e.target.value } })}
-              style={{ width:26, height:20, border:'1px solid #ccc', padding:0, cursor:'pointer', borderRadius:3, flexShrink:0 }} />
-          </div>
-        </div>
 
         {/* 텍스트 추가 */}
         <button onClick={onAddFreeBlock}
@@ -627,7 +603,7 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
   const addFreeBlock = useCallback(() => {
     if (selectedIdx === null) return
     const id = Date.now().toString(36) + Math.random().toString(36).slice(2)
-    const newBlock = { id, type:'text', content:'', fontSize:24, color:'#111111', fontFamily:'', fontWeight:400, align:'center', padding:32 }
+    const newBlock = { id, type:'text', content:'', fontSize:28, color:'#ffffff', fontFamily:'', fontWeight:700, align:'center', x:230, y:80, w:400 }
     const sec = sects[selectedIdx]
     upd(selectedIdx, { ...sec, freeBlocks: [...(sec.freeBlocks || []), newBlock] })
     setActiveBlockId(id)

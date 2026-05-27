@@ -1,49 +1,97 @@
 // src/components/SectionEditor.jsx
 import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { C, DS, TPL_LABELS } from '../constants'
-import { TPL, ImageAdjust, TextSelectCtx } from './SectionTemplates'
+import { TPL, TextSelectCtx } from './SectionTemplates'
 import { capturePNG } from '../utils'
 
-// Design/layout fields managed by CanvaPanel (parent) — synced from sec prop
 const DESIGN_FIELDS = ['template','designStyle','gradient','textStyles','customColors','iconSet','flipped','secImg2','secImg3','secImg4']
 
-/* ── 자유 텍스트 블록 ─────────────────────────────────── */
-function FreeBlock({ block, t, editing, selected, onSelect, onUpdate, onRemove }) {
-  const fs   = block.fontSize   || 22
+/* ── 드래그 가능 자유 텍스트 블록 (absolute overlay) ── */
+function FreeBlock({ block, t, editing, selected, onSelect, onUpdate, onRemove, scale }) {
+  const [localEdit, setLocalEdit] = useState(false)
+  const [dragState, setDragState] = useState(null)
+  const taRef = useRef(null)
+
+  const x = block.x ?? 230
+  const y = block.y ?? 80
+  const w = block.w ?? 400
+
+  const fs   = block.fontSize   || 24
   const ff   = block.fontFamily || 'inherit'
-  const fc   = block.color      || t.fg
-  const fw   = block.fontWeight || 400
+  const fc   = block.color      || '#ffffff'
+  const fw   = block.fontWeight || 700
   const align = block.align     || 'center'
-  const pad   = block.padding   !== undefined ? block.padding : 32
+
+  const handleMouseDown = e => {
+    if (!editing) return
+    if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'BUTTON') return
+    e.stopPropagation()
+    e.preventDefault()
+    onSelect()
+    const sc = scale || 1
+    setDragState({
+      startMx: e.clientX / sc,
+      startMy: e.clientY / sc,
+      baseX: x, baseY: y,
+    })
+  }
+
+  useEffect(() => {
+    if (!dragState) return
+    const sc = scale || 1
+    const onMove = e => {
+      const newX = Math.max(0, Math.min(860 - w, dragState.baseX + (e.clientX / sc - dragState.startMx)))
+      const newY = Math.max(0, dragState.baseY + (e.clientY / sc - dragState.startMy))
+      onUpdate({ ...block, x: newX, y: newY })
+    }
+    const onUp = () => setDragState(null)
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
+  }, [dragState]) // eslint-disable-line
+
+  useEffect(() => {
+    if (localEdit && taRef.current) taRef.current.focus()
+  }, [localEdit])
+
+  const textStyle = { fontSize: fs, fontFamily: ff, color: fc, fontWeight: fw, textAlign: align, lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'keep-all' }
 
   return (
     <div
+      onMouseDown={handleMouseDown}
       onClick={e => { e.stopPropagation(); onSelect() }}
-      style={{ position:'relative', background: t.bg, cursor:'pointer',
-        outline: selected ? '2px solid #3b82f6' : 'none',
-        outlineOffset: -2 }}
+      onDoubleClick={e => { e.stopPropagation(); if (editing) setLocalEdit(true) }}
+      style={{
+        position: 'absolute', left: x, top: y, width: w, zIndex: 10,
+        cursor: editing ? (dragState ? 'grabbing' : 'grab') : 'default',
+        outline: selected ? '2px solid #3b82f6' : editing ? '1px dashed rgba(255,255,255,0.35)' : 'none',
+        outlineOffset: 3,
+        borderRadius: 4,
+      }}
     >
-      {/* X 버튼 - 항상 표시 */}
+      {/* X 버튼 */}
       <button
+        onMouseDown={e => e.stopPropagation()}
         onClick={e => { e.stopPropagation(); onRemove() }}
-        style={{ position:'absolute',top:8,right:8,zIndex:20,width:24,height:24,borderRadius:'50%',border:'none',background:'#ef4444',color:'#fff',fontSize:15,cursor:'pointer',fontWeight:800,lineHeight:'24px',textAlign:'center',display:'flex',alignItems:'center',justifyContent:'center' }}
-      >×</button>
+        style={{ position: 'absolute', top: -10, right: -10, zIndex: 20, width: 22, height: 22, borderRadius: '50%', border: 'none', background: '#ef4444', color: '#fff', fontSize: 14, cursor: 'pointer', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        ×
+      </button>
 
-      <div style={{ padding:`${pad}px 60px` }}>
-        {editing && selected
-          ? <textarea
-              value={block.content || ''}
-              onChange={e => onUpdate({ ...block, content: e.target.value })}
-              onClick={e => e.stopPropagation()}
-              rows={Math.max(2, (block.content||'').split('\n').length + 1)}
-              style={{ width:'100%', fontSize:fs, lineHeight:1.8, border:'1px solid #3b82f6', borderRadius:8, padding:'10px 14px', outline:'none', resize:'vertical', fontFamily:ff, color:fc, fontWeight:fw, textAlign:align, background:t.sub, boxSizing:'border-box' }}
-            />
-          : <p style={{ fontSize:fs, color:fc, lineHeight:1.85, margin:0, whiteSpace:'pre-wrap', textAlign:align, fontFamily:ff, fontWeight:fw, opacity: block.content ? 0.9 : 0.35 }}>
-              {block.content || (editing ? '클릭해서 편집' : '')}
-            </p>
-        }
-      </div>
-      <div style={{ height:1, background:t.bd, opacity:0.35 }} />
+      {localEdit
+        ? <textarea
+            ref={taRef}
+            value={block.content || ''}
+            onChange={e => onUpdate({ ...block, content: e.target.value })}
+            onBlur={() => setLocalEdit(false)}
+            onClick={e => e.stopPropagation()}
+            onMouseDown={e => e.stopPropagation()}
+            rows={Math.max(2, (block.content || '').split('\n').length + 1)}
+            style={{ ...textStyle, width: '100%', background: 'rgba(0,0,0,0.55)', border: '2px solid #3b82f6', borderRadius: 6, padding: '10px 14px', outline: 'none', resize: 'both', boxSizing: 'border-box' }}
+          />
+        : <p style={{ ...textStyle, margin: 0, padding: '8px 12px', opacity: block.content ? 1 : 0.45, textShadow: '0 2px 8px rgba(0,0,0,0.6)' }}>
+            {block.content || (editing ? '더블클릭해서 편집' : '')}
+          </p>
+      }
     </div>
   )
 }
@@ -71,7 +119,7 @@ export default function SectionEditor({
 
   useEffect(() => { onSavedChange?.(idx, saved) }, [idx, saved])
 
-  // ── 부모(CanvaPanel)가 변경한 디자인 필드 자동 동기화 ──
+  // 부모(CanvaPanel)가 변경한 디자인 필드 자동 동기화
   useEffect(() => {
     const patch = {}
     for (const f of DESIGN_FIELDS) {
@@ -103,7 +151,6 @@ export default function SectionEditor({
     return () => obs.disconnect()
   }, [scale])
 
-  // ── section data helpers ──
   const t      = DS[dr.designStyle] || Object.values(DS)[0]
   const change = (key, val) => { setDr(d => ({ ...d, [key]: val })); setSaved(false) }
   const save   = () => { onUpdate(idx, dr); setSaved(true); setEditing(false) }
@@ -117,10 +164,8 @@ export default function SectionEditor({
     finally { setDl(false) }
   }
 
-  // ── free blocks (dr.freeBlocks 에서 직접 관리, 즉시 onUpdate) ──
+  // freeBlocks: dr.freeBlocks에서 직접 관리, 변경 즉시 onUpdate
   const freeBlocks = dr.freeBlocks || []
-
-  const mkId = () => Date.now().toString(36) + Math.random().toString(36).slice(2)
 
   const updBlock = (id, data) => {
     const nb = freeBlocks.map(b => b.id === id ? data : b)
@@ -137,7 +182,7 @@ export default function SectionEditor({
     if (activeBlockId === id) onBlockSelect?.(null)
   }
 
-  // ── TextSelectCtx: EditText 포커스 → CanvaPanel activeField ──
+  // TextSelectCtx: EditText 포커스 → CanvaPanel activeField
   const textSelectCtxValue = useMemo(() => ({
     setField: k => {
       onActiveFieldChange?.(k)
@@ -145,12 +190,11 @@ export default function SectionEditor({
     }
   }), [onActiveFieldChange, onBlockSelect])
 
-  const Tpl     = TPL[dr.template] || TPL.topBottom
+  const Tpl            = TPL[dr.template] || TPL.topBottom
   const placeholderImg = `https://picsum.photos/seed/${idx + 1}/860/500`
-  const img     = dr.secImg || placeholderImg
-  const dlLabel = dl ? '변환 중' : '↓ PNG'
+  const img            = dr.secImg || placeholderImg
+  const dlLabel        = dl ? '변환 중' : '↓ PNG'
 
-  // fieldStyles = textStyles(CanvaPanel) + fieldStyles(local) merged
   const mergedFieldStyles = useMemo(
     () => ({ ...(dr.textStyles || {}), ...(dr.fieldStyles || {}) }),
     [dr.textStyles, dr.fieldStyles]
@@ -169,7 +213,7 @@ export default function SectionEditor({
           border: isSelected ? '3px solid #2563EB' : '2px solid #93C5FD' }} />
       )}
 
-      {/* ── 툴바 ── */}
+      {/* 툴바 */}
       <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 14px',background:editing?'#EFF6FF':C.alt,borderBottom:`1px solid ${editing?'#BFDBFE':C.bd}`,flexWrap:'wrap',gap:6 }}>
         <div style={{ display:'flex',alignItems:'center',gap:8,flexWrap:'wrap' }}>
           <div style={{ width:8,height:8,borderRadius:'50%',background:t.ac }} />
@@ -201,10 +245,10 @@ export default function SectionEditor({
         </div>
       </div>
 
-      {/* ── 카드 미리보기 ── */}
+      {/* 카드 미리보기 */}
       <div ref={wrapRef} style={{ position:'relative', background:'#e8e6e0', overflow:'hidden' }}>
         <div style={{ width:860, transformOrigin:'top left', transform:`scale(${scale})` }}>
-          <div ref={ref} data-sect-card style={{ fontFamily:"'Noto Sans KR','Apple SD Gothic Neo',sans-serif", width:860 }}>
+          <div ref={ref} data-sect-card style={{ fontFamily:"'Noto Sans KR','Apple SD Gothic Neo',sans-serif", width:860, position:'relative' }}>
             <TextSelectCtx.Provider value={textSelectCtxValue}>
               <Tpl
                 s={dr} img={img} t={t} editing={editing} onChange={change}
@@ -214,24 +258,20 @@ export default function SectionEditor({
               />
             </TextSelectCtx.Provider>
 
-            {/* 자유 텍스트 블록 */}
-            {freeBlocks.length > 0 && (
-              <div style={{ background:t.bg }}>
-                {freeBlocks.map(b => (
-                  <FreeBlock
-                    key={b.id}
-                    block={b} t={t} editing={editing}
-                    selected={isSelected && activeBlockId === b.id}
-                    onSelect={() => {
-                      onBlockSelect?.(b.id)
-                      onActiveFieldChange?.(null)
-                    }}
-                    onUpdate={data => updBlock(b.id, data)}
-                    onRemove={() => rmBlock(b.id)}
-                  />
-                ))}
-              </div>
-            )}
+            {/* 자유 텍스트 블록 (absolute overlay) */}
+            {freeBlocks.map(b => (
+              <FreeBlock
+                key={b.id}
+                block={b} t={t} editing={editing} scale={scale}
+                selected={isSelected && activeBlockId === b.id}
+                onSelect={() => {
+                  onBlockSelect?.(b.id)
+                  onActiveFieldChange?.(null)
+                }}
+                onUpdate={data => updBlock(b.id, data)}
+                onRemove={() => rmBlock(b.id)}
+              />
+            ))}
 
             <div style={{ padding:'6px 20px',textAlign:'right',fontSize:9,color:t.fg,opacity:0.1,background:t.bg }}>ContentOS</div>
           </div>
