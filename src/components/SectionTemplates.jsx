@@ -270,7 +270,6 @@ export function TplHero({ s, img, t, editing, onChange, secMeta, onSecMeta, fiel
               )
             })}
           </div>
-          {editing && <div style={{ textAlign: 'center', marginTop: 32 }}><button onClick={addPt} style={addBtnStyle}>+ 포인트 추가</button></div>}
         </div>
       </div>
     </CardWrapper>
@@ -328,7 +327,6 @@ export function TplMaterial({ s, img, t, editing, onChange, secMeta, onSecMeta, 
             )
           })}
         </div>
-        {editing && <button onClick={addPt} style={{ ...addBtnStyle, marginTop: 20, width: '100%', padding: '12px 0' }}>+ 항목 추가</button>}
       </div>
     </CardWrapper>
   )
@@ -369,7 +367,6 @@ export function TplDetail2col({ s, img, t, editing, onChange, secMeta, onSecMeta
               </div>
             ))}
           </div>
-          {editing && <button onClick={addPt} style={{ ...addBtnStyle, marginTop: 16, padding: '10px 0' }}>+ 항목 추가</button>}
         </div>
       </div>
       {(img3 || img4) && (
@@ -482,7 +479,6 @@ export function TplPoints3({ s, img, t, editing, onChange, secMeta, onSecMeta, f
             )
           })}
         </div>
-        {editing && <div style={{ textAlign:'center',marginTop:24 }}><button onClick={addPt} style={addBtnStyle}>+ 포인트 추가</button></div>}
         {s.secImg2 && <div style={{ marginTop:44 }}><ImgBox url={s.secImg2} t={t} label="이미지 2" editing={editing} onImgChange={v=>onChange('secImg2',v)} imgMeta={secMeta?.img2} onMetaChange={m=>onSecMeta?.('img2',m)} /></div>}
       </div>
     </CardWrapper>
@@ -509,7 +505,6 @@ export function TplTarget({ s, img, t, editing, onChange, secMeta, onSecMeta, fi
             {editing && <button onClick={()=>delPt(i)} style={delBtnInline}>×</button>}
           </div>
         ))}
-        {editing && <div style={{ padding:'16px 64px 0' }}><button onClick={addPt} style={{ ...addBtnStyle,width:'100%',padding:'12px 0' }}>+ 항목 추가</button></div>}
       </div>
       {img && <ImgBox url={img} t={t} label="이미지" editing={editing} onImgChange={v=>onChange('secImg',v)} imgMeta={secMeta?.img1} onMetaChange={m=>onSecMeta?.('img1',m)} />}
     </CardWrapper>
@@ -569,7 +564,6 @@ export function TplSpecTable({ s, img, t, editing, onChange, fieldStyles = {} })
             })}
           </tbody>
         </table>
-        {editing && <button onClick={addRow} style={{ marginTop:16,width:'100%',padding:'11px 0',fontSize:13,fontWeight:600,border:'1.5px dashed #ccc',borderRadius:8,background:'transparent',color:'#888',cursor:'pointer' }}>+ 항목 추가</button>}
       </div>
     </CardWrapper>
   )
