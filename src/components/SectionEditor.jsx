@@ -212,7 +212,6 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete, onSavedCha
 
   const ref     = useRef(null)
   const wrapRef = useRef(null)
-  const snapRef = useRef(null)
 
   useEffect(() => {
     const el = wrapRef.current
@@ -248,8 +247,6 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete, onSavedCha
     catch(e) { alert('저장 오류: '+e.message) }
     finally { setDl(false) }
   }
-  snapRef.current = { activeOverlay, rmOverlay }
-
   const mkId = () => Date.now() + Math.random()
 
   const addBlock = (type, afterIdx) => {
