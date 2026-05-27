@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="480" viewBox="0 0 860 480">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#CBD5E1"/>
+      <stop offset="100%" style="stop-color:#94A3B8"/>
+    </linearGradient>
+  </defs>
+  <rect width="860" height="480" fill="url(#bg)"/>
+  <rect x="280" y="140" width="300" height="200" rx="16" fill="rgba(255,255,255,0.2)"/>
+  <circle cx="430" cy="210" r="40" fill="rgba(255,255,255,0.35)"/>
+  <path d="M410 205 Q430 230 450 205" stroke="rgba(255,255,255,0.8)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  <circle cx="418" cy="200" r="4" fill="rgba(255,255,255,0.8)"/>
+  <circle cx="442" cy="200" r="4" fill="rgba(255,255,255,0.8)"/>
+  <text x="430" y="290" text-anchor="middle" font-family="sans-serif" font-size="15" fill="rgba(255,255,255,0.7)" font-weight="600">클릭해서 사진 업로드</text>
+  <text x="430" y="312" text-anchor="middle" font-family="sans-serif" font-size="12" fill="rgba(255,255,255,0.5)">권장 비율 16:9</text>
+</svg>

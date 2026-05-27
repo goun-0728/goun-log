@@ -4,8 +4,13 @@ import { C, DS, DS_KEYS, TPL_LABELS } from '../constants'
 import { TPL, ImageAdjust, ICON_SETS, TextSelectCtx } from './SectionTemplates'
 import { capturePNG } from '../utils'
 
-function Spin() {
-  return <span style={{ display:'inline-block',width:13,height:13,borderRadius:'50%',border:'2px solid #ddd',borderTopColor:'#555',animation:'sp .6s linear infinite',flexShrink:0 }} />
+function getGradCSS(grad, t) {
+  const alpha = (grad.alpha ?? 70) / 100
+  const col   = grad.color || t.bg || '#000000'
+  const m     = col.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i)
+  const rgb   = m ? `${parseInt(m[1],16)},${parseInt(m[2],16)},${parseInt(m[3],16)}` : '0,0,0'
+  const dirs  = { top: 'to bottom', bottom: 'to top', left: 'to right', right: 'to left' }
+  return `linear-gradient(${dirs[grad.dir] || 'to bottom'}, rgba(${rgb},${alpha}) 0%, rgba(${rgb},0) 60%)`
 }
 
 const FONT_OPTIONS = [
@@ -22,11 +27,48 @@ const SIZE_OPTIONS = [['작게',14],['보통',18],['크게',24],['아주크게',
 function FreeBlock({ block, t, editing, selected, onSelect, onUpdate, onRemove, onMoveUp, onMoveDn, isFirst, isLast }) {
   const fileRef = useRef(null)
 
-  const handleImg = e => {
-    const f = e.target.files[0]; if (!f) return
-    const fr = new FileReader()
-    fr.onload = ev => onUpdate({ ...block, content: ev.target.result })
-    fr.readAsDataURL(f); e.target.value = ''
+  useEffect(() => {
+    if (!resizing) return
+    const onMove = e => {
+      const { startX, startY, startSize, corner } = rsRef.current
+      const dx = e.clientX - startX
+      const dy = e.clientY - startY
+      const delta = corner === 'se' ? (dx + dy) / 4 : corner === 'nw' ? (-dx - dy) / 4 : corner === 'ne' ? (dx - dy) / 4 : (-dx + dy) / 4
+      const newSize = Math.max(10, Math.min(120, Math.round(startSize + delta)))
+      onUpdate({ ...ot, style: { ...(ot.style || {}), fontSize: newSize } })
+    }
+    const onUp = () => setResizing(false)
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
+  }, [resizing]) // eslint-disable-line
+
+  useEffect(() => {
+    if (!dragging) return
+    const onMove = e => {
+      const container = containerRef.current
+      if (!container || !startRef.current) return
+      const rect = container.getBoundingClientRect()
+      const { mx, my, ox, oy } = startRef.current
+      const nx = Math.max(0, Math.min(90, ox + (e.clientX - mx) / rect.width * 100))
+      const ny = Math.max(0, Math.min(95, oy + (e.clientY - my) / rect.height * 100))
+      onUpdate({ ...ot, x: nx, y: ny })
+    }
+    const onUp = () => setDragging(false)
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
+  }, [dragging, ot, onUpdate, containerRef])
+
+  const handleMD = e => {
+    if (e.target.getAttribute('contenteditable') === 'true') return
+    const container = containerRef.current
+    if (!container) return
+    startRef.current = { mx: e.clientX, my: e.clientY, ox: ot.x ?? 10, oy: ot.y ?? 10 }
+    setDragging(true)
+    onSelect(ot.id)
+    e.preventDefault()
+    e.stopPropagation()
   }
 
   if (block.type === 'text') {
@@ -170,6 +212,7 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete, onSavedCha
 
   const ref     = useRef(null)
   const wrapRef = useRef(null)
+  const snapRef = useRef(null)
 
   useEffect(() => {
     const el = wrapRef.current
@@ -180,14 +223,10 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete, onSavedCha
   }, [])
 
   useEffect(() => {
-    setDr(prev => ({ ...sec, secImg: prev.secImg ?? sec.secImg }))
-  }, [sec])
-
-  useEffect(() => {
-    const inner = ref.current
-    if (!inner || !wrapRef.current) return
+    const inner = ref.current; if (!inner || !wrapRef.current) return
     const update = () => {
-      if (wrapRef.current && ref.current) wrapRef.current.style.height = ref.current.offsetHeight * scale + 'px'
+      if (wrapRef.current && ref.current)
+        wrapRef.current.style.height = ref.current.offsetHeight * scale + 'px'
     }
     update()
     const obs = new ResizeObserver(update)
@@ -209,6 +248,7 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete, onSavedCha
     catch(e) { alert('저장 오류: '+e.message) }
     finally { setDl(false) }
   }
+  snapRef.current = { activeOverlay, rmOverlay }
 
   const mkId = () => Date.now() + Math.random()
 
@@ -267,8 +307,19 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete, onSavedCha
   const hasSelection = !!(selectedBlockId || selectedField)
 
   return (
-    <div style={{ display:'flex', alignItems:'flex-start', marginBottom:20 }}>
-    <div style={{ flex:1, minWidth:0, borderRadius:12, overflow:'clip', border:`2px solid ${editing?'#3b82f6':C.bd}`, transition:'border-color .2s' }}>
+    <div
+      onClick={e => { onSelect?.(idx); e.stopPropagation() }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{ position: 'relative', cursor: 'default' }}
+    >
+      {/* 선택/호버 테두리 오버레이 — layout에 영향 없음 */}
+      {(isSelected || hovered) && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 20, pointerEvents: 'none',
+          border: isSelected ? '3px solid #2563EB' : '2px solid #93C5FD',
+        }} />
+      )}
 
       {/* ── 툴바 ── */}
       <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 14px',background:editing?'#EFF6FF':C.alt,borderBottom:`1px solid ${editing?'#BFDBFE':C.bd}`,flexWrap:'wrap',gap:6 }}>
@@ -531,7 +582,6 @@ export default function SectionEditor({ sec, idx, onUpdate, onDelete, onSavedCha
         )}
 
       </div>
-    </div>
     </div>
   )
 }

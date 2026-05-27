@@ -23,36 +23,43 @@ export const DS = {
   '웜베이지':     { bg: '#FAF3E0', fg: '#2D2000', ac: '#8B6914', sub: '#F0E8CC', bd: '#DDD0A0' },
   '로즈':         { bg: '#FDF2F2', fg: '#2D0808', ac: '#C0404A', sub: '#F8E8E8', bd: '#E8C0C0' },
   '올리브':       { bg: '#2A2E1A', fg: '#F8F8E8', ac: '#8B9E3A', sub: '#383C28', bd: '#484C38' },
-  '스틸블루':     { bg: '#1A2A3A', fg: '#EEF4F8', ac: '#5B8DB8', sub: '#253545', bd: '#304555' },
   '크림':         { bg: '#FDFAF5', fg: '#2A2010', ac: '#A0784A', sub: '#F5F0E8', bd: '#E0D8C8' },
+  '민트':         { bg: '#F0FDF9', fg: '#0D3A2A', ac: '#10B981', sub: '#D8F5EC', bd: '#A7E8D2' },
+  '라벤더':       { bg: '#F6F3FF', fg: '#2E1A5C', ac: '#7C3AED', sub: '#EDE8FF', bd: '#C9B8F5' },
+  '피치':         { bg: '#FFF5F0', fg: '#3A1205', ac: '#F97316', sub: '#FFE8DA', bd: '#F5C8A8' },
 }
 export const DS_KEYS = Object.keys(DS)
 
 export const AUTO_DS = {
-  HERO: '웜베이지', '문제 공감': '크림', '해결 제안': '포레스트그린',
-  '특징 강조': '딥네이비', '사용 상황': '올리브', '비교': '슬레이트',
-  '추천 대상': '웜베이지', CTA: '버건디', '브랜드 스토리': '웜베이지',
-  '소재설명': '크림', '인증/수상': '딥네이비', '사용 장면': '올리브',
+  HERO: '크림', '문제 공감': '크림', '해결 제안': '크림',
+  '특징 강조': '크림', '사용 상황': '크림', '비교': '크림',
+  '추천 대상': '크림', CTA: '크림', '브랜드 스토리': '크림',
+  '소재설명': '크림', '인증/수상': '크림', '사용 장면': '크림',
 }
 
 export const AUTO_TPL = {
-  HERO: 'hero', '문제 공감': 'material', '해결 제안': 'points3',
-  '특징 강조': 'detail2col', '사용 상황': 'scene', '비교': 'compare',
-  '추천 대상': 'target', CTA: 'cta', '브랜드 스토리': 'scene',
-  '소재설명': 'material', '인증/수상': 'points3', '사용 장면': 'scene',
+  HERO: 'fullHero', '문제 공감': 'story', '해결 제안': 'points3icon',
+  '특징 강조': 'leftRight', '사용 상황': 'topBottom', '비교': 'compare',
+  '추천 대상': 'howTo', CTA: 'fullHero',
 }
 
 export const TPL_LABELS = [
-  { k: 'hero',       l: 'Hero형' },
-  { k: 'material',   l: '소재설명형' },
-  { k: 'detail2col', l: '디테일형' },
-  { k: 'scene',      l: '사용장면형' },
-  { k: 'compare',    l: '비교형' },
-  { k: 'points3',    l: '포인트3단형' },
-  { k: 'target',     l: '추천대상형' },
-  { k: 'cta',        l: 'CTA형' },
-  { k: 'specTable',  l: '제품상세표시' },
+  { k: 'fullHero',    l: '풀이미지형' },
+  { k: 'topBottom',   l: '상하분할형' },
+  { k: 'leftRight',   l: '좌우분할형' },
+  { k: 'points3icon', l: '포인트3단형' },
+  { k: 'story',       l: '스토리형' },
+  { k: 'howTo',       l: '활용법형' },
+  { k: 'compare',     l: '비교형' },
+  { k: 'specTable',   l: '제품상세표시' },
 ]
+
+// 구버전 template 키 → 신버전 호환 매핑
+export const TPL_COMPAT = {
+  hero: 'fullHero', material: 'topBottom', detail2col: 'leftRight',
+  scene: 'fullHero', target: 'howTo', cta: 'topBottom',
+  points3: 'points3icon',
+}
 
 // 추가 가능한 섹션 목록
 export const EXTRA_SECTIONS = [
@@ -104,8 +111,9 @@ export const mkSec = (o = {}) => ({
   _id: Math.random().toString(36).slice(2, 9),
   sectionType: '', title: '', mainCopy: '', subCopy: '', bodyText: '',
   points: [], description: '', designStyle: '크림',
-  template: 'material', photoDir: '{}', imagePrompt: '', cta: '',
+  template: 'topBottom', photoDir: '{}', imagePrompt: '', cta: '',
   secImg: null, secImg2: null, secImg3: null, secImg4: null,
+  textStyles: {}, customColors: {},
   ...o,
 })
 
@@ -435,6 +443,15 @@ ${ctx}
   return `당신은 스마트스토어 상세페이지 전문 기획자 겸 카피라이터입니다.
 제품 정보를 바탕으로 기획안을 작성합니다.
 과장·허위 표현 금지. AI 느낌 제거. 실무형으로 작성.
+
+━━━ 카피라이팅 규칙 (필수) ━━━
+- 메인카피: 15자 이내, 임팩트 슬로건형 (예: "자연 그대로의 맛")
+- 서브카피: 20자 이내, 핵심 특장점 1줄 (예: "국내산 100% 참기름")
+- 내용: 50자 이내, 제품 정보 반영 핵심 설명 1문장 (예: "국내산 무농약 원재료만 사용, 직접 제조로 신선도 보장")
+- 포인트: 각 15자 이내, 나열형 단문 (예: "깊은 향, 풍부한 맛")
+- 서술형 문장 절대 금지 — "~합니다", "~입니다", "~있습니다" 형태 사용 금지
+- 불필요한 수식어·설명 없이 핵심만 임팩트 있게
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${customBlock ? '\n' + customBlock : ''}
 ━━━ AI이미지 프롬프트 생성 규칙 ━━━
 각 섹션의 AI프롬프트는 반드시 아래 규칙을 모두 지켜 영어로만 출력한다.
