@@ -18,6 +18,11 @@ export function parseSections(text) {
   while ((m = re.exec(text)) !== null) {
     const r = m[3]
     const gf = k => { const rx = new RegExp(k + ':\\s*([^\\n]+)'); const f = r.match(rx); return f ? f[1].trim() : '' }
+    const gml = k => {
+      const rx = new RegExp(k + ':\\s*([\\s\\S]*?)(?=\\n(?:메인카피|서브카피|본문내용|포인트|버튼문구|촬영기획|AI프롬프트):|\\n\\[|▼|$)')
+      const f = r.match(rx); if (!f) return ''
+      return f[1].trim()
+    }
     const gb = k => {
       const rx = new RegExp(k + ':\\s*\\n([\\s\\S]*?)(?=\\n[가-힣A-Za-z]+:|\\n\\[|▼|$)')
       const f = r.match(rx); if (!f) return []
@@ -34,6 +39,7 @@ export function parseSections(text) {
     out.push(mkSec({
       sectionType: sn, title: sn,
       mainCopy: gf('메인카피'), subCopy: gf('서브카피'),
+      bodyText: gml('본문내용'),
       points: gb('포인트'), cta: gf('버튼문구'),
       designStyle: AUTO_DS[sn] || '크림',
       template: AUTO_TPL[sn] || 'material',
