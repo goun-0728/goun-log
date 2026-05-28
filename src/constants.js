@@ -114,6 +114,8 @@ export const mkSec = (o = {}) => ({
   template: 'topBottom', photoDir: '{}', imagePrompt: '', cta: '',
   secImg: null, secImg2: null, secImg3: null, secImg4: null,
   textStyles: {}, customColors: {},
+  /* 기본 하단 그라데이션 오버레이 (섹션 하단 30% 영역) */
+  bottomBox: { bgColor: '#000000', intensity: 60, overlayY: 448, overlayH: 224, textBlocks: [] },
   ...o,
 })
 

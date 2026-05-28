@@ -162,7 +162,7 @@ export function ImgBox({ url, t, label, editing = false, onImgChange, minH = 320
       <input ref={ref} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
       {editing && (
         <button onClick={() => ref.current?.click()}
-          style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 10, padding: '12px 28px', fontSize: 15, fontWeight: 700, background: '#333333', color: '#ffffff', border: 'none', borderRadius: 10, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 9999, padding: '12px 28px', fontSize: 15, fontWeight: 700, background: '#333333', color: '#ffffff', border: 'none', borderRadius: 10, cursor: 'pointer', whiteSpace: 'nowrap' }}>
           📷 사진 교체
         </button>
       )}

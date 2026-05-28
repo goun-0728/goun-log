@@ -121,7 +121,7 @@ function AddBetweenHover({ onClick, loading }) {
 const NAMED_KEYS = new Set(['mainCopy', 'subCopy', 'bodyText', 'cta', 'description'])
 
 
-function CanvaPanel({ sec, idx, onUpdate, onDelete, activeBlockId, onAddSection, dlAll, onDlAll, onDlSection }) {
+function CanvaPanel({ sec, idx, onUpdate, onDelete, activeBlockId, onAddSection, onAddBlankSection, dlAll, onDlAll, onDlSection }) {
   const panelStyle = { width:'100%', height:'calc(100vh - 52px)', background:'#fff', boxShadow:'-4px 0 24px rgba(0,0,0,0.1)', display:'flex', flexDirection:'column', overflow:'hidden' }
 
   /* 기본 텍스트 스타일 (선택된 박스 없을 때 사용/편집) */
@@ -403,6 +403,18 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeBlockId, onAddSection,
             + 하단 오버레이 추가
           </button>
         )}
+
+        {/* 섹션 추가 */}
+        {sec !== null && (
+          <>
+            <div style={{ borderTop:`1px solid ${C.bd}`, margin:'8px 0 10px' }} />
+            <button
+              onClick={onAddBlankSection}
+              style={{ width:'100%', padding:'9px 0', fontSize:14, fontWeight:700, borderRadius:7, border:'1.5px dashed #10b981', background:'#f0fdf4', color:'#059669', cursor:'pointer' }}>
+              + 섹션 추가
+            </button>
+          </>
+        )}
       </div>
 
       {/* 하단 PNG 버튼 */}
@@ -589,6 +601,27 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
     })
   }, [])
 
+  /* 빈 섹션 즉시 추가 (편집 패널 버튼) */
+  const addBlankSection = useCallback(() => {
+    const seed = Date.now() % 9973
+    const ns = mkSec({
+      sectionType: '새 섹션',
+      designStyle: '크림',
+      mainCopy: '메인 제목을 입력하세요',
+      subCopy: '서브 타이틀',
+      bodyText: '내용을 입력하세요',
+      secImg: `https://picsum.photos/seed/${seed}/860/640`,
+      _userAdded: true,
+    })
+    setSects(p => {
+      const insertIdx = selectedIdxRef.current !== null ? selectedIdxRef.current : p.length - 1
+      const n = [...p]; n.splice(insertIdx + 1, 0, ns); return n
+    })
+    const newIdx = selectedIdxRef.current !== null ? selectedIdxRef.current + 1 : 0
+    setSelectedIdx(newIdx)
+    setActiveBlockId(null)
+  }, []) // eslint-disable-line
+
   const addSection = useCallback(async (typeInfo, insertAfterIdx) => {
     setAddModal(null)
     setAddLoading(typeInfo.type)
@@ -760,6 +793,7 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
                 onUpdate={upd}
                 onDelete={() => selectedIdx !== null && setDeleteConfirm(selectedIdx)}
                 onAddSection={() => setAddModal(selectedIdx ?? sects.length - 1)}
+                onAddBlankSection={addBlankSection}
                 activeBlockId={activeBlockId}
                 dlAll={dlAll}
                 onDlAll={dlAllPNG}
@@ -858,20 +892,6 @@ export default function App() {
   const taRef       = useRef(null)
   const featuresRef = useRef(null)
   const resRef      = useRef(null)
-  const imgUploadRef = useRef(null)
-
-  // 제품 사진 업로드
-  const [productImgs, setProductImgs] = useState([])
-  const handleProductImgs = e => {
-    const files = Array.from(e.target.files)
-    const remaining = 5 - productImgs.length
-    files.slice(0, remaining).forEach(f => {
-      const fr = new FileReader()
-      fr.onload = ev => setProductImgs(prev => prev.length < 5 ? [...prev, ev.target.result] : prev)
-      fr.readAsDataURL(f)
-    })
-    e.target.value = ''
-  }
 
   useEffect(() => {
     try { localStorage.setItem('cos_history', JSON.stringify(history.slice(0, 20))) } catch {}
@@ -892,7 +912,6 @@ export default function App() {
 
   const resetAll = () => {
     setForm({ ...EMPTY_FORM })
-    setProductImgs([])
     setResult('')
     setDetailData(null); try { localStorage.removeItem('cos_detail_data') } catch {}
     setError('')
@@ -911,7 +930,6 @@ export default function App() {
       const targetStr = tParts.join(', ')
 
       const baseText = `상품명: ${form.productName}\n핵심 특징: ${form.features}`
-      const hasImgs = productImgs.length > 0
       const sysBase = getSys('detail', '', {
         features: form.features,
         category: form.category,
@@ -919,10 +937,7 @@ export default function App() {
         pricePosition: form.pricePosition,
         mood: form.mood,
       })
-      const systemPrompt = hasImgs
-        ? sysBase + '\n\n업로드된 제품 사진을 분석해서 제품의 외형·색상·패키지 디자인을 파악하고, 각 섹션 AI프롬프트에 실제 제품의 시각적 특성(색상, 형태, 질감, 소재감)을 구체적으로 반영해줘.'
-        : sysBase
-      const text = await generateContent({ systemPrompt, userPrompt: baseText, images: hasImgs ? productImgs : [], model: 'gpt-4o', maxTokens: 4000 })
+      const text = await generateContent({ systemPrompt: sysBase, userPrompt: baseText, model: 'gpt-4o', maxTokens: 4000 })
       setResult(text)
       setDetailData(null); try { localStorage.removeItem('cos_detail_data') } catch {}
       setDetailGenKey(k => k + 1)
@@ -1059,24 +1074,6 @@ export default function App() {
               <SelBtn options={FORM_MOODS} value={form.mood} onChange={v => updForm('mood', v)} />
             </div>
 
-            {/* 제품 사진 업로드 */}
-            <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.mu, marginBottom: 8 }}>제품 사진 <span style={{ fontWeight: 400 }}>(선택, 최대 5장 — AI 이미지 프롬프트 정확도 향상)</span></label>
-              <input ref={imgUploadRef} type="file" accept="image/*" multiple onChange={handleProductImgs} style={{ display: 'none' }} />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <button onClick={() => imgUploadRef.current?.click()} disabled={productImgs.length >= 5}
-                  style={{ padding: '6px 14px', fontSize: 12, borderRadius: 7, border: `1px solid ${C.bd}`, background: C.alt, color: productImgs.length >= 5 ? C.fa : C.mu, cursor: productImgs.length >= 5 ? 'not-allowed' : 'pointer', fontWeight: 600 }}>
-                  📷 사진 추가 ({productImgs.length}/5)
-                </button>
-                {productImgs.map((img, i) => (
-                  <div key={i} style={{ position: 'relative', width: 56, height: 56, flexShrink: 0 }}>
-                    <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 7, border: `1px solid ${C.bd}`, display: 'block' }} />
-                    <button onClick={() => setProductImgs(p => p.filter((_, j) => j !== i))}
-                      style={{ position: 'absolute', top: -6, right: -6, width: 18, height: 18, borderRadius: '50%', background: '#ef4444', color: '#fff', border: '2px solid #fff', fontSize: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, padding: 0 }}>×</button>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
 
           {/* 생성 버튼 */}
