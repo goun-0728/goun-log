@@ -25,7 +25,7 @@ const RESIZE_HANDLES = [
 ]
 
 /* ── 드래그 + 리사이즈 텍스트 블록 ── */
-function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect, onTextChange, onPosChange, onRemove, scale }) {
+function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect, onTextChange, onPosChange, onRemove, onFontResize, scale }) {
   const [localEdit, setLocalEdit] = useState(false)
   const [dragState, setDragState] = useState(null)
   const [resizeDir, setResizeDir] = useState(null)
@@ -62,7 +62,12 @@ function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect,
     e.stopPropagation(); e.preventDefault()
     const sc = scale || 1
     const curH = blockRef.current ? blockRef.current.offsetHeight : (h || 40)
-    setResizeDir({ dir, startMx: e.clientX / sc, startMy: e.clientY / sc, startW: w, startH: curH, startX: x, startY: y })
+    setResizeDir({
+      dir,
+      startMx: e.clientX / sc, startMy: e.clientY / sc,
+      startW: w, startH: curH, startX: x, startY: y,
+      startFontSize: style.fontSize || 28,
+    })
   }
 
   useEffect(() => {
@@ -71,7 +76,7 @@ function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect,
     const move = e => {
       const dx = e.clientX / sc - resizeDir.startMx
       const dy = e.clientY / sc - resizeDir.startMy
-      const { dir, startW, startH, startX, startY } = resizeDir
+      const { dir, startW, startH, startX, startY, startFontSize } = resizeDir
       const aspect = startW / (startH || 1)
 
       let newX = startX, newY = startY, newW = startW, newH = startH
@@ -89,7 +94,7 @@ function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect,
         newH = startH + (startY - newY)
       }
 
-      /* Shift 키: 모서리(corner) 드래그 시 비율 고정 */
+      /* Shift 키: 모서리 드래그 시 비율 고정 */
       if (e.shiftKey && dir.length === 2) {
         if (dir.includes('e') || dir.includes('w')) {
           newH = newW / aspect
@@ -100,7 +105,17 @@ function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect,
         }
       }
 
-      onPosChange({ ...pos, x: newX, y: newY, w: Math.max(50, newW), h: Math.max(20, newH) })
+      newW = Math.max(50, newW)
+      newH = Math.max(20, newH)
+
+      /* 모서리 드래그 시 폰트 비례 변경 */
+      if (dir.length === 2 && onFontResize) {
+        const ratio = newW / startW
+        const newFs = Math.min(200, Math.max(10, Math.round(startFontSize * ratio)))
+        onFontResize(newFs)
+      }
+
+      onPosChange({ ...pos, x: newX, y: newY, w: newW, h: newH })
     }
     const up = () => setResizeDir(null)
     window.addEventListener('mousemove', move)
@@ -114,7 +129,8 @@ function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect,
   const ff = style.fontFamily || 'inherit'
   const fc = style.color      || '#ffffff'
   const fw = style.fontWeight || 700
-  const txStyle = { fontSize: fs, fontFamily: ff, color: fc, fontWeight: fw, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'keep-all' }
+  const ta = style.textAlign  || 'left'
+  const txStyle = { fontSize: fs, fontFamily: ff, color: fc, fontWeight: fw, textAlign: ta, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'keep-all' }
 
   if (!editing && !text) return null
 
@@ -127,13 +143,11 @@ function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect,
       style={{ position: 'absolute', left: x, top: y, width: w, height: h || undefined, zIndex: 10, borderRadius: 4,
         cursor: editing ? (dragState ? 'grabbing' : 'grab') : 'default', boxSizing: 'border-box' }}
     >
-      {/* 선택/편집 아웃라인 */}
       {editing && (
         <div style={{ position: 'absolute', inset: -3, borderRadius: 6, pointerEvents: 'none', zIndex: 5,
           border: selected ? '2px solid #3b82f6' : '1px dashed rgba(255,255,255,0.4)' }} />
       )}
 
-      {/* 블록 레이블 */}
       {editing && selected && label && (
         <div style={{ position: 'absolute', top: -22, left: 0, fontSize: 10, fontWeight: 700,
           color: '#fff', background: '#3b82f6', padding: '1px 7px', borderRadius: 4, zIndex: 25, whiteSpace: 'nowrap' }}>
@@ -141,7 +155,6 @@ function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect,
         </div>
       )}
 
-      {/* X 버튼 */}
       {editing && (
         <button onMouseDown={e => e.stopPropagation()}
           onClick={e => { e.stopPropagation(); onRemove() }}
@@ -150,7 +163,6 @@ function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect,
             fontSize: 14, cursor: 'pointer', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
       )}
 
-      {/* 리사이즈 핸들 8방향 */}
       {editing && selected && RESIZE_HANDLES.map(({ dir, style: hs }) => (
         <div key={dir} data-resize-handle
           onMouseDown={e => handleResizeDown(e, dir)}
@@ -180,80 +192,104 @@ function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect,
   )
 }
 
-/* ── 섹션 하단 가변 높이 텍스트 박스 ── */
-function BottomBox({ bottomBox, onUpdate, editing, scale }) {
-  const [localEdit, setLocalEdit] = useState(false)
-  const [resizing, setResizing]   = useState(null)
-  const taRef = useRef(null)
+/* ── 오버레이 아이콘 ── */
+function OverlayIcon({ icon, editing, selected, onSelect, onUpdate, onRemove, scale }) {
+  const [dragState, setDragState] = useState(null)
+  const { x = 100, y = 500, icon: ch = '★', fontSize = 40, color = '#ffffff' } = icon
 
-  useEffect(() => { if (localEdit && taRef.current) taRef.current.focus() }, [localEdit])
+  const handleMouseDown = e => {
+    if (!editing) return
+    if (e.target.tagName === 'BUTTON') return
+    e.stopPropagation(); e.preventDefault()
+    onSelect()
+    const sc = scale || 1
+    setDragState({ startMx: e.clientX / sc, startMy: e.clientY / sc, baseX: x, baseY: y })
+  }
 
   useEffect(() => {
-    if (!resizing) return
+    if (!dragState) return
     const sc = scale || 1
     const move = e => {
-      const dy = (e.clientY - resizing.startY) / sc
-      const newH = Math.max(40, resizing.startH + dy)
-      onUpdate({ height: newH })
+      const nx = Math.max(0, Math.min(CARD_W - fontSize, dragState.baseX + (e.clientX / sc - dragState.startMx)))
+      const ny = Math.max(0, Math.min(CARD_H - fontSize, dragState.baseY + (e.clientY / sc - dragState.startMy)))
+      onUpdate({ x: nx, y: ny })
     }
-    const up = () => setResizing(null)
+    const up = () => setDragState(null)
     window.addEventListener('mousemove', move)
     window.addEventListener('mouseup', up)
     return () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up) }
-  }, [resizing]) // eslint-disable-line
-
-  if (!bottomBox) return null
-
-  const { text = '', bgColor = '#ffffff', height = 120 } = bottomBox
+  }, [dragState]) // eslint-disable-line
 
   return (
     <div
-      onClick={e => { if (editing && !localEdit) { e.stopPropagation(); setLocalEdit(true) } }}
-      style={{ width: '100%', height: height, background: bgColor, position: 'relative',
-        boxSizing: 'border-box', borderTop: editing ? '2px dashed #93c5fd' : 'none',
-        overflow: 'hidden', cursor: editing ? (localEdit ? 'text' : 'pointer') : 'default' }}
+      onMouseDown={handleMouseDown}
+      onClick={e => { e.stopPropagation(); if (editing) onSelect() }}
+      style={{ position: 'absolute', left: x, top: y, fontSize, color, lineHeight: 1,
+        cursor: editing ? (dragState ? 'grabbing' : 'grab') : 'default',
+        userSelect: 'none', zIndex: 12, padding: 4, borderRadius: 4,
+        outline: selected && editing ? '2px solid #3b82f6' : 'none', boxSizing: 'content-box' }}
     >
-      {localEdit
-        ? <textarea ref={taRef}
-            value={text}
-            onChange={e => onUpdate({ text: e.target.value })}
-            onBlur={() => setLocalEdit(false)}
-            onClick={e => e.stopPropagation()}
-            onMouseDown={e => e.stopPropagation()}
-            style={{ width: '100%', height: '100%', border: 'none', outline: 'none',
-              background: 'transparent', resize: 'none', padding: '12px 16px',
-              fontSize: 16, fontFamily: 'inherit', boxSizing: 'border-box', lineHeight: 1.7 }} />
-        : <div style={{ padding: '12px 16px', fontSize: 16, fontFamily: 'inherit',
-            whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: 1.7, color: '#222',
-            opacity: text ? 1 : (editing ? 0.4 : 1) }}>
-            {text || (editing ? '클릭해서 텍스트 입력' : '')}
-          </div>
-      }
-
-      {/* X 버튼 (캡처 시 숨김) */}
+      {ch}
       {editing && (
-        <button
-          onMouseDown={e => e.stopPropagation()}
-          onClick={e => { e.stopPropagation(); onUpdate(null) }}
-          style={{ position: 'absolute', top: 6, right: 6, width: 22, height: 22,
+        <button onMouseDown={e => e.stopPropagation()}
+          onClick={e => { e.stopPropagation(); onRemove() }}
+          style={{ position: 'absolute', top: -8, right: -8, width: 18, height: 18,
             borderRadius: '50%', border: 'none', background: '#ef4444', color: '#fff',
-            fontSize: 14, cursor: 'pointer', fontWeight: 800,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>×</button>
+            fontSize: 10, cursor: 'pointer', fontWeight: 800,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 20 }}>×</button>
       )}
+    </div>
+  )
+}
 
-      {/* 하단 높이 조절 핸들 (캡처 시 숨김) */}
-      {editing && (
-        <div
-          onMouseDown={e => {
-            e.preventDefault(); e.stopPropagation()
-            setResizing({ startY: e.clientY, startH: height })
-          }}
-          style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 10,
-            cursor: 'row-resize', background: 'rgba(59,130,246,0.12)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ width: 40, height: 3, background: '#3b82f6', borderRadius: 2 }} />
-        </div>
-      )}
+/* ── 하단 그라데이션 오버레이 ── */
+function BottomOverlay({ bottomBox, editing, scale, activeBlockId, onBlockSelect, onUpdate }) {
+  const { bgColor = '#000000', intensity = 50, textBlocks = [], icons = [] } = bottomBox || {}
+
+  const gradBg = `linear-gradient(to top, ${bgColor}, transparent ${intensity}%)`
+
+  const updateBlocks = newBlocks => onUpdate({ textBlocks: newBlocks })
+  const updateIcons  = newIcons  => onUpdate({ icons: newIcons })
+
+  return (
+    <div
+      style={{ position: 'absolute', inset: 0, zIndex: 8, background: gradBg,
+        pointerEvents: editing ? 'auto' : 'none' }}
+      onClick={e => { if (e.target === e.currentTarget && editing) { onBlockSelect?.(null); e.stopPropagation() } }}
+    >
+      {/* 오버레이 내 텍스트 블록 */}
+      {textBlocks.map(b => (
+        <DragBlock
+          key={b.id}
+          bKey={b.id}
+          label="텍스트"
+          text={b.content || ''}
+          pos={{ x: b.x ?? 100, y: b.y ?? 400, w: b.w ?? 300, h: b.h }}
+          style={{ fontSize: b.fontSize || 28, color: b.color || '#ffffff', fontFamily: b.fontFamily || '', fontWeight: b.fontWeight || 700, textAlign: b.align || 'left' }}
+          editing={editing}
+          selected={activeBlockId === b.id}
+          onSelect={() => onBlockSelect?.(b.id)}
+          onTextChange={v => updateBlocks(textBlocks.map(tb => tb.id === b.id ? { ...tb, content: v } : tb))}
+          onPosChange={p => updateBlocks(textBlocks.map(tb => tb.id === b.id ? { ...tb, x: p.x, y: p.y, w: p.w, h: p.h } : tb))}
+          onRemove={() => { updateBlocks(textBlocks.filter(tb => tb.id !== b.id)); if (activeBlockId === b.id) onBlockSelect?.(null) }}
+          onFontResize={newFs => updateBlocks(textBlocks.map(tb => tb.id === b.id ? { ...tb, fontSize: newFs } : tb))}
+          scale={scale}
+        />
+      ))}
+
+      {/* 오버레이 내 아이콘 */}
+      {icons.map(ic => (
+        <OverlayIcon
+          key={ic.id}
+          icon={ic}
+          editing={editing}
+          selected={activeBlockId === ic.id}
+          onSelect={() => onBlockSelect?.(ic.id)}
+          onUpdate={patch => updateIcons(icons.map(i => i.id === ic.id ? { ...i, ...patch } : i))}
+          onRemove={() => { updateIcons(icons.filter(i => i.id !== ic.id)); if (activeBlockId === ic.id) onBlockSelect?.(null) }}
+          scale={scale}
+        />
+      ))}
     </div>
   )
 }
@@ -392,17 +428,34 @@ export default function SectionEditor({
         <div style={{ width:CARD_W,transformOrigin:'top left',transform:`scale(${scale})` }}>
           <div ref={ref} data-sect-card style={{ fontFamily:"'Noto Sans KR','Apple SD Gothic Neo',sans-serif",width:CARD_W,position:'relative' }}>
 
-            {/* 풀 배경 이미지 */}
             <div style={{ position:'relative', minHeight: CARD_H }}>
               <ImgBox url={img} t={t} label="배경 이미지" editing={editing}
                 onImgChange={v => commit({ secImg: v })}
                 imgMeta={secMeta?.img1} onMetaChange={m => setSecMeta(p=>({...p,img1:m}))}
                 minH={CARD_H} fill />
 
-              {/* 그라데이션 오버레이 */}
+              {/* 그라데이션 오버레이 (섹션 설정) */}
               {grad && <div style={{ position:'absolute',inset:0,background:grad,pointerEvents:'none' }} />}
 
-              {/* Named 텍스트 블록 (메인/서브/내용) */}
+              {/* 하단 그라데이션 오버레이 (bottomBox) */}
+              {dr.bottomBox && (
+                <BottomOverlay
+                  bottomBox={dr.bottomBox}
+                  editing={editing}
+                  scale={scale}
+                  activeBlockId={activeBlockId}
+                  onBlockSelect={onBlockSelect}
+                  onUpdate={patch => {
+                    if (patch === null) {
+                      commit({ bottomBox: null })
+                    } else {
+                      commit({ bottomBox: { ...(drRef.current.bottomBox || { bgColor: '#000000', intensity: 50, textBlocks: [], icons: [] }), ...patch } })
+                    }
+                  }}
+                />
+              )}
+
+              {/* Named 텍스트 블록 (메인/서브/내용) — bottomBox 위로 */}
               {NAMED_BLOCKS.map(({ key, label }) => (
                 <DragBlock
                   key={key}
@@ -417,6 +470,10 @@ export default function SectionEditor({
                   onTextChange={v => commit({ [key]: v })}
                   onPosChange={p => commit({ blockPositions: { ...(drRef.current.blockPositions || {}), [key]: p } })}
                   onRemove={() => { commit({ [key]: '' }); if (activeBlockId === key) onBlockSelect?.(null) }}
+                  onFontResize={newFs => {
+                    const cur = drRef.current.textStyles || {}
+                    commit({ textStyles: { ...cur, [key]: { ...(cur[key] || {}), fontSize: newFs } } })
+                  }}
                   scale={scale}
                 />
               ))}
@@ -436,24 +493,11 @@ export default function SectionEditor({
                   onTextChange={v => commit({ freeBlocks: drRef.current.freeBlocks.map(fb => fb.id === b.id ? {...fb, content: v} : fb) })}
                   onPosChange={p => commit({ freeBlocks: drRef.current.freeBlocks.map(fb => fb.id === b.id ? {...fb, x:p.x, y:p.y, w:p.w, h:p.h} : fb) })}
                   onRemove={() => { commit({ freeBlocks: drRef.current.freeBlocks.filter(fb => fb.id !== b.id) }); if (activeBlockId === b.id) onBlockSelect?.(null) }}
+                  onFontResize={newFs => commit({ freeBlocks: drRef.current.freeBlocks.map(fb => fb.id === b.id ? {...fb, fontSize: newFs} : fb) })}
                   scale={scale}
                 />
               ))}
             </div>
-
-            {/* 섹션 하단 가변 높이 텍스트 박스 */}
-            <BottomBox
-              bottomBox={dr.bottomBox}
-              editing={editing}
-              scale={scale}
-              onUpdate={patch => {
-                if (patch === null) {
-                  commit({ bottomBox: null })
-                } else {
-                  commit({ bottomBox: { ...(drRef.current.bottomBox || { text: '', bgColor: '#ffffff', height: 120 }), ...patch } })
-                }
-              }}
-            />
 
             <div style={{ padding:'6px 20px',textAlign:'right',fontSize:9,color:t.fg,opacity:0.1,background:t.bg }}>ContentOS</div>
           </div>
