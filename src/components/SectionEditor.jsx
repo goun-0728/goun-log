@@ -6,34 +6,31 @@ import { capturePNG } from '../utils'
 
 const DESIGN_FIELDS = ['template','designStyle','gradient','textStyles','customColors','iconSet','flipped','secImg2','secImg3','secImg4']
 
-/* ── 드래그 가능 자유 텍스트 블록 (absolute overlay) ── */
+/* ── 드래그 + 리사이즈 가능 자유 텍스트 블록 ── */
 function FreeBlock({ block, t, editing, selected, onSelect, onUpdate, onRemove, scale }) {
   const [localEdit, setLocalEdit] = useState(false)
-  const [dragState, setDragState] = useState(null)
+  const [dragState, setDragState]   = useState(null)
+  const [resizeDir, setResizeDir]   = useState(null)
   const taRef = useRef(null)
 
-  const x = block.x ?? 230
-  const y = block.y ?? 80
-  const w = block.w ?? 400
+  const x  = block.x ?? 230
+  const y  = block.y ?? 80
+  const w  = block.w ?? 400
+  const fs = block.fontSize   || 24
+  const ff = block.fontFamily || 'inherit'
+  const fc = block.color      || '#ffffff'
+  const fw = block.fontWeight || 700
+  const align = block.align   || 'center'
 
-  const fs   = block.fontSize   || 24
-  const ff   = block.fontFamily || 'inherit'
-  const fc   = block.color      || '#ffffff'
-  const fw   = block.fontWeight || 700
-  const align = block.align     || 'center'
-
+  /* ── 드래그 ── */
   const handleMouseDown = e => {
     if (!editing) return
     if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'BUTTON') return
-    e.stopPropagation()
-    e.preventDefault()
+    if (e.target.hasAttribute('data-resize-handle')) return
+    e.stopPropagation(); e.preventDefault()
     onSelect()
     const sc = scale || 1
-    setDragState({
-      startMx: e.clientX / sc,
-      startMy: e.clientY / sc,
-      baseX: x, baseY: y,
-    })
+    setDragState({ startMx: e.clientX / sc, startMy: e.clientY / sc, baseX: x, baseY: y })
   }
 
   useEffect(() => {
@@ -46,49 +43,93 @@ function FreeBlock({ block, t, editing, selected, onSelect, onUpdate, onRemove, 
     }
     const onUp = () => setDragState(null)
     window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup', onUp)
+    window.addEventListener('mouseup',   onUp)
     return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
   }, [dragState]) // eslint-disable-line
 
+  /* ── 리사이즈 ── */
+  const handleResizeDown = (e, dir) => {
+    e.stopPropagation(); e.preventDefault()
+    const sc = scale || 1
+    setResizeDir({ dir, startMx: e.clientX / sc, startW: w, startX: x })
+  }
+
   useEffect(() => {
-    if (localEdit && taRef.current) taRef.current.focus()
-  }, [localEdit])
+    if (!resizeDir) return
+    const sc = scale || 1
+    const onMove = e => {
+      const dx = e.clientX / sc - resizeDir.startMx
+      if (resizeDir.dir === 'right') {
+        const newW = Math.max(80, Math.min(860 - resizeDir.startX, resizeDir.startW + dx))
+        onUpdate({ ...block, w: newW })
+      } else {
+        const rawX = resizeDir.startX + dx
+        const newX = Math.max(0, Math.min(resizeDir.startX + resizeDir.startW - 80, rawX))
+        const newW = resizeDir.startW + (resizeDir.startX - newX)
+        onUpdate({ ...block, x: newX, w: newW })
+      }
+    }
+    const onUp = () => setResizeDir(null)
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup',   onUp)
+    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
+  }, [resizeDir]) // eslint-disable-line
+
+  useEffect(() => { if (localEdit && taRef.current) taRef.current.focus() }, [localEdit])
 
   const textStyle = { fontSize: fs, fontFamily: ff, color: fc, fontWeight: fw, textAlign: align, lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'keep-all' }
 
   return (
     <div
       onMouseDown={handleMouseDown}
-      onClick={e => { e.stopPropagation(); onSelect() }}
+      onClick={e => { e.stopPropagation(); if (editing) onSelect() }}
       onDoubleClick={e => { e.stopPropagation(); if (editing) setLocalEdit(true) }}
-      style={{
-        position: 'absolute', left: x, top: y, width: w, zIndex: 10,
-        cursor: editing ? (dragState ? 'grabbing' : 'grab') : 'default',
-        outline: selected ? '2px solid #3b82f6' : editing ? '1px dashed rgba(255,255,255,0.35)' : 'none',
-        outlineOffset: 3,
-        borderRadius: 4,
-      }}
+      style={{ position: 'absolute', left: x, top: y, width: w, zIndex: 10, borderRadius: 4,
+        cursor: editing ? (dragState ? 'grabbing' : 'grab') : 'default' }}
     >
-      {/* X 버튼 */}
-      <button
-        onMouseDown={e => e.stopPropagation()}
-        onClick={e => { e.stopPropagation(); onRemove() }}
-        style={{ position: 'absolute', top: -10, right: -10, zIndex: 20, width: 22, height: 22, borderRadius: '50%', border: 'none', background: '#ef4444', color: '#fff', fontSize: 14, cursor: 'pointer', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        ×
-      </button>
+      {/* 선택/편집 아웃라인 (캡처 시 editing=false → 숨김) */}
+      {editing && (
+        <div style={{ position: 'absolute', inset: -3, borderRadius: 6, pointerEvents: 'none', zIndex: 5,
+          border: selected ? '2px solid #3b82f6' : '1px dashed rgba(255,255,255,0.35)' }} />
+      )}
+
+      {/* X 버튼 (캡처 시 숨김) */}
+      {editing && (
+        <button onMouseDown={e => e.stopPropagation()}
+          onClick={e => { e.stopPropagation(); onRemove() }}
+          style={{ position: 'absolute', top: -10, right: -10, zIndex: 20, width: 22, height: 22,
+            borderRadius: '50%', border: 'none', background: '#ef4444', color: '#fff',
+            fontSize: 14, cursor: 'pointer', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          ×
+        </button>
+      )}
+
+      {/* 리사이즈 핸들 (선택 시에만, 캡처 시 숨김) */}
+      {editing && selected && (
+        <>
+          <div data-resize-handle onMouseDown={e => handleResizeDown(e, 'left')}
+            style={{ position: 'absolute', left: -6, top: '50%', transform: 'translateY(-50%)',
+              width: 12, height: 40, background: '#3b82f6', borderRadius: 4, cursor: 'ew-resize', zIndex: 25 }} />
+          <div data-resize-handle onMouseDown={e => handleResizeDown(e, 'right')}
+            style={{ position: 'absolute', right: -6, top: '50%', transform: 'translateY(-50%)',
+              width: 12, height: 40, background: '#3b82f6', borderRadius: 4, cursor: 'ew-resize', zIndex: 25 }} />
+        </>
+      )}
 
       {localEdit
-        ? <textarea
-            ref={taRef}
+        ? <textarea ref={taRef}
             value={block.content || ''}
             onChange={e => onUpdate({ ...block, content: e.target.value })}
             onBlur={() => setLocalEdit(false)}
             onClick={e => e.stopPropagation()}
             onMouseDown={e => e.stopPropagation()}
             rows={Math.max(2, (block.content || '').split('\n').length + 1)}
-            style={{ ...textStyle, width: '100%', background: 'rgba(0,0,0,0.55)', border: '2px solid #3b82f6', borderRadius: 6, padding: '10px 14px', outline: 'none', resize: 'both', boxSizing: 'border-box' }}
+            style={{ ...textStyle, width: '100%', background: 'rgba(0,0,0,0.55)', border: '2px solid #3b82f6',
+              borderRadius: 6, padding: '10px 14px', outline: 'none', resize: 'both', boxSizing: 'border-box' }}
           />
-        : <p style={{ ...textStyle, margin: 0, padding: '8px 12px', opacity: block.content ? 1 : 0.45, textShadow: '0 2px 8px rgba(0,0,0,0.6)' }}>
+        : <p style={{ ...textStyle, margin: 0, padding: '8px 12px',
+            opacity: block.content ? 1 : (editing ? 0.45 : 0),
+            textShadow: '0 2px 8px rgba(0,0,0,0.6)' }}>
             {block.content || (editing ? '더블클릭해서 편집' : '')}
           </p>
       }
@@ -109,17 +150,30 @@ export default function SectionEditor({
   onActiveFieldChange,
   activeBlockId, onBlockSelect,
 }) {
-  const [editing, setEditing] = useState(true)
-  const [dr, setDr]           = useState(sec)
-  const [saved, setSaved]     = useState(true)
-  const [dl, setDl]           = useState(false)
-  const [scale, setScale]     = useState(1)
-  const [secMeta, setSecMeta] = useState({})
-  const [hovered, setHovered] = useState(false)
+  const [editing,    setEditing]    = useState(true)
+  const [capturing,  setCapturing]  = useState(false)
+  const [dr,         setDr]         = useState(sec)
+  const [saved,      setSaved]      = useState(true)
+  const [dl,         setDl]         = useState(false)
+  const [scale,      setScale]      = useState(1)
+  const [secMeta,    setSecMeta]    = useState({})
+  const [hovered,    setHovered]    = useState(false)
+
+  /* png-capture-start / end 이벤트 수신 */
+  useEffect(() => {
+    const onStart = () => setCapturing(true)
+    const onEnd   = () => setCapturing(false)
+    document.addEventListener('png-capture-start', onStart)
+    document.addEventListener('png-capture-end',   onEnd)
+    return () => {
+      document.removeEventListener('png-capture-start', onStart)
+      document.removeEventListener('png-capture-end',   onEnd)
+    }
+  }, [])
 
   useEffect(() => { onSavedChange?.(idx, saved) }, [idx, saved])
 
-  // 부모(CanvaPanel)가 변경한 디자인 필드 자동 동기화
+  /* 부모(CanvaPanel)가 변경한 디자인 필드 자동 동기화 */
   useEffect(() => {
     const patch = {}
     for (const f of DESIGN_FIELDS) {
@@ -159,13 +213,15 @@ export default function SectionEditor({
   const dlPNG = async () => {
     if (!ref.current) return
     setDl(true)
+    setCapturing(true)
+    await new Promise(r => setTimeout(r, 80))
     try { await capturePNG(ref.current, `section_${idx+1}_${sec.sectionType}.png`) }
     catch(e) { alert('저장 오류: '+e.message) }
-    finally { setDl(false) }
+    finally { setDl(false); setCapturing(false) }
   }
 
-  // freeBlocks: dr.freeBlocks에서 직접 관리, 변경 즉시 onUpdate
-  const freeBlocks = dr.freeBlocks || []
+  const freeBlocks  = dr.freeBlocks || []
+  const activeEditing = editing && !capturing
 
   const updBlock = (id, data) => {
     const nb = freeBlocks.map(b => b.id === id ? data : b)
@@ -182,7 +238,6 @@ export default function SectionEditor({
     if (activeBlockId === id) onBlockSelect?.(null)
   }
 
-  // TextSelectCtx: EditText 포커스 → CanvaPanel activeField
   const textSelectCtxValue = useMemo(() => ({
     setField: k => {
       onActiveFieldChange?.(k)
@@ -207,7 +262,7 @@ export default function SectionEditor({
       onMouseLeave={() => setHovered(false)}
       style={{ position: 'relative', cursor: 'default' }}
     >
-      {/* 선택/호버 테두리 */}
+      {/* 선택/호버 테두리 (캡처 대상 밖) */}
       {(isSelected || hovered) && (
         <div style={{ position:'absolute', inset:0, zIndex:20, pointerEvents:'none',
           border: isSelected ? '3px solid #2563EB' : '2px solid #93C5FD' }} />
@@ -251,18 +306,18 @@ export default function SectionEditor({
           <div ref={ref} data-sect-card style={{ fontFamily:"'Noto Sans KR','Apple SD Gothic Neo',sans-serif", width:860, position:'relative' }}>
             <TextSelectCtx.Provider value={textSelectCtxValue}>
               <Tpl
-                s={dr} img={img} t={t} editing={editing} onChange={change}
+                s={dr} img={img} t={t} editing={activeEditing} onChange={change}
                 secMeta={secMeta}
                 onSecMeta={(key,val) => { setSecMeta(p=>({...p,[key]:val})); setSaved(false) }}
                 fieldStyles={mergedFieldStyles}
               />
             </TextSelectCtx.Provider>
 
-            {/* 자유 텍스트 블록 (absolute overlay) */}
+            {/* 자유 텍스트 블록 */}
             {freeBlocks.map(b => (
               <FreeBlock
                 key={b.id}
-                block={b} t={t} editing={editing} scale={scale}
+                block={b} t={t} editing={activeEditing} scale={scale}
                 selected={isSelected && activeBlockId === b.id}
                 onSelect={() => {
                   onBlockSelect?.(b.id)

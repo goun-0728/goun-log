@@ -173,7 +173,7 @@ function AddBetweenHover({ onClick, loading }) {
 }
 
 /* ── Canva 우측 편집 패널 ────────────────────────────── */
-function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeBlockId, onAddFreeBlock, onAddSection, dlAll, onDlAll, onDlSection }) {
+function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeBlockId, onAddFreeBlock, onAddPoint, onAddSection, dlAll, onDlAll, onDlSection }) {
   const panelStyle = { width:'100%', height:'calc(100vh - 52px)', background:'#fff', boxShadow:'-4px 0 24px rgba(0,0,0,0.1)', display:'flex', flexDirection:'column', overflow:'hidden' }
 
   if (sec === null || idx === null) {
@@ -406,8 +406,14 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeField, activeBlockId, 
 
         {/* 텍스트 추가 */}
         <button onClick={onAddFreeBlock}
-          style={{ width:'100%', padding:'8px 0', fontSize:12, fontWeight:700, borderRadius:7, border:'1.5px dashed #3b82f6', background:'#EFF6FF', color:'#1d4ed8', cursor:'pointer', marginBottom:8 }}>
+          style={{ width:'100%', padding:'8px 0', fontSize:12, fontWeight:700, borderRadius:7, border:'1.5px dashed #3b82f6', background:'#EFF6FF', color:'#1d4ed8', cursor:'pointer', marginBottom:6 }}>
           + 텍스트 추가
+        </button>
+
+        {/* 항목 추가 (points) */}
+        <button onClick={onAddPoint}
+          style={{ width:'100%', padding:'8px 0', fontSize:12, fontWeight:700, borderRadius:7, border:'1.5px dashed #f59e0b', background:'#fffbeb', color:'#b45309', cursor:'pointer', marginBottom:8 }}>
+          + 항목 추가
         </button>
 
         {/* 아이콘 모양 (points3icon) */}
@@ -560,14 +566,59 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
   })
   const [activeField,    setActiveField]    = useState(null)
   const [activeBlockId,  setActiveBlockId]  = useState(null)
-  const sectsInit = useRef(false)
+  const sectsInit      = useRef(false)
+  const historyRef     = useRef({})          // { sectionIdx: [...prevStates] }
+  const selectedIdxRef = useRef(selectedIdx)
+  const activeBlockIdRef = useRef(activeBlockId)
+  const MAX_HISTORY    = 20
+
+  useEffect(() => { selectedIdxRef.current  = selectedIdx  }, [selectedIdx])
+  useEffect(() => { activeBlockIdRef.current = activeBlockId }, [activeBlockId])
 
   useEffect(() => {
     if (!sectsInit.current) { sectsInit.current = true; return }
     onSectsChange?.(sects)
   }, [sects])
 
-  const upd = useCallback((i, v) => setSects(p => p.map((s, j) => j === i ? v : s)), [])
+  const upd = useCallback((i, v) => {
+    setSects(p => {
+      const prev = p[i]
+      historyRef.current[i] = [...(historyRef.current[i] || []).slice(-(MAX_HISTORY - 1)), prev]
+      return p.map((s, j) => j === i ? v : s)
+    })
+  }, [])
+
+  /* Ctrl+Z 실행취소 / Delete 키 텍스트 박스 삭제 */
+  useEffect(() => {
+    const handler = e => {
+      /* Ctrl+Z */
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        const si = selectedIdxRef.current
+        if (si === null) return
+        const hist = historyRef.current[si]
+        if (!hist?.length) return
+        const prev = hist[hist.length - 1]
+        historyRef.current[si] = hist.slice(0, -1)
+        setSects(p => p.map((s, j) => j === si ? prev : s))
+        return
+      }
+      /* Delete → 선택된 FreeBlock 삭제 */
+      if (e.key === 'Delete') {
+        const t = e.target
+        if (t.closest('[contenteditable]') || t.tagName === 'TEXTAREA' || t.tagName === 'INPUT') return
+        const si  = selectedIdxRef.current
+        const bid = activeBlockIdRef.current
+        if (si !== null && bid) {
+          setSects(p => p.map((s, j) => j !== si ? s : { ...s, freeBlocks: (s.freeBlocks || []).filter(b => b.id !== bid) }))
+          setActiveBlockId(null)
+          e.preventDefault()
+        }
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
 
   const selectSection = useCallback((idx) => {
     setSelectedIdx(idx)
@@ -619,11 +670,14 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
 
   const dlAllPNG = async () => {
     setDlAll(true)
+    document.dispatchEvent(new CustomEvent('png-capture-start'))
+    await new Promise(r => setTimeout(r, 100))
     const els = document.querySelectorAll('[data-sect-card]')
     for (let i = 0; i < els.length; i++) {
       try { await capturePNG(els[i], `section_${i + 1}.png`); await new Promise(r => setTimeout(r, 600)) }
       catch (e) { console.error(e) }
     }
+    document.dispatchEvent(new CustomEvent('png-capture-end'))
     setDlAll(false)
   }
 
@@ -633,9 +687,14 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
     const el  = els[selectedIdx]
     if (!el) return
     setDlAll(true)
+    document.dispatchEvent(new CustomEvent('png-capture-start'))
+    await new Promise(r => setTimeout(r, 100))
     try { await capturePNG(el, `section_${selectedIdx + 1}.png`) }
     catch (e) { console.error(e) }
-    finally { setDlAll(false) }
+    finally {
+      document.dispatchEvent(new CustomEvent('png-capture-end'))
+      setDlAll(false)
+    }
   }
 
   return (
@@ -775,6 +834,11 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
                 activeField={activeField}
                 activeBlockId={activeBlockId}
                 onAddFreeBlock={addFreeBlock}
+                onAddPoint={() => {
+                  if (selectedIdx === null) return
+                  const sec = sects[selectedIdx]
+                  upd(selectedIdx, { ...sec, points: [...(sec.points || []), '새 항목'] })
+                }}
                 dlAll={dlAll}
                 onDlAll={dlAllPNG}
                 onDlSection={dlSectionPNG}
