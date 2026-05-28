@@ -7,6 +7,9 @@ import { capturePNG } from '../utils'
 const CARD_W = 860
 const CARD_H = 640
 
+/* 패널 아이콘 버튼이 textarea 포커스를 빼앗지 않고 텍스트를 삽입하기 위한 공유 참조 */
+export const activeTextareaInfo = { ref: null, setText: null }
+
 export const NAMED_BLOCKS = [
   { key: 'mainCopy', label: '메인', x: 60, y: 300, w: 740, fontSize: 72, color: '#ffffff', fontWeight: 900 },
   { key: 'subCopy',  label: '서브', x: 60, y: 410, w: 740, fontSize: 28, color: 'rgba(255,255,255,0.85)', fontWeight: 400 },
@@ -173,7 +176,8 @@ function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect,
       {localEdit
         ? <textarea ref={taRef}
             value={text || ''}
-            onChange={e => onTextChange(e.target.value)}
+            onChange={e => { onTextChange(e.target.value); if (activeTextareaInfo.ref === taRef.current) activeTextareaInfo.setText = onTextChange }}
+            onFocus={() => { activeTextareaInfo.ref = taRef.current; activeTextareaInfo.setText = onTextChange }}
             onBlur={() => setLocalEdit(false)}
             onClick={e => e.stopPropagation()}
             onMouseDown={e => e.stopPropagation()}
@@ -192,64 +196,12 @@ function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect,
   )
 }
 
-/* ── 오버레이 아이콘 ── */
-function OverlayIcon({ icon, editing, selected, onSelect, onUpdate, onRemove, scale }) {
-  const [dragState, setDragState] = useState(null)
-  const { x = 100, y = 500, icon: ch = '★', fontSize = 40, color = '#ffffff' } = icon
-
-  const handleMouseDown = e => {
-    if (!editing) return
-    if (e.target.tagName === 'BUTTON') return
-    e.stopPropagation(); e.preventDefault()
-    onSelect()
-    const sc = scale || 1
-    setDragState({ startMx: e.clientX / sc, startMy: e.clientY / sc, baseX: x, baseY: y })
-  }
-
-  useEffect(() => {
-    if (!dragState) return
-    const sc = scale || 1
-    const move = e => {
-      const nx = Math.max(0, Math.min(CARD_W - fontSize, dragState.baseX + (e.clientX / sc - dragState.startMx)))
-      const ny = Math.max(0, Math.min(CARD_H - fontSize, dragState.baseY + (e.clientY / sc - dragState.startMy)))
-      onUpdate({ x: nx, y: ny })
-    }
-    const up = () => setDragState(null)
-    window.addEventListener('mousemove', move)
-    window.addEventListener('mouseup', up)
-    return () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up) }
-  }, [dragState]) // eslint-disable-line
-
-  return (
-    <div
-      onMouseDown={handleMouseDown}
-      onClick={e => { e.stopPropagation(); if (editing) onSelect() }}
-      style={{ position: 'absolute', left: x, top: y, fontSize, color, lineHeight: 1,
-        cursor: editing ? (dragState ? 'grabbing' : 'grab') : 'default',
-        userSelect: 'none', zIndex: 12, padding: 4, borderRadius: 4,
-        outline: selected && editing ? '2px solid #3b82f6' : 'none', boxSizing: 'content-box' }}
-    >
-      {ch}
-      {editing && (
-        <button onMouseDown={e => e.stopPropagation()}
-          onClick={e => { e.stopPropagation(); onRemove() }}
-          style={{ position: 'absolute', top: -8, right: -8, width: 18, height: 18,
-            borderRadius: '50%', border: 'none', background: '#ef4444', color: '#fff',
-            fontSize: 10, cursor: 'pointer', fontWeight: 800,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 20 }}>×</button>
-      )}
-    </div>
-  )
-}
-
 /* ── 하단 그라데이션 오버레이 ── */
 function BottomOverlay({ bottomBox, editing, scale, activeBlockId, onBlockSelect, onUpdate }) {
-  const { bgColor = '#000000', intensity = 50, textBlocks = [], icons = [] } = bottomBox || {}
+  const { bgColor = '#000000', intensity = 50, textBlocks = [] } = bottomBox || {}
 
   const gradBg = `linear-gradient(to top, ${bgColor}, transparent ${intensity}%)`
-
   const updateBlocks = newBlocks => onUpdate({ textBlocks: newBlocks })
-  const updateIcons  = newIcons  => onUpdate({ icons: newIcons })
 
   return (
     <div
@@ -257,14 +209,13 @@ function BottomOverlay({ bottomBox, editing, scale, activeBlockId, onBlockSelect
         pointerEvents: editing ? 'auto' : 'none' }}
       onClick={e => { if (e.target === e.currentTarget && editing) { onBlockSelect?.(null); e.stopPropagation() } }}
     >
-      {/* 오버레이 내 텍스트 블록 */}
       {textBlocks.map(b => (
         <DragBlock
           key={b.id}
           bKey={b.id}
           label="텍스트"
           text={b.content || ''}
-          pos={{ x: b.x ?? 100, y: b.y ?? 400, w: b.w ?? 300, h: b.h }}
+          pos={{ x: b.x ?? 100, y: b.y ?? 440, w: b.w ?? 340, h: b.h }}
           style={{ fontSize: b.fontSize || 28, color: b.color || '#ffffff', fontFamily: b.fontFamily || '', fontWeight: b.fontWeight || 700, textAlign: b.align || 'left' }}
           editing={editing}
           selected={activeBlockId === b.id}
@@ -273,20 +224,6 @@ function BottomOverlay({ bottomBox, editing, scale, activeBlockId, onBlockSelect
           onPosChange={p => updateBlocks(textBlocks.map(tb => tb.id === b.id ? { ...tb, x: p.x, y: p.y, w: p.w, h: p.h } : tb))}
           onRemove={() => { updateBlocks(textBlocks.filter(tb => tb.id !== b.id)); if (activeBlockId === b.id) onBlockSelect?.(null) }}
           onFontResize={newFs => updateBlocks(textBlocks.map(tb => tb.id === b.id ? { ...tb, fontSize: newFs } : tb))}
-          scale={scale}
-        />
-      ))}
-
-      {/* 오버레이 내 아이콘 */}
-      {icons.map(ic => (
-        <OverlayIcon
-          key={ic.id}
-          icon={ic}
-          editing={editing}
-          selected={activeBlockId === ic.id}
-          onSelect={() => onBlockSelect?.(ic.id)}
-          onUpdate={patch => updateIcons(icons.map(i => i.id === ic.id ? { ...i, ...patch } : i))}
-          onRemove={() => { updateIcons(icons.filter(i => i.id !== ic.id)); if (activeBlockId === ic.id) onBlockSelect?.(null) }}
           scale={scale}
         />
       ))}
@@ -428,7 +365,7 @@ export default function SectionEditor({
         <div style={{ width:CARD_W,transformOrigin:'top left',transform:`scale(${scale})` }}>
           <div ref={ref} data-sect-card style={{ fontFamily:"'Noto Sans KR','Apple SD Gothic Neo',sans-serif",width:CARD_W,position:'relative' }}>
 
-            <div style={{ position:'relative', minHeight: CARD_H }}>
+            <div style={{ position:'relative', height: CARD_H, overflow: 'hidden' }}>
               <ImgBox url={img} t={t} label="배경 이미지" editing={editing}
                 onImgChange={v => commit({ secImg: v })}
                 imgMeta={secMeta?.img1} onMetaChange={m => setSecMeta(p=>({...p,img1:m}))}
@@ -486,7 +423,7 @@ export default function SectionEditor({
                   label="추가"
                   text={b.content || ''}
                   pos={{ x: b.x ?? 230, y: b.y ?? 80, w: b.w ?? 400, h: b.h }}
-                  style={{ fontSize: b.fontSize || 28, color: b.color || '#ffffff', fontFamily: b.fontFamily || '', fontWeight: b.fontWeight || 700 }}
+                  style={{ fontSize: b.fontSize || 28, color: b.color || '#ffffff', fontFamily: b.fontFamily || '', fontWeight: b.fontWeight || 700, textAlign: b.textAlign || 'left' }}
                   editing={editing}
                   selected={isSelected && activeBlockId === b.id}
                   onSelect={() => { onBlockSelect?.(b.id); onActiveFieldChange?.(null) }}

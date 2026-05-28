@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { C, DS, DS_KEYS, TPL_LABELS, TPL_COMPAT, TASKS, BLOG_TONES, getSys, EXTRA_SECTIONS, getExtraSectSys, mkSec } from './constants'
 import { parseBlocks, parseSections, capturePNG, downloadURL } from './utils'
 import { generateContent } from './api/generate'
-import SectionEditor, { NAMED_BLOCKS } from './components/SectionEditor'
+import SectionEditor, { NAMED_BLOCKS, activeTextareaInfo } from './components/SectionEditor'
 import { FONT_OPTS, selectionStore } from './components/SectionTemplates'
 import CardNewsView from './components/CardNewsEditor'
 import BlogKeywords from './components/BlogKeywords'
@@ -50,9 +50,9 @@ const PRESET_COLORS = ['#ffffff','#111111','#ef4444','#f59e0b','#10b981','#3b82f
 const sLabel = { fontSize:14, fontWeight:700, color:'#B0ADA5', letterSpacing:'0.06em', textTransform:'uppercase', marginBottom:6, marginTop:0 }
 
 const ICON_LIST = [
-  { k: '❤', l: '하트' }, { k: '★', l: '별' }, { k: '✓', l: '체크' },
-  { k: '↓', l: '↓' }, { k: '→', l: '→' }, { k: '🌿', l: '리프' },
-  { k: '🔥', l: '불꽃' }, { k: '👑', l: '왕관' }, { k: '◆', l: '다이아' }, { k: '🎀', l: '리본' },
+  { k: '♥', l: '하트' }, { k: '★', l: '별' }, { k: '✓', l: '체크' },
+  { k: '→', l: '→' }, { k: '↓', l: '↓' }, { k: '🌿', l: '리프' },
+  { k: '🔥', l: '불꽃' }, { k: '👑', l: '왕관' }, { k: '💎', l: '다이아' }, { k: '🎀', l: '리본' },
 ]
 
 function TplIcon({ k }) {
@@ -185,6 +185,9 @@ const NAMED_KEYS = new Set(['mainCopy', 'subCopy', 'bodyText', 'cta', 'descripti
 function CanvaPanel({ sec, idx, onUpdate, onDelete, activeBlockId, onAddSection, dlAll, onDlAll, onDlSection }) {
   const panelStyle = { width:'100%', height:'calc(100vh - 52px)', background:'#fff', boxShadow:'-4px 0 24px rgba(0,0,0,0.1)', display:'flex', flexDirection:'column', overflow:'hidden' }
 
+  /* 기본 텍스트 스타일 (선택된 박스 없을 때 사용/편집) */
+  const [defStyle, setDefStyle] = useState({ fontSize:28, fontFamily:'', color:'#ffffff', fontWeight:400, align:'left' })
+
   if (sec === null || idx === null) {
     return (
       <div style={{ ...panelStyle, alignItems:'center', justifyContent:'center', gap:12 }}>
@@ -198,36 +201,65 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeBlockId, onAddSection,
 
   const change  = (key, val) => onUpdate(idx, { ...sec, [key]: val })
   const setGrad = (key, val) => change('gradient', { ...grad, [key]: val })
-  const setBB   = patch => change('bottomBox', patch === null ? null : { ...(bb || { bgColor:'#000000', intensity:50, textBlocks:[], icons:[] }), ...patch })
+  const setBB   = patch => change('bottomBox', patch === null ? null : { ...(bb || { bgColor:'#000000', intensity:50, textBlocks:[] }), ...patch })
 
-  /* 메인 텍스트 블록 선택 */
+  /* 메인 블록 선택 */
   const isNamed    = activeBlockId && NAMED_KEYS.has(activeBlockId)
   const isFree     = activeBlockId && !NAMED_KEYS.has(activeBlockId)
   const namedDef   = NAMED_BLOCKS.find(b => b.key === activeBlockId) || {}
   const namedStyle = isNamed ? (sec.textStyles?.[activeBlockId] || {}) : {}
   const freeBlock  = isFree  ? (sec.freeBlocks || []).find(b => b.id === activeBlockId) : null
-  const hasActive  = isNamed || freeBlock
 
-  /* 오버레이 내 선택 */
+  /* 오버레이 텍스트 선택 */
   const overlayTxt = bb?.textBlocks?.find(b => b.id === activeBlockId) || null
-  const overlayIco = bb?.icons?.find(ic => ic.id === activeBlockId) || null
-  const hasOverlayActive = overlayTxt || overlayIco
 
-  const currentStyle = isNamed
-    ? { fontFamily: namedStyle.fontFamily, fontSize: namedStyle.fontSize ?? namedDef.fontSize, color: namedStyle.color ?? namedDef.color, bold: (namedStyle.fontWeight ?? namedDef.fontWeight ?? 400) >= 700 }
-    : freeBlock
-      ? { fontFamily: freeBlock.fontFamily, fontSize: freeBlock.fontSize, color: freeBlock.color, bold: (freeBlock.fontWeight || 400) >= 700 }
-      : {}
+  /* 표시할 현재 스타일 값 (우선순위: named > free > overlayTxt > defStyle) */
+  const anyActive = isNamed || freeBlock || overlayTxt
+  const dispFS    = isNamed ? (namedStyle.fontSize ?? namedDef.fontSize ?? 28)
+                  : freeBlock ? (freeBlock.fontSize || 28)
+                  : overlayTxt ? (overlayTxt.fontSize || 28)
+                  : defStyle.fontSize
+  const dispFF    = isNamed ? (namedStyle.fontFamily || '')
+                  : freeBlock ? (freeBlock.fontFamily || '')
+                  : overlayTxt ? (overlayTxt.fontFamily || '')
+                  : defStyle.fontFamily
+  const dispColor = isNamed ? (namedStyle.color ?? namedDef.color ?? '#ffffff')
+                  : freeBlock ? (freeBlock.color || '#ffffff')
+                  : overlayTxt ? (overlayTxt.color || '#ffffff')
+                  : defStyle.color
+  const dispBold  = isNamed ? ((namedStyle.fontWeight ?? namedDef.fontWeight ?? 400) >= 700)
+                  : freeBlock ? ((freeBlock.fontWeight || 400) >= 700)
+                  : overlayTxt ? ((overlayTxt.fontWeight || 400) >= 700)
+                  : defStyle.fontWeight >= 700
+  const dispAlign = isNamed ? (namedStyle.textAlign || 'left')
+                  : freeBlock ? (freeBlock.textAlign || 'left')
+                  : overlayTxt ? (overlayTxt.align || 'left')
+                  : defStyle.align
 
-  const updateTS = (key, val) => {
+  const panelLabel = isNamed ? `텍스트 — ${namedDef.label || activeBlockId}`
+                   : freeBlock ? '추가 텍스트'
+                   : overlayTxt ? '오버레이 텍스트'
+                   : '기본값 (선택 없음)'
+
+  /* 통합 스타일 적용 함수 */
+  const applyStyle = (key, val) => {
     if (isNamed) {
-      const mk = key === 'bold' ? 'fontWeight' : key
+      const mk = key === 'bold' ? 'fontWeight' : key === 'align' ? 'textAlign' : key
       const mv = key === 'bold' ? (val ? 700 : 400) : val
       change('textStyles', { ...(sec.textStyles||{}), [activeBlockId]: { ...(sec.textStyles?.[activeBlockId]||{}), [mk]: mv } })
     } else if (freeBlock) {
-      const mk = key === 'bold' ? 'fontWeight' : key
+      const mk = key === 'bold' ? 'fontWeight' : key === 'align' ? 'textAlign' : key
       const mv = key === 'bold' ? (val ? 700 : 400) : val
       change('freeBlocks', (sec.freeBlocks||[]).map(b => b.id === activeBlockId ? { ...b, [mk]: mv } : b))
+    } else if (overlayTxt) {
+      const mk = key === 'bold' ? 'fontWeight' : key
+      const mv = key === 'bold' ? (val ? 700 : 400) : val
+      setBB({ textBlocks: bb.textBlocks.map(b => b.id === activeBlockId ? { ...b, [mk]: mv } : b) })
+    } else {
+      /* 선택 없음 → defStyle 업데이트 */
+      const dk = key === 'bold' ? 'fontWeight' : key
+      const dv = key === 'bold' ? (val ? 700 : 400) : val
+      setDefStyle(d => ({ ...d, [dk]: dv }))
     }
     if (selectionStore.range) {
       try {
@@ -240,28 +272,14 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeBlockId, onAddSection,
     }
   }
 
-  const updateOverlayTxt = (key, val) => {
-    if (!overlayTxt || !bb) return
-    setBB({ textBlocks: bb.textBlocks.map(b => b.id === activeBlockId ? { ...b, [key]: val } : b) })
+  /* 아이콘을 활성 textarea 커서 위치에 삽입 */
+  const insertIcon = iconChar => {
+    const ta = activeTextareaInfo.ref
+    if (ta) {
+      ta.focus()
+      document.execCommand('insertText', false, iconChar)
+    }
   }
-  const updateOverlayIco = (key, val) => {
-    if (!overlayIco || !bb) return
-    setBB({ icons: bb.icons.map(ic => ic.id === activeBlockId ? { ...ic, [key]: val } : ic) })
-  }
-
-  /* 텍스트 스타일 패널 (main blocks + overlay txt 공통) */
-  const txtFS    = hasOverlayActive ? (overlayTxt?.fontSize || 28)    : (currentStyle.fontSize ?? 28)
-  const txtFF    = hasOverlayActive ? (overlayTxt?.fontFamily || '')   : (currentStyle.fontFamily || '')
-  const txtColor = hasOverlayActive ? (overlayTxt?.color || '#ffffff') : (currentStyle.color || '#ffffff')
-  const txtBold  = hasOverlayActive ? ((overlayTxt?.fontWeight||400)>=700) : (currentStyle.bold || false)
-  const txtAlign = overlayTxt?.align || 'left'
-
-  const showTxtPanel = hasActive || overlayTxt
-  const showIcoPanel = overlayIco != null
-
-  const panelLabel = hasActive
-    ? (isNamed ? `텍스트 박스 — ${namedDef.label || activeBlockId}` : '추가 텍스트 블록')
-    : overlayTxt ? '오버레이 텍스트' : ''
 
   return (
     <div style={panelStyle}>
@@ -317,166 +335,131 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeBlockId, onAddSection,
           )}
         </div>
 
-        {/* 텍스트 박스 스타일 패널 */}
-        {showTxtPanel ? (
-          <>
-            <div style={{ borderTop:`1px solid ${C.bd}`, margin:'6px 0 12px' }} />
-            <p style={sLabel}>{panelLabel}</p>
+        {/* ── 텍스트 편집 도구 (항상 표시) ── */}
+        <div style={{ borderTop:`1px solid ${C.bd}`, margin:'6px 0 10px' }} />
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+          <p style={{ ...sLabel, margin:0 }}>텍스트 편집</p>
+          <span style={{ fontSize:11, color: anyActive ? '#3b82f6' : C.fa, fontWeight: anyActive ? 700 : 400 }}>
+            {panelLabel}
+          </span>
+        </div>
 
-            {/* 정렬 (오버레이 텍스트만) */}
-            {overlayTxt && (
-              <div style={{ display:'flex', gap:4, marginBottom:10 }}>
-                {[['left','좌'],['center','중'],['right','우']].map(([a,l]) => (
-                  <button key={a} onClick={() => updateOverlayTxt('align', a)}
-                    style={{ flex:1, padding:'6px 0', fontSize:14, borderRadius:6, border:`1.5px solid ${txtAlign===a?'#3b82f6':C.bd}`, background:txtAlign===a?'#EFF6FF':C.sur, color:txtAlign===a?'#1d4ed8':C.mu, cursor:'pointer', fontWeight:txtAlign===a?700:400 }}>
-                    {l}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* 폰트 크기 */}
-            <div style={{ marginBottom:10 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
-                <span style={{ fontSize:14, color:C.mu }}>글자 크기</span>
-                <span style={{ fontSize:14, fontWeight:700, color:C.tx }}>{txtFS}px</span>
-              </div>
-              <input type="range" min={10} max={200}
-                value={txtFS}
-                onChange={e => overlayTxt ? updateOverlayTxt('fontSize',+e.target.value) : updateTS('fontSize',+e.target.value)}
-                style={{ width:'100%', accentColor:'#3b82f6' }} />
-            </div>
-
-            {/* 폰트 선택 */}
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:4, marginBottom:4 }}>
-              {FONT_OPTS.map(f => {
-                const on = txtFF === f.v
-                return (
-                  <button key={f.v}
-                    onMouseDown={e => e.preventDefault()}
-                    onClick={() => overlayTxt ? updateOverlayTxt('fontFamily',f.v) : updateTS('fontFamily',f.v)}
-                    style={{ padding:'7px 8px', fontSize:14, borderRadius:6, border:`1.5px solid ${on?'#3b82f6':C.bd}`, background:on?'#EFF6FF':C.sur, color:on?'#1d4ed8':C.mu, cursor:'pointer', fontWeight:on?700:400, textAlign:'left', fontFamily:f.v, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                    {f.l}
-                  </button>
-                )
-              })}
-            </div>
-            <button
+        {/* 정렬 */}
+        <div style={{ display:'flex', gap:4, marginBottom:10 }}>
+          {[['left','좌'],['center','중'],['right','우']].map(([a,l]) => (
+            <button key={a}
               onMouseDown={e => e.preventDefault()}
-              onClick={() => overlayTxt ? updateOverlayTxt('fontWeight', txtBold?400:700) : updateTS('bold',!txtBold)}
-              style={{ width:'100%', padding:'7px 0', fontSize:14, borderRadius:6, border:`1.5px solid ${txtBold?'#3b82f6':C.bd}`, background:txtBold?'#EFF6FF':C.sur, color:txtBold?'#1d4ed8':C.mu, cursor:'pointer', fontWeight:txtBold?700:400, marginBottom:10 }}>
-              <strong>B</strong> 굵게
+              onClick={() => applyStyle('align', a)}
+              style={{ flex:1, padding:'6px 0', fontSize:14, borderRadius:6, border:`1.5px solid ${dispAlign===a?'#3b82f6':C.bd}`, background:dispAlign===a?'#EFF6FF':C.sur, color:dispAlign===a?'#1d4ed8':C.mu, cursor:'pointer', fontWeight:dispAlign===a?700:400 }}>
+              {l}
             </button>
+          ))}
+        </div>
 
-            {/* 글자색 */}
-            <span style={{ fontSize:14, color:C.mu, display:'block', marginBottom:6 }}>글자색</span>
-            <div style={{ display:'flex', gap:5, flexWrap:'wrap', alignItems:'center', marginBottom:12 }}>
-              {PRESET_COLORS.map(c => (
-                <button key={c}
-                  onMouseDown={e => e.preventDefault()}
-                  onClick={() => overlayTxt ? updateOverlayTxt('color',c) : updateTS('color',c)}
-                  style={{ width:24, height:24, borderRadius:5, background:c,
-                    border: txtColor===c ? '2px solid #3b82f6' : '1px solid #ccc',
-                    cursor:'pointer', flexShrink:0 }} />
-              ))}
-              <input type="color" value={txtColor}
+        {/* 폰트 크기 */}
+        <div style={{ marginBottom:10 }}>
+          <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
+            <span style={{ fontSize:14, color:C.mu }}>글자 크기</span>
+            <span style={{ fontSize:14, fontWeight:700, color:C.tx }}>{dispFS}px</span>
+          </div>
+          <input type="range" min={10} max={200}
+            value={dispFS}
+            onChange={e => applyStyle('fontSize', +e.target.value)}
+            style={{ width:'100%', accentColor:'#3b82f6' }} />
+        </div>
+
+        {/* 폰트 선택 */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:4, marginBottom:4 }}>
+          {FONT_OPTS.map(f => {
+            const on = dispFF === f.v
+            return (
+              <button key={f.v}
                 onMouseDown={e => e.preventDefault()}
-                onChange={e => overlayTxt ? updateOverlayTxt('color',e.target.value) : updateTS('color',e.target.value)}
-                style={{ width:30, height:24, border:'1px solid #ccc', padding:0, cursor:'pointer', borderRadius:5, flexShrink:0 }} />
-            </div>
-          </>
-        ) : showIcoPanel ? (
-          <>
-            <div style={{ borderTop:`1px solid ${C.bd}`, margin:'6px 0 12px' }} />
-            <p style={sLabel}>아이콘</p>
-            <div style={{ marginBottom:10 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
-                <span style={{ fontSize:14, color:C.mu }}>크기</span>
-                <span style={{ fontSize:14, fontWeight:700, color:C.tx }}>{overlayIco.fontSize||40}px</span>
-              </div>
-              <input type="range" min={12} max={120}
-                value={overlayIco.fontSize||40}
-                onChange={e => updateOverlayIco('fontSize',+e.target.value)}
-                style={{ width:'100%', accentColor:'#3b82f6' }} />
-            </div>
-            <label style={{ fontSize:14, color:C.mu, display:'flex', alignItems:'center', gap:8, cursor:'pointer' }}>
-              <span>색상</span>
-              <input type="color" value={overlayIco.color||'#ffffff'}
-                onChange={e => updateOverlayIco('color',e.target.value)}
-                style={{ width:30, height:22, border:'1px solid #ccc', padding:0, cursor:'pointer', borderRadius:4 }} />
-            </label>
-          </>
-        ) : (
-          <>
-            <div style={{ borderTop:`1px solid ${C.bd}`, margin:'6px 0 12px' }} />
-            <p style={{ fontSize:14, color:C.fa, textAlign:'center', padding:'8px 0' }}>텍스트 박스를 클릭하면<br/>스타일을 편집할 수 있습니다</p>
-          </>
-        )}
+                onClick={() => applyStyle('fontFamily', f.v)}
+                style={{ padding:'7px 8px', fontSize:14, borderRadius:6, border:`1.5px solid ${on?'#3b82f6':C.bd}`, background:on?'#EFF6FF':C.sur, color:on?'#1d4ed8':C.mu, cursor:'pointer', fontWeight:on?700:400, textAlign:'left', fontFamily:f.v, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                {f.l}
+              </button>
+            )
+          })}
+        </div>
+        <button
+          onMouseDown={e => e.preventDefault()}
+          onClick={() => applyStyle('bold', !dispBold)}
+          style={{ width:'100%', padding:'7px 0', fontSize:14, borderRadius:6, border:`1.5px solid ${dispBold?'#3b82f6':C.bd}`, background:dispBold?'#EFF6FF':C.sur, color:dispBold?'#1d4ed8':C.mu, cursor:'pointer', fontWeight:dispBold?700:400, marginBottom:10 }}>
+          <strong>B</strong> 굵게
+        </button>
 
-        {/* 하단 오버레이 */}
+        {/* 글자색 */}
+        <span style={{ fontSize:14, color:C.mu, display:'block', marginBottom:6 }}>글자색</span>
+        <div style={{ display:'flex', gap:5, flexWrap:'wrap', alignItems:'center', marginBottom:10 }}>
+          {PRESET_COLORS.map(c => (
+            <button key={c}
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => applyStyle('color', c)}
+              style={{ width:24, height:24, borderRadius:5, background:c,
+                border: dispColor===c ? '2px solid #3b82f6' : '1px solid #ccc',
+                cursor:'pointer', flexShrink:0 }} />
+          ))}
+          <input type="color" value={dispColor}
+            onMouseDown={e => e.preventDefault()}
+            onChange={e => applyStyle('color', e.target.value)}
+            style={{ width:30, height:24, border:'1px solid #ccc', padding:0, cursor:'pointer', borderRadius:5, flexShrink:0 }} />
+        </div>
+
+        {/* 인라인 아이콘 삽입 팔레트 */}
+        <span style={{ fontSize:13, color:C.fa, display:'block', marginBottom:5 }}>아이콘 (편집 중 클릭 시 삽입)</span>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:4, marginBottom:12 }}>
+          {ICON_LIST.map(({ k, l }) => (
+            <button key={k}
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => insertIcon(k)}
+              title={l}
+              style={{ padding:'5px 0', fontSize:18, borderRadius:6, border:`1px solid ${C.bd}`, background:C.sur, cursor:'pointer', textAlign:'center' }}>
+              {k}
+            </button>
+          ))}
+        </div>
+
+        {/* ── 하단 오버레이 ── */}
         <div style={{ borderTop:`1px solid ${C.bd}`, margin:'6px 0 10px' }} />
         <p style={sLabel}>하단 오버레이</p>
         {bb ? (
           <>
-            {/* 배경색 + 강도 */}
-            {!hasOverlayActive && (
-              <>
-                <label style={{ fontSize:14, color:C.mu, display:'flex', alignItems:'center', gap:8, cursor:'pointer', marginBottom:10 }}>
-                  <span>배경색</span>
-                  <input type="color" value={bb.bgColor||'#000000'}
-                    onChange={e => setBB({ bgColor: e.target.value })}
-                    style={{ width:34, height:22, border:'1px solid #ccc', padding:0, cursor:'pointer', borderRadius:4 }} />
-                  <span style={{ fontSize:12, color:C.fa }}>{bb.bgColor||'#000000'}</span>
-                </label>
-                <div style={{ marginBottom:10 }}>
-                  <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
-                    <span style={{ fontSize:14, color:C.mu }}>강도</span>
-                    <span style={{ fontSize:14, fontWeight:700, color:C.tx }}>{bb.intensity??50}%</span>
-                  </div>
-                  <input type="range" min={0} max={100} step={1}
-                    value={bb.intensity??50}
-                    onChange={e => setBB({ intensity: +e.target.value })}
-                    style={{ width:'100%', accentColor:'#3b82f6' }} />
-                </div>
-
-                {/* 텍스트 추가 */}
-                <button
-                  onClick={() => {
-                    const newTxt = { id:`txt_${Date.now()}`, x:100, y:440, w:340, h:null, content:'텍스트', fontSize:28, fontFamily:'', color:'#ffffff', fontWeight:700, align:'left' }
-                    setBB({ textBlocks: [...(bb.textBlocks||[]), newTxt] })
-                  }}
-                  style={{ width:'100%', padding:'8px 0', fontSize:14, fontWeight:700, borderRadius:7, border:'1.5px dashed #3b82f6', background:'#eff6ff', color:'#1d4ed8', cursor:'pointer', marginBottom:8 }}>
-                  + 텍스트 추가
-                </button>
-
-                {/* 아이콘 팔레트 */}
-                <p style={{ fontSize:13, color:C.mu, margin:'4px 0 6px' }}>아이콘 추가</p>
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:4, marginBottom:10 }}>
-                  {ICON_LIST.map(({ k, l }) => (
-                    <button key={k}
-                      onClick={() => {
-                        const newIco = { id:`ico_${Date.now()}`, x:120, y:500, icon:k, fontSize:40, color:'#ffffff' }
-                        setBB({ icons: [...(bb.icons||[]), newIco] })
-                      }}
-                      title={l}
-                      style={{ padding:'6px 0', fontSize:18, borderRadius:6, border:`1px solid ${C.bd}`, background:C.sur, cursor:'pointer', textAlign:'center' }}>
-                      {k}
-                    </button>
-                  ))}
-                </div>
-
-                {/* 오버레이 삭제 */}
-                <button
-                  onClick={() => setBB(null)}
-                  style={{ width:'100%', padding:'7px 0', fontSize:14, fontWeight:700, borderRadius:7, border:'1px solid #fca5a5', background:'#fef2f2', color:'#ef4444', cursor:'pointer' }}>
-                  × 오버레이 삭제
-                </button>
-              </>
-            )}
+            <label style={{ fontSize:14, color:C.mu, display:'flex', alignItems:'center', gap:8, cursor:'pointer', marginBottom:10 }}>
+              <span>배경색</span>
+              <input type="color" value={bb.bgColor||'#000000'}
+                onChange={e => setBB({ bgColor: e.target.value })}
+                style={{ width:34, height:22, border:'1px solid #ccc', padding:0, cursor:'pointer', borderRadius:4 }} />
+              <span style={{ fontSize:12, color:C.fa }}>{bb.bgColor||'#000000'}</span>
+            </label>
+            <div style={{ marginBottom:10 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
+                <span style={{ fontSize:14, color:C.mu }}>강도</span>
+                <span style={{ fontSize:14, fontWeight:700, color:C.tx }}>{bb.intensity??50}%</span>
+              </div>
+              <input type="range" min={0} max={100} step={1}
+                value={bb.intensity??50}
+                onChange={e => setBB({ intensity: +e.target.value })}
+                style={{ width:'100%', accentColor:'#3b82f6' }} />
+            </div>
+            <button
+              onClick={() => {
+                const d = defStyle
+                const newTxt = { id:`txt_${Date.now()}`, x:80, y:440, w:340, h:null, content:'텍스트', fontSize:d.fontSize, fontFamily:d.fontFamily, color:d.color, fontWeight:d.fontWeight, align:d.align }
+                setBB({ textBlocks: [...(bb.textBlocks||[]), newTxt] })
+              }}
+              style={{ width:'100%', padding:'8px 0', fontSize:14, fontWeight:700, borderRadius:7, border:'1.5px dashed #3b82f6', background:'#eff6ff', color:'#1d4ed8', cursor:'pointer', marginBottom:8 }}>
+              + 텍스트 추가
+            </button>
+            <button
+              onClick={() => setBB(null)}
+              style={{ width:'100%', padding:'7px 0', fontSize:14, fontWeight:700, borderRadius:7, border:'1px solid #fca5a5', background:'#fef2f2', color:'#ef4444', cursor:'pointer' }}>
+              × 오버레이 삭제
+            </button>
           </>
         ) : (
           <button
-            onClick={() => change('bottomBox', { bgColor:'#000000', intensity:50, textBlocks:[], icons:[] })}
+            onClick={() => change('bottomBox', { bgColor:'#000000', intensity:50, textBlocks:[] })}
             style={{ width:'100%', padding:'8px 0', fontSize:14, fontWeight:700, borderRadius:7, border:'1.5px dashed #3b82f6', background:'#eff6ff', color:'#1d4ed8', cursor:'pointer', marginBottom:8 }}>
             + 하단 오버레이 추가
           </button>
