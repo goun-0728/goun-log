@@ -13,14 +13,26 @@ export const NAMED_BLOCKS = [
   { key: 'bodyText', label: '내용', x: 60, y: 470, w: 740, fontSize: 20, color: 'rgba(255,255,255,0.72)', fontWeight: 400 },
 ]
 
+const RESIZE_HANDLES = [
+  { dir: 'nw', style: { top: -4, left: -4,                                        cursor: 'nw-resize' } },
+  { dir: 'n',  style: { top: -4, left: '50%', transform: 'translateX(-50%)',       cursor: 'n-resize'  } },
+  { dir: 'ne', style: { top: -4, right: -4,                                        cursor: 'ne-resize' } },
+  { dir: 'e',  style: { top: '50%', right: -4, transform: 'translateY(-50%)',      cursor: 'e-resize'  } },
+  { dir: 'se', style: { bottom: -4, right: -4,                                     cursor: 'se-resize' } },
+  { dir: 's',  style: { bottom: -4, left: '50%', transform: 'translateX(-50%)',    cursor: 's-resize'  } },
+  { dir: 'sw', style: { bottom: -4, left: -4,                                      cursor: 'sw-resize' } },
+  { dir: 'w',  style: { top: '50%', left: -4, transform: 'translateY(-50%)',       cursor: 'w-resize'  } },
+]
+
 /* ── 드래그 + 리사이즈 텍스트 블록 ── */
 function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect, onTextChange, onPosChange, onRemove, scale }) {
   const [localEdit, setLocalEdit] = useState(false)
   const [dragState, setDragState] = useState(null)
   const [resizeDir, setResizeDir] = useState(null)
-  const taRef = useRef(null)
+  const taRef    = useRef(null)
+  const blockRef = useRef(null)
 
-  const { x = 60, y = 300, w = 740 } = pos
+  const { x = 60, y = 300, w = 740, h = null } = pos
 
   const handleMouseDown = e => {
     if (!editing) return
@@ -49,7 +61,8 @@ function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect,
   const handleResizeDown = (e, dir) => {
     e.stopPropagation(); e.preventDefault()
     const sc = scale || 1
-    setResizeDir({ dir, startMx: e.clientX / sc, startW: w, startX: x })
+    const curH = blockRef.current ? blockRef.current.offsetHeight : (h || 40)
+    setResizeDir({ dir, startMx: e.clientX / sc, startMy: e.clientY / sc, startW: w, startH: curH, startX: x, startY: y })
   }
 
   useEffect(() => {
@@ -57,15 +70,37 @@ function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect,
     const sc = scale || 1
     const move = e => {
       const dx = e.clientX / sc - resizeDir.startMx
-      if (resizeDir.dir === 'right') {
-        const nw = Math.max(80, Math.min(CARD_W - resizeDir.startX, resizeDir.startW + dx))
-        onPosChange({ ...pos, w: nw })
-      } else {
-        const rawX = resizeDir.startX + dx
-        const nx = Math.max(0, Math.min(resizeDir.startX + resizeDir.startW - 80, rawX))
-        const nw = resizeDir.startW + (resizeDir.startX - nx)
-        onPosChange({ ...pos, x: nx, w: nw })
+      const dy = e.clientY / sc - resizeDir.startMy
+      const { dir, startW, startH, startX, startY } = resizeDir
+      const aspect = startW / (startH || 1)
+
+      let newX = startX, newY = startY, newW = startW, newH = startH
+
+      if (dir.includes('e')) newW = Math.max(50, Math.min(CARD_W - startX, startW + dx))
+      if (dir.includes('w')) {
+        const rawX = startX + dx
+        newX = Math.max(0, Math.min(startX + startW - 50, rawX))
+        newW = startW + (startX - newX)
       }
+      if (dir.includes('s')) newH = Math.max(20, startH + dy)
+      if (dir.includes('n')) {
+        const rawY = startY + dy
+        newY = Math.max(0, Math.min(startY + startH - 20, rawY))
+        newH = startH + (startY - newY)
+      }
+
+      /* Shift 키: 모서리(corner) 드래그 시 비율 고정 */
+      if (e.shiftKey && dir.length === 2) {
+        if (dir.includes('e') || dir.includes('w')) {
+          newH = newW / aspect
+          if (dir.includes('n')) newY = startY + startH - newH
+        } else {
+          newW = newH * aspect
+          if (dir.includes('w')) newX = startX + startW - newW
+        }
+      }
+
+      onPosChange({ ...pos, x: newX, y: newY, w: Math.max(50, newW), h: Math.max(20, newH) })
     }
     const up = () => setResizeDir(null)
     window.addEventListener('mousemove', move)
@@ -85,13 +120,14 @@ function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect,
 
   return (
     <div
+      ref={blockRef}
       onMouseDown={handleMouseDown}
       onClick={e => { e.stopPropagation(); if (editing) onSelect() }}
       onDoubleClick={e => { e.stopPropagation(); if (editing) setLocalEdit(true) }}
-      style={{ position: 'absolute', left: x, top: y, width: w, zIndex: 10, borderRadius: 4,
-        cursor: editing ? (dragState ? 'grabbing' : 'grab') : 'default' }}
+      style={{ position: 'absolute', left: x, top: y, width: w, height: h || undefined, zIndex: 10, borderRadius: 4,
+        cursor: editing ? (dragState ? 'grabbing' : 'grab') : 'default', boxSizing: 'border-box' }}
     >
-      {/* 선택/편집 아웃라인 (캡처 시 editing=false → 사라짐) */}
+      {/* 선택/편집 아웃라인 */}
       {editing && (
         <div style={{ position: 'absolute', inset: -3, borderRadius: 6, pointerEvents: 'none', zIndex: 5,
           border: selected ? '2px solid #3b82f6' : '1px dashed rgba(255,255,255,0.4)' }} />
@@ -105,7 +141,7 @@ function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect,
         </div>
       )}
 
-      {/* X 버튼 (캡처 시 숨김) */}
+      {/* X 버튼 */}
       {editing && (
         <button onMouseDown={e => e.stopPropagation()}
           onClick={e => { e.stopPropagation(); onRemove() }}
@@ -114,17 +150,13 @@ function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect,
             fontSize: 14, cursor: 'pointer', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
       )}
 
-      {/* 리사이즈 핸들 (캡처 시 숨김) */}
-      {editing && selected && (
-        <>
-          <div data-resize-handle onMouseDown={e => handleResizeDown(e, 'left')}
-            style={{ position: 'absolute', left: -6, top: '50%', transform: 'translateY(-50%)',
-              width: 12, height: 40, background: '#3b82f6', borderRadius: 4, cursor: 'ew-resize', zIndex: 25 }} />
-          <div data-resize-handle onMouseDown={e => handleResizeDown(e, 'right')}
-            style={{ position: 'absolute', right: -6, top: '50%', transform: 'translateY(-50%)',
-              width: 12, height: 40, background: '#3b82f6', borderRadius: 4, cursor: 'ew-resize', zIndex: 25 }} />
-        </>
-      )}
+      {/* 리사이즈 핸들 8방향 */}
+      {editing && selected && RESIZE_HANDLES.map(({ dir, style: hs }) => (
+        <div key={dir} data-resize-handle
+          onMouseDown={e => handleResizeDown(e, dir)}
+          style={{ position: 'absolute', width: 8, height: 8, background: '#ffffff',
+            border: '1.5px solid #3b82f6', borderRadius: 2, zIndex: 25, ...hs }} />
+      ))}
 
       {localEdit
         ? <textarea ref={taRef}
@@ -134,8 +166,9 @@ function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect,
             onClick={e => e.stopPropagation()}
             onMouseDown={e => e.stopPropagation()}
             rows={Math.max(2, (text || '').split('\n').length + 1)}
-            style={{ ...txStyle, width: '100%', background: 'rgba(0,0,0,0.6)', border: '2px solid #3b82f6',
-              borderRadius: 6, padding: '10px 14px', outline: 'none', resize: 'both', boxSizing: 'border-box' }}
+            style={{ ...txStyle, width: '100%', height: h ? '100%' : undefined,
+              background: 'rgba(0,0,0,0.6)', border: '2px solid #3b82f6',
+              borderRadius: 6, padding: '10px 14px', outline: 'none', resize: 'none', boxSizing: 'border-box' }}
           />
         : <p style={{ ...txStyle, margin: 0, padding: '8px 12px',
             opacity: text ? 1 : (editing ? 0.4 : 0),
@@ -143,6 +176,84 @@ function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect,
             {text || (editing ? `${label || '텍스트'} · 더블클릭 편집` : '')}
           </p>
       }
+    </div>
+  )
+}
+
+/* ── 섹션 하단 가변 높이 텍스트 박스 ── */
+function BottomBox({ bottomBox, onUpdate, editing, scale }) {
+  const [localEdit, setLocalEdit] = useState(false)
+  const [resizing, setResizing]   = useState(null)
+  const taRef = useRef(null)
+
+  useEffect(() => { if (localEdit && taRef.current) taRef.current.focus() }, [localEdit])
+
+  useEffect(() => {
+    if (!resizing) return
+    const sc = scale || 1
+    const move = e => {
+      const dy = (e.clientY - resizing.startY) / sc
+      const newH = Math.max(40, resizing.startH + dy)
+      onUpdate({ height: newH })
+    }
+    const up = () => setResizing(null)
+    window.addEventListener('mousemove', move)
+    window.addEventListener('mouseup', up)
+    return () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up) }
+  }, [resizing]) // eslint-disable-line
+
+  if (!bottomBox) return null
+
+  const { text = '', bgColor = '#ffffff', height = 120 } = bottomBox
+
+  return (
+    <div
+      onClick={e => { if (editing && !localEdit) { e.stopPropagation(); setLocalEdit(true) } }}
+      style={{ width: '100%', height: height, background: bgColor, position: 'relative',
+        boxSizing: 'border-box', borderTop: editing ? '2px dashed #93c5fd' : 'none',
+        overflow: 'hidden', cursor: editing ? (localEdit ? 'text' : 'pointer') : 'default' }}
+    >
+      {localEdit
+        ? <textarea ref={taRef}
+            value={text}
+            onChange={e => onUpdate({ text: e.target.value })}
+            onBlur={() => setLocalEdit(false)}
+            onClick={e => e.stopPropagation()}
+            onMouseDown={e => e.stopPropagation()}
+            style={{ width: '100%', height: '100%', border: 'none', outline: 'none',
+              background: 'transparent', resize: 'none', padding: '12px 16px',
+              fontSize: 16, fontFamily: 'inherit', boxSizing: 'border-box', lineHeight: 1.7 }} />
+        : <div style={{ padding: '12px 16px', fontSize: 16, fontFamily: 'inherit',
+            whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: 1.7, color: '#222',
+            opacity: text ? 1 : (editing ? 0.4 : 1) }}>
+            {text || (editing ? '클릭해서 텍스트 입력' : '')}
+          </div>
+      }
+
+      {/* X 버튼 (캡처 시 숨김) */}
+      {editing && (
+        <button
+          onMouseDown={e => e.stopPropagation()}
+          onClick={e => { e.stopPropagation(); onUpdate(null) }}
+          style={{ position: 'absolute', top: 6, right: 6, width: 22, height: 22,
+            borderRadius: '50%', border: 'none', background: '#ef4444', color: '#fff',
+            fontSize: 14, cursor: 'pointer', fontWeight: 800,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>×</button>
+      )}
+
+      {/* 하단 높이 조절 핸들 (캡처 시 숨김) */}
+      {editing && (
+        <div
+          onMouseDown={e => {
+            e.preventDefault(); e.stopPropagation()
+            setResizing({ startY: e.clientY, startH: height })
+          }}
+          style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 10,
+            cursor: 'row-resize', background: 'rgba(59,130,246,0.12)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 40, height: 3, background: '#3b82f6', borderRadius: 2 }} />
+        </div>
+      )}
     </div>
   )
 }
@@ -167,11 +278,9 @@ export default function SectionEditor({
   const [secMeta, setSecMeta] = useState({})
   const [hovered, setHovered] = useState(false)
 
-  // drRef은 항상 최신 dr 참조
   const drRef = useRef(dr)
   useEffect(() => { drRef.current = dr }, [dr])
 
-  /* PNG 캡처 이벤트 */
   useEffect(() => {
     const start = () => setCapturing(true)
     const end   = () => setCapturing(false)
@@ -180,7 +289,6 @@ export default function SectionEditor({
     return () => { document.removeEventListener('png-capture-start', start); document.removeEventListener('png-capture-end', end) }
   }, [])
 
-  /* 부모 → dr 동기화 */
   useEffect(() => {
     const nd = { ...drRef.current, ...sec }
     drRef.current = nd
@@ -208,7 +316,6 @@ export default function SectionEditor({
 
   const t = DS[dr.designStyle] || Object.values(DS)[0]
 
-  /* commit: dr + 부모 즉시 업데이트 (history tracking용) */
   const commit = useCallback((patch) => {
     const nd = { ...drRef.current, ...patch }
     drRef.current = nd
@@ -227,7 +334,6 @@ export default function SectionEditor({
 
   const editing = !capturing
 
-  /* Named block 헬퍼 */
   const getNamedStyle = key => {
     const def = NAMED_BLOCKS.find(b => b.key === key) || {}
     return { fontSize: def.fontSize || 28, color: def.color || '#ffffff', fontWeight: def.fontWeight || 700, fontFamily: '', ...(dr.textStyles?.[key] || {}) }
@@ -315,25 +421,39 @@ export default function SectionEditor({
                 />
               ))}
 
-              {/* Free 텍스트 블록 (기존 사용자 추가 블록) */}
+              {/* Free 텍스트 블록 */}
               {freeBlocks.map(b => (
                 <DragBlock
                   key={b.id}
                   bKey={b.id}
                   label="추가"
                   text={b.content || ''}
-                  pos={{ x: b.x ?? 230, y: b.y ?? 80, w: b.w ?? 400 }}
+                  pos={{ x: b.x ?? 230, y: b.y ?? 80, w: b.w ?? 400, h: b.h }}
                   style={{ fontSize: b.fontSize || 28, color: b.color || '#ffffff', fontFamily: b.fontFamily || '', fontWeight: b.fontWeight || 700 }}
                   editing={editing}
                   selected={isSelected && activeBlockId === b.id}
                   onSelect={() => { onBlockSelect?.(b.id); onActiveFieldChange?.(null) }}
                   onTextChange={v => commit({ freeBlocks: drRef.current.freeBlocks.map(fb => fb.id === b.id ? {...fb, content: v} : fb) })}
-                  onPosChange={p => commit({ freeBlocks: drRef.current.freeBlocks.map(fb => fb.id === b.id ? {...fb, x:p.x, y:p.y, w:p.w} : fb) })}
+                  onPosChange={p => commit({ freeBlocks: drRef.current.freeBlocks.map(fb => fb.id === b.id ? {...fb, x:p.x, y:p.y, w:p.w, h:p.h} : fb) })}
                   onRemove={() => { commit({ freeBlocks: drRef.current.freeBlocks.filter(fb => fb.id !== b.id) }); if (activeBlockId === b.id) onBlockSelect?.(null) }}
                   scale={scale}
                 />
               ))}
             </div>
+
+            {/* 섹션 하단 가변 높이 텍스트 박스 */}
+            <BottomBox
+              bottomBox={dr.bottomBox}
+              editing={editing}
+              scale={scale}
+              onUpdate={patch => {
+                if (patch === null) {
+                  commit({ bottomBox: null })
+                } else {
+                  commit({ bottomBox: { ...(drRef.current.bottomBox || { text: '', bgColor: '#ffffff', height: 120 }), ...patch } })
+                }
+              }}
+            />
 
             <div style={{ padding:'6px 20px',textAlign:'right',fontSize:9,color:t.fg,opacity:0.1,background:t.bg }}>ContentOS</div>
           </div>

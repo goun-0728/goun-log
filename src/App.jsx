@@ -183,24 +183,15 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeBlockId, onAddSection,
     return (
       <div style={{ ...panelStyle, alignItems:'center', justifyContent:'center', gap:12 }}>
         <p style={{ fontSize:12, color:C.mu, textAlign:'center', lineHeight:1.8, margin:0, padding:'0 24px' }}>섹션을 클릭해서<br/>편집하세요</p>
-        {onAddSection && (
-          <button onClick={onAddSection}
-            style={{ padding:'8px 20px', fontSize:12, fontWeight:700, borderRadius:8, border:'1.5px dashed #10b981', background:'#f0fdf4', color:'#059669', cursor:'pointer', marginTop:8 }}>
-            + 섹션 추가
-          </button>
-        )}
       </div>
     )
   }
 
-  const baseT = DS[sec.designStyle] || Object.values(DS)[0]
-  const t     = { ...baseT, ...(sec.customColors || {}) }
   const grad  = sec.gradient || {}
 
   const change  = (key, val) => onUpdate(idx, { ...sec, [key]: val })
   const setGrad = (key, val) => change('gradient', { ...grad, [key]: val })
 
-  // Named block (mainCopy/subCopy/bodyText) vs free block (UUID)
   const isNamed      = activeBlockId && NAMED_KEYS.has(activeBlockId)
   const isFree       = activeBlockId && !NAMED_KEYS.has(activeBlockId)
   const namedDef     = NAMED_BLOCKS.find(b => b.key === activeBlockId) || {}
@@ -215,18 +206,7 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeBlockId, onAddSection,
       : {}
 
   const updateTS = (key, val) => {
-    if (selectionStore.range) {
-      try {
-        const sel = window.getSelection()
-        sel.removeAllRanges()
-        sel.addRange(selectionStore.range)
-        if (key === 'bold') document.execCommand('bold', false, null)
-        else if (key === 'color') document.execCommand('foreColor', false, val)
-        else if (key === 'fontFamily') document.execCommand('fontName', false, val)
-      } catch(e) {}
-      selectionStore.range = null
-      return
-    }
+    /* 항상 sections state 직접 업데이트 (named / free 모두) */
     if (isNamed) {
       const mappedKey = key === 'bold' ? 'fontWeight' : key
       const mappedVal = key === 'bold' ? (val ? 700 : 400) : val
@@ -240,6 +220,18 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeBlockId, onAddSection,
       change('freeBlocks', (sec.freeBlocks || []).map(b =>
         b.id === activeBlockId ? { ...b, [mappedKey]: mappedVal } : b
       ))
+    }
+    /* contenteditable 선택 영역이 있으면 execCommand도 시도 (EditText 호환) */
+    if (selectionStore.range) {
+      try {
+        const sel = window.getSelection()
+        sel.removeAllRanges()
+        sel.addRange(selectionStore.range)
+        if (key === 'bold') document.execCommand('bold', false, null)
+        else if (key === 'color') document.execCommand('foreColor', false, val)
+        else if (key === 'fontFamily') document.execCommand('fontName', false, val)
+      } catch(e) {}
+      selectionStore.range = null
     }
   }
 
@@ -256,44 +248,6 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeBlockId, onAddSection,
 
       {/* 스크롤 컨트롤 영역 */}
       <div style={{ flex:1, overflowY:'auto', padding:'8px 12px 10px' }}>
-
-        {/* 색상 테마 */}
-        <p style={sLabel}>색상 테마</p>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:3, marginBottom:8 }}>
-          {DS_KEYS.map(s => {
-            const on = sec.designStyle === s && !Object.keys(sec.customColors || {}).length; const d = DS[s]
-            return (
-              <button key={s} onClick={() => onUpdate(idx, { ...sec, designStyle: s, customColors: {} })}
-                style={{ borderRadius:7, border:`2px solid ${on?'#3b82f6':'transparent'}`, cursor:'pointer', padding:0, overflow:'hidden', background:'none', outline:'none' }}>
-                <div style={{ height:22, background:d.bg, display:'flex', alignItems:'center', justifyContent:'center', gap:3 }}>
-                  <div style={{ width:7, height:7, borderRadius:'50%', background:d.ac }} />
-                  <div style={{ width:10, height:2, borderRadius:2, background:d.fg, opacity:0.4 }} />
-                </div>
-                <div style={{ padding:'2px', background:on?'#EFF6FF':C.alt, fontSize:8, color:on?'#1d4ed8':C.mu, fontWeight:on?700:400, textAlign:'center', lineHeight:1.3 }}>{s}</div>
-              </button>
-            )
-          })}
-        </div>
-
-        {/* 커스텀 색상 */}
-        <p style={sLabel}>커스텀 색상</p>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6, marginBottom:8 }}>
-          {[{ label:'배경색', key:'bg' }, { label:'강조색', key:'ac' }, { label:'글자색', key:'fg' }].map(({ label, key }) => (
-            <div key={key} style={{ display:'flex', flexDirection:'column', gap:3, alignItems:'center' }}>
-              <span style={{ fontSize:9, color:C.mu }}>{label}</span>
-              <label style={{ cursor:'pointer', position:'relative' }}>
-                <div style={{ width:44, height:24, borderRadius:5, background:(sec.customColors?.[key]) || t[key], border:`1.5px solid ${C.bd}`, cursor:'pointer' }} />
-                <input type="color" value={(sec.customColors?.[key]) || t[key] || '#ffffff'}
-                  onChange={e => change('customColors', { ...(sec.customColors||{}), [key]: e.target.value })}
-                  style={{ position:'absolute', opacity:0, width:0, height:0, top:0, left:0 }} />
-              </label>
-              {sec.customColors?.[key] && (
-                <button onClick={() => { const cc={...(sec.customColors||{})}; delete cc[key]; change('customColors',cc) }}
-                  style={{ fontSize:8, color:'#ef4444', border:'none', background:'none', cursor:'pointer', padding:0 }}>초기화</button>
-              )}
-            </div>
-          ))}
-        </div>
 
         {/* 그라데이션 */}
         <p style={sLabel}>그라데이션</p>
@@ -323,12 +277,12 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeBlockId, onAddSection,
               </div>
               <label style={{ fontSize:9, color:C.mu, display:'flex', alignItems:'center', gap:6, cursor:'pointer' }}>
                 <span>색상</span>
-                <input type="color" value={grad.color || t.bg || '#000000'}
+                <input type="color" value={grad.color || '#000000'}
                   onChange={e => setGrad('color', e.target.value)}
                   style={{ width:26, height:18, border:'1px solid #ccc', padding:0, cursor:'pointer', borderRadius:3 }} />
                 {grad.color && (
                   <button onClick={() => { const g2={...grad}; delete g2.color; change('gradient',g2) }}
-                    style={{ fontSize:8, color:'#ef4444', border:'none', background:'none', cursor:'pointer' }}>배경색으로</button>
+                    style={{ fontSize:8, color:'#ef4444', border:'none', background:'none', cursor:'pointer' }}>초기화</button>
                 )}
               </label>
             </div>
@@ -400,16 +354,27 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeBlockId, onAddSection,
           </>
         )}
 
-        {/* 섹션 추가 / 삭제 */}
+        {/* 하단 텍스트 박스 */}
         <div style={{ borderTop:`1px solid ${C.bd}`, margin:'6px 0 8px' }} />
-        <button onClick={onAddSection}
-          style={{ width:'100%', padding:'8px 0', fontSize:12, fontWeight:700, borderRadius:7, border:'1.5px dashed #10b981', background:'#f0fdf4', color:'#059669', cursor:'pointer', marginBottom:6 }}>
-          + 섹션 추가
-        </button>
-        <button onClick={onDelete}
-          style={{ width:'100%', padding:'8px 0', fontSize:12, fontWeight:700, borderRadius:7, border:'1px solid #fca5a5', background:'#fef2f2', color:'#ef4444', cursor:'pointer' }}>
-          × 섹션 삭제
-        </button>
+        <p style={sLabel}>하단 텍스트 박스</p>
+        {sec.bottomBox ? (
+          <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:8 }}>
+            <label style={{ fontSize:9, color:C.mu, display:'flex', alignItems:'center', gap:8, cursor:'pointer' }}>
+              <span>배경색</span>
+              <input type="color" value={sec.bottomBox.bgColor || '#ffffff'}
+                onChange={e => change('bottomBox', { ...sec.bottomBox, bgColor: e.target.value })}
+                style={{ width:34, height:20, border:'1px solid #ccc', padding:0, cursor:'pointer', borderRadius:3 }} />
+              <span style={{ fontSize:9, color:C.fa }}>{sec.bottomBox.bgColor || '#ffffff'}</span>
+            </label>
+          </div>
+        ) : (
+          <button
+            onClick={() => change('bottomBox', { text: '', bgColor: '#ffffff', height: 120 })}
+            style={{ width:'100%', padding:'7px 0', fontSize:11, fontWeight:700, borderRadius:7,
+              border:'1.5px dashed #3b82f6', background:'#eff6ff', color:'#1d4ed8', cursor:'pointer', marginBottom:8 }}>
+            + 하단 박스 추가
+          </button>
+        )}
       </div>
 
       {/* 하단 PNG 버튼 */}

@@ -12,6 +12,8 @@ export function mkGrad(dir, alpha) {
   if (!dir || dir === 'none') return null
   if (dir === 'bottom') return `linear-gradient(to top, rgba(0,0,0,${a}) 0%, transparent 60%)`
   if (dir === 'top')    return `linear-gradient(to bottom, rgba(0,0,0,${a}) 0%, transparent 60%)`
+  if (dir === 'left')   return `linear-gradient(to left, rgba(0,0,0,${a}) 0%, transparent 60%)`
+  if (dir === 'right')  return `linear-gradient(to right, rgba(0,0,0,${a}) 0%, transparent 60%)`
   if (dir === 'full')   return `rgba(0,0,0,${(a * 0.55).toFixed(2)})`
   return null
 }
