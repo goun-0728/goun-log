@@ -194,52 +194,110 @@ function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect,
   )
 }
 
-/* ── 하단 그라데이션 오버레이 (시각적 배경만) ── */
-function BottomOverlay({ bottomBox, editing, scale, onResizeH, onSectionSelect }) {
-  const { bgColor = '#000000', overlayH = 200 } = bottomBox || {}
-  const [resizing, setResizing] = useState(null)
+/* ── 하단 그라데이션 오버레이 ── 드래그 이동 + 상하 리사이즈 */
+function BottomOverlay({ bottomBox, editing, scale, onUpdate, onSectionSelect }) {
+  const { bgColor = '#000000', intensity = 80, overlayY = 440, overlayH = 200 } = bottomBox || {}
+  const [dragState,    setDragState]    = useState(null) // 전체 이동
+  const [resizeTop,    setResizeTop]    = useState(null) // 상단 리사이즈
+  const [resizeBottom, setResizeBottom] = useState(null) // 하단 리사이즈
 
+  /* 헥스 알파로 그라데이션 */
+  const alpha = Math.round((intensity / 100) * 255).toString(16).padStart(2, '0')
+  const hexBase = bgColor.startsWith('#') ? bgColor : '#000000'
+  const gradBg = `linear-gradient(to bottom, ${hexBase}00 0%, ${hexBase}${alpha} 100%)`
+
+  /* 전체 이동 */
   useEffect(() => {
-    if (!resizing) return
+    if (!dragState) return
     const sc = scale || 1
     const move = e => {
-      const dy = (e.clientY - resizing.startY) / sc
-      onResizeH(Math.max(60, Math.min(CARD_H, resizing.startH + dy)))
+      const dy = e.clientY / sc - dragState.startMy
+      const newY = Math.max(0, Math.min(CARD_H - 20, dragState.baseY + dy))
+      onUpdate({ overlayY: newY })
     }
-    const up = () => setResizing(null)
+    const up = () => setDragState(null)
     window.addEventListener('mousemove', move)
     window.addEventListener('mouseup', up)
     return () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up) }
-  }, [resizing]) // eslint-disable-line
+  }, [dragState]) // eslint-disable-line
+
+  /* 상단 리사이즈 (상단 경계 드래그 → Y이동 + H변경, 하단 고정) */
+  useEffect(() => {
+    if (!resizeTop) return
+    const sc = scale || 1
+    const move = e => {
+      const dy = e.clientY / sc - resizeTop.startMy
+      const newY = Math.max(0, Math.min(resizeTop.baseY + resizeTop.baseH - 40, resizeTop.baseY + dy))
+      const newH = Math.max(40, resizeTop.baseH + (resizeTop.baseY - newY))
+      onUpdate({ overlayY: newY, overlayH: newH })
+    }
+    const up = () => setResizeTop(null)
+    window.addEventListener('mousemove', move)
+    window.addEventListener('mouseup', up)
+    return () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up) }
+  }, [resizeTop]) // eslint-disable-line
+
+  /* 하단 리사이즈 (하단 경계 드래그 → H변경만) */
+  useEffect(() => {
+    if (!resizeBottom) return
+    const sc = scale || 1
+    const move = e => {
+      const dy = e.clientY / sc - resizeBottom.startMy
+      const newH = Math.max(40, resizeBottom.baseH + dy)
+      onUpdate({ overlayH: newH })
+    }
+    const up = () => setResizeBottom(null)
+    window.addEventListener('mousemove', move)
+    window.addEventListener('mouseup', up)
+    return () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up) }
+  }, [resizeBottom]) // eslint-disable-line
+
+  const handleDrag = e => {
+    if (!editing) return
+    if (e.target.hasAttribute('data-overlay-handle')) return
+    e.stopPropagation(); e.preventDefault()
+    const sc = scale || 1
+    setDragState({ startMy: e.clientY / sc, baseY: overlayY })
+  }
 
   return (
     <div
-      onClick={e => { if (e.target === e.currentTarget) { onSectionSelect?.(); e.stopPropagation() } }}
+      onMouseDown={handleDrag}
+      onClick={e => { if (e.target === e.currentTarget && editing) { onSectionSelect?.(); e.stopPropagation() } }}
       style={{
-        position: 'absolute', top: CARD_H, left: 0, right: 0, height: overlayH,
-        background: `linear-gradient(to bottom, transparent 0%, ${bgColor} 100%)`,
-        zIndex: 2, pointerEvents: editing ? 'auto' : 'none',
+        position: 'absolute', top: overlayY, left: 0, right: 0, height: overlayH,
+        background: gradBg, zIndex: 8,
+        pointerEvents: editing ? 'auto' : 'none',
+        cursor: editing ? (dragState ? 'grabbing' : 'grab') : 'default',
       }}
     >
-      {/* 상단 경계선 (편집 시) */}
-      {editing && (
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2,
-          background: 'rgba(59,130,246,0.4)', pointerEvents: 'none' }} />
-      )}
-
-      {/* 하단 드래그 핸들 */}
+      {/* 상단 리사이즈 핸들 */}
       {editing && (
         <div
+          data-overlay-handle
           onMouseDown={e => {
-            e.preventDefault(); e.stopPropagation()
-            setResizing({ startY: e.clientY, startH: overlayH })
+            e.stopPropagation(); e.preventDefault()
+            const sc = scale || 1
+            setResizeTop({ startMy: e.clientY / sc, baseY: overlayY, baseH: overlayH })
           }}
-          style={{
-            position: 'absolute', bottom: 0, left: 0, right: 0, height: 14,
-            cursor: 'ns-resize', background: 'rgba(59,130,246,0.15)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 20,
-          }}>
-          <div style={{ width: 48, height: 4, background: '#3b82f6', borderRadius: 2 }} />
+          style={{ position:'absolute', top:0, left:0, right:0, height:12, cursor:'ns-resize', zIndex:25,
+            background:'rgba(59,130,246,0.18)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <div style={{ width:48, height:3, background:'#3b82f6', borderRadius:2 }} />
+        </div>
+      )}
+
+      {/* 하단 리사이즈 핸들 */}
+      {editing && (
+        <div
+          data-overlay-handle
+          onMouseDown={e => {
+            e.stopPropagation(); e.preventDefault()
+            const sc = scale || 1
+            setResizeBottom({ startMy: e.clientY / sc, baseH: overlayH })
+          }}
+          style={{ position:'absolute', bottom:0, left:0, right:0, height:12, cursor:'ns-resize', zIndex:25,
+            background:'rgba(59,130,246,0.18)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <div style={{ width:48, height:3, background:'#3b82f6', borderRadius:2 }} />
         </div>
       )}
     </div>
@@ -332,8 +390,9 @@ export default function SectionEditor({
   }
 
   const freeBlocks  = dr.freeBlocks || []
-  const overlayH    = dr.bottomBox?.overlayH ?? 0
-  const totalH      = CARD_H + (dr.bottomBox ? overlayH : 0)
+  const overlayY    = dr.bottomBox?.overlayY ?? 440
+  const overlayH    = dr.bottomBox?.overlayH ?? 200
+  const totalH      = dr.bottomBox ? Math.max(CARD_H, overlayY + overlayH) : CARD_H
   const bbTxtBlocks = dr.bottomBox?.textBlocks || []
 
   const grad = dr.gradient?.dir && dr.gradient.dir !== 'none'
@@ -399,14 +458,14 @@ export default function SectionEditor({
               {grad && <div style={{ position:'absolute',inset:0,background:grad,pointerEvents:'none' }} />}
             </div>
 
-            {/* 하단 오버레이 (이미지 아래) */}
+            {/* 하단 그라데이션 오버레이 (자유 배치) */}
             {dr.bottomBox && (
               <BottomOverlay
                 bottomBox={dr.bottomBox}
                 editing={editing}
                 scale={scale}
                 onSectionSelect={selectSection}
-                onResizeH={newH => commit({ bottomBox: { ...drRef.current.bottomBox, overlayH: newH } })}
+                onUpdate={patch => commit({ bottomBox: { ...drRef.current.bottomBox, ...patch } })}
               />
             )}
 

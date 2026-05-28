@@ -1,13 +1,10 @@
 // src/App.jsx
 import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { C, DS, DS_KEYS, TPL_LABELS, TPL_COMPAT, TASKS, BLOG_TONES, getSys, EXTRA_SECTIONS, getExtraSectSys, mkSec } from './constants'
+import { C, DS, DS_KEYS, TPL_LABELS, TPL_COMPAT, TASKS, getSys, EXTRA_SECTIONS, getExtraSectSys, mkSec } from './constants'
 import { parseBlocks, parseSections, capturePNG, downloadURL } from './utils'
 import { generateContent } from './api/generate'
 import SectionEditor, { NAMED_BLOCKS, activeTextareaInfo } from './components/SectionEditor'
 import { FONT_OPTS, selectionStore } from './components/SectionTemplates'
-import CardNewsView from './components/CardNewsEditor'
-import BlogKeywords from './components/BlogKeywords'
-import BlogThumbnail from './components/BlogThumbnail'
 
 /* ── 입력폼 옵션 ── */
 const FORM_CATEGORIES = ['식품', '농산물', '뷰티', '생활용품', '패션', '디지털', '기타']
@@ -143,7 +140,7 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeBlockId, onAddSection,
 
   const change  = (key, val) => onUpdate(idx, { ...sec, [key]: val })
   const setGrad = (key, val) => change('gradient', { ...grad, [key]: val })
-  const setBB   = patch => change('bottomBox', patch === null ? null : { ...(bb || { bgColor:'#000000', overlayH:200, textBlocks:[] }), ...patch })
+  const setBB   = patch => change('bottomBox', patch === null ? null : { ...(bb || { bgColor:'#000000', intensity:80, overlayY:440, overlayH:200, textBlocks:[] }), ...patch })
 
   /* 메인 블록 선택 */
   const isNamed    = activeBlockId && NAMED_KEYS.has(activeBlockId)
@@ -374,7 +371,16 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeBlockId, onAddSection,
                 style={{ width:34, height:22, border:'1px solid #ccc', padding:0, cursor:'pointer', borderRadius:4 }} />
               <span style={{ fontSize:12, color:C.fa }}>{bb.bgColor||'#000000'}</span>
             </label>
-            <p style={{ fontSize:12, color:C.fa, margin:'0 0 8px' }}>높이 {bb.overlayH||200}px — 이미지 하단 핸들로 조절</p>
+            <div style={{ marginBottom:10 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
+                <span style={{ fontSize:14, color:C.mu }}>그라데이션 강도</span>
+                <span style={{ fontSize:14, fontWeight:700, color:C.tx }}>{bb.intensity??80}%</span>
+              </div>
+              <input type="range" min={0} max={100} step={1}
+                value={bb.intensity??80}
+                onChange={e => setBB({ intensity: +e.target.value })}
+                style={{ width:'100%', accentColor:'#3b82f6' }} />
+            </div>
             <button
               onClick={() => {
                 const d = defStyle
@@ -392,7 +398,7 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeBlockId, onAddSection,
           </>
         ) : (
           <button
-            onClick={() => change('bottomBox', { bgColor:'#000000', overlayH:200, textBlocks:[] })}
+            onClick={() => change('bottomBox', { bgColor:'#000000', intensity:80, overlayY:440, overlayH:200, textBlocks:[] })}
             style={{ width:'100%', padding:'8px 0', fontSize:14, fontWeight:700, borderRadius:7, border:'1.5px dashed #3b82f6', background:'#eff6ff', color:'#1d4ed8', cursor:'pointer', marginBottom:8 }}>
             + 하단 오버레이 추가
           </button>
@@ -679,7 +685,7 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
         <div style={{ background: '#FEFCE8', padding: '20px 0 24px', borderTop: '1px solid #FEF08A', borderBottom: '1px solid #FEF08A' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <span style={{ fontSize: 12, fontWeight: 800, color: '#713F12', letterSpacing: '-0.02em' }}>📐 섹션별 기획안</span>
-            <span style={{ fontSize: 11, color: '#A16207' }}>— 촬영 가이드 · AI 프롬프트 포함</span>
+            <span style={{ fontSize: 11, color: '#A16207' }}>— 촬영 가이드</span>
           </div>
           {sects.map((s, i) => {
             let sp = {}
@@ -714,19 +720,6 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
                         <p style={{ fontSize: 10, fontWeight: 700, color: C.fa, marginBottom: 6 }}>📷 촬영 기획</p>
                         {Object.entries(sp).map(([k, v], j) => <div key={j} style={{ fontSize: 12, color: C.tx, marginBottom: 3 }}><span style={{ color: C.mu, fontWeight: 600 }}>{k}:</span> {v}</div>)}
                       </div>
-                    )}
-                    {s.imagePrompt && (
-                      <>
-                        <div style={{ background: '#111', borderRadius: 7, padding: '9px 12px', display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                          <code style={{ fontSize: 11, color: '#D4D4D4', fontFamily: "'Courier New',monospace", lineHeight: 1.7, flex: 1, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{s.imagePrompt}</code>
-                          <CopyBtn text={s.imagePrompt} />
-                        </div>
-                        <p style={{ margin: '8px 0 0', fontSize: 11, color: C.mu, lineHeight: 1.8 }}>
-                          💡 프롬프트를 복사하고, ChatGPT 또는 미드저니에서<br />
-                          여기 업로드한 제품 사진과 함께 사용하세요.<br />
-                          사진을 같이 올리면 더 정확한 이미지가 생성됩니다.
-                        </p>
-                      </>
                     )}
                   </div>
                 )}
@@ -828,15 +821,12 @@ function DetailView({ result, savedSects, onSectsChange, productInput, quiz }) {
 
 /* ── 메인 앱 ───────────────────────────────────────── */
 export default function App() {
-  const [task, setTask] = useState(TASKS[0])
-  const [tone, setTone] = useState('생활형')
-  const [tabLoading, setTabLoading] = useState({})
-  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState('')
 
   // 새로고침 시 전체 초기화
   useEffect(() => {
-    ;['cos_input','cos_quiz','cos_result_detail','cos_result_blog','cos_result_card',
-      'cos_card_data','cos_detail_data','cos_history'].forEach(k => {
+    ;['cos_input','cos_quiz','cos_result_detail','cos_card_data','cos_detail_data','cos_history'].forEach(k => {
       try { localStorage.removeItem(k) } catch {}
     })
   }, [])
@@ -851,60 +841,16 @@ export default function App() {
 
   const allDone = !!(form.productName.trim() && form.features.trim())
 
-  // 탭별 결과
-  const [tabResults, setTabResults] = useState(() => {
-    const r = {}
-    for (const t of TASKS) { r[t.id] = '' }
-    return r
-  })
-  const result = tabResults[task.id] || ''
-
-  const saveResult = useCallback((tid, text) => {
-    setTabResults(prev => ({ ...prev, [tid]: text }))
-    try { localStorage.setItem(`cos_result_${tid}`, text) } catch {}
-  }, [])
-
-  // 카드/섹션 에디터 상태
-  const [cardData,   setCardData]   = useState(null)
-  const [detailData, setDetailData] = useState(null)
-  const [cardGenKey,   setCardGenKey]   = useState(0)
+  // 상세페이지 결과
+  const [result,       setResult]       = useState('')
+  const [detailData,   setDetailData]   = useState(null)
   const [detailGenKey, setDetailGenKey] = useState(0)
-
-  const saveCardData = useCallback((cards) => {
-    setCardData(cards)
-    try {
-      try {
-        const dd = localStorage.getItem('cos_detail_data')
-        if (dd) {
-          const p = JSON.parse(dd)
-          if (p.some(s => s.secImg || s.secImg2 || s.secImg3 || s.secImg4))
-            localStorage.setItem('cos_detail_data', JSON.stringify(p.map(s => ({ ...s, secImg: null, secImg2: null, secImg3: null, secImg4: null }))))
-        }
-      } catch {}
-      localStorage.setItem('cos_card_data', JSON.stringify(cards))
-    } catch {
-      try { localStorage.setItem('cos_card_data', JSON.stringify(cards.map(c => ({ ...c, image: null })))) } catch {}
-    }
-  }, [])
 
   const saveDetailData = useCallback((sects) => {
     setDetailData(sects)
-    try {
-      try {
-        const cd = localStorage.getItem('cos_card_data')
-        if (cd) {
-          const p = JSON.parse(cd)
-          if (p.some(c => c.image))
-            localStorage.setItem('cos_card_data', JSON.stringify(p.map(c => ({ ...c, image: null }))))
-        }
-      } catch {}
-      localStorage.setItem('cos_detail_data', JSON.stringify(sects))
-    } catch {
-      try { localStorage.setItem('cos_detail_data', JSON.stringify(sects.map(s => ({ ...s, secImg: null, secImg2: null, secImg3: null, secImg4: null })))) } catch {}
-    }
+    try { localStorage.setItem('cos_detail_data', JSON.stringify(sects.map(s => ({ ...s, secImg: null, secImg2: null, secImg3: null, secImg4: null })))) } catch {}
   }, [])
 
-  const [keywordContext, setKeywordContext] = useState('')
   const [history, setHistory] = useState([])
   const [histOpen, setHistOpen] = useState(false)
   const [titleHover, setTitleHover] = useState(false)
@@ -947,27 +893,17 @@ export default function App() {
   const resetAll = () => {
     setForm({ ...EMPTY_FORM })
     setProductImgs([])
-    const empty = {}
-    for (const t of TASKS) {
-      empty[t.id] = ''
-      try { localStorage.removeItem(`cos_result_${t.id}`) } catch {}
-    }
-    setTabResults(empty)
-    setCardData(null);   try { localStorage.removeItem('cos_card_data')   } catch {}
+    setResult('')
     setDetailData(null); try { localStorage.removeItem('cos_detail_data') } catch {}
-    setTask(TASKS[0])
     setError('')
-    setKeywordContext('')
   }
 
   const run = async () => {
-    if (!allDone || tabLoading[task.id]) return
-    const tid = task.id
-    setTabLoading(prev => ({ ...prev, [tid]: true }))
-    saveResult(tid, '')
+    if (!allDone || loading) return
+    setLoading(true)
+    setResult('')
     setError('')
     try {
-      /* 타겟 문자열 조합 */
       const tParts = []
       if (form.targetGender && form.targetGender !== '성별무관') tParts.push(form.targetGender)
       if (form.targetAges.length)      tParts.push(form.targetAges.join('·'))
@@ -975,11 +911,8 @@ export default function App() {
       const targetStr = tParts.join(', ')
 
       const baseText = `상품명: ${form.productName}\n핵심 특징: ${form.features}`
-      const userPrompt = (tid === 'blog' && keywordContext)
-        ? `다음 키워드를 자연스럽게 포함하고, 아래 내용을 참고해서 블로그 글을 작성해줘.\n키워드: ${keywordContext}\n참고 내용: ${baseText}`
-        : baseText
-      const hasImgs = tid === 'detail' && productImgs.length > 0
-      const sysBase = getSys(tid, tone, {
+      const hasImgs = productImgs.length > 0
+      const sysBase = getSys('detail', '', {
         features: form.features,
         category: form.category,
         target: targetStr,
@@ -989,44 +922,19 @@ export default function App() {
       const systemPrompt = hasImgs
         ? sysBase + '\n\n업로드된 제품 사진을 분석해서 제품의 외형·색상·패키지 디자인을 파악하고, 각 섹션 AI프롬프트에 실제 제품의 시각적 특성(색상, 형태, 질감, 소재감)을 구체적으로 반영해줘.'
         : sysBase
-      const text = await generateContent({
-        systemPrompt,
-        userPrompt,
-        images: hasImgs ? productImgs : [],
-        model: 'gpt-4o',
-        maxTokens: tid === 'detail' ? 4000 : 2000,
-      })
-      saveResult(tid, text)
-      if (tid === 'card') {
-        setCardData(null); try { localStorage.removeItem('cos_card_data') } catch {}
-        setCardGenKey(k => k + 1)
-      }
-      if (tid === 'detail') {
-        setDetailData(null); try { localStorage.removeItem('cos_detail_data') } catch {}
-        setDetailGenKey(k => k + 1)
-      }
+      const text = await generateContent({ systemPrompt, userPrompt: baseText, images: hasImgs ? productImgs : [], model: 'gpt-4o', maxTokens: 4000 })
+      setResult(text)
+      setDetailData(null); try { localStorage.removeItem('cos_detail_data') } catch {}
+      setDetailGenKey(k => k + 1)
       const preview = `${form.productName}: ${form.features}`.slice(0, 60)
-      const h = { id: Date.now(), taskId: tid, label: task.label, preview, result: text, ts: new Date().toISOString() }
-      setHistory(p => [h, ...p].slice(0, 20))
+      setHistory(p => [{ id: Date.now(), preview, result: text, ts: new Date().toISOString() }, ...p].slice(0, 20))
       setTimeout(() => resRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
     } catch (e) {
       setError('오류: ' + (e.message || JSON.stringify(e) || '알 수 없는 오류가 발생했습니다. 다시 시도해주세요.'))
     } finally {
-      setTabLoading(prev => ({ ...prev, [tid]: false }))
+      setLoading(false)
     }
   }
-
-  const topBlocks = result ? parseBlocks(result) : []
-
-  const blogTitle = (() => {
-    if (task.id !== 'blog' || !result) return ''
-    const block = topBlocks.find(b => b.title.includes('제목'))
-    if (!block) return ''
-    const line = block.lines.find(l => /^\d[..]/.test(l.trim()))
-    return line ? line.replace(/^\d+[..]\s*/, '').trim() : ''
-  })()
-
-  const loading = tabLoading[task.id] || false
 
   return (
     <>
@@ -1051,26 +959,20 @@ export default function App() {
           <div style={{ flex: 1, overflowY: 'auto', padding: '8px 10px 20px' }}>
             {history.length === 0
               ? <p style={{ fontSize: 12, color: C.fa, textAlign: 'center', marginTop: 32 }}>아직 기록 없음</p>
-              : history.map(h => {
-                  const tk = TASKS.find(t => t.id === h.taskId) || TASKS[0]
-                  return (
-                    <button key={h.id} onClick={() => {
-                      const tk2 = TASKS.find(t => t.id === h.taskId) || TASKS[0]
-                      setTask(tk2)
-                      saveResult(h.taskId, h.result)
-                      if (h.taskId === 'card') { setCardData(null); try { localStorage.removeItem('cos_card_data') } catch {}; setCardGenKey(k => k + 1) }
-                      if (h.taskId === 'detail') { setDetailData(null); try { localStorage.removeItem('cos_detail_data') } catch {}; setDetailGenKey(k => k + 1) }
-                      setTimeout(() => resRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
-                    }} style={{ width: '100%', textAlign: 'left', padding: '9px 10px', borderRadius: 8, border: `1px solid ${C.bd}`, background: C.sur, cursor: 'pointer', marginBottom: 5, display: 'block' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
-                        <span style={{ fontSize: 14 }}>{tk.icon}</span>
-                        <span style={{ fontSize: 10, fontWeight: 700, color: tk.col }}>{tk.label}</span>
-                        <span style={{ fontSize: 10, color: C.fa, marginLeft: 'auto' }}>{new Date(h.ts).toLocaleString('ko', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                      </div>
-                      <div style={{ fontSize: 11, color: C.mu, lineHeight: 1.4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{h.preview}</div>
-                    </button>
-                  )
-                })}
+              : history.map(h => (
+                  <button key={h.id} onClick={() => {
+                    setResult(h.result)
+                    setDetailData(null); try { localStorage.removeItem('cos_detail_data') } catch {}
+                    setDetailGenKey(k => k + 1)
+                    setTimeout(() => resRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
+                  }} style={{ width: '100%', textAlign: 'left', padding: '9px 10px', borderRadius: 8, border: `1px solid ${C.bd}`, background: C.sur, cursor: 'pointer', marginBottom: 5, display: 'block' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: C.mu }}>상세페이지</span>
+                      <span style={{ fontSize: 10, color: C.fa }}>{new Date(h.ts).toLocaleString('ko', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: C.mu, lineHeight: 1.4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{h.preview}</div>
+                  </button>
+                ))}
           </div>
         </div>
       </aside>
@@ -1082,8 +984,8 @@ export default function App() {
           {/* 타이틀 */}
           <div onClick={resetAll} onMouseEnter={() => setTitleHover(true)} onMouseLeave={() => setTitleHover(false)}
             style={{ textAlign: 'center', marginBottom: 28, cursor: 'pointer', opacity: titleHover ? 0.6 : 1, transition: 'opacity .15s' }}>
-            <h1 style={{ fontSize: 'clamp(22px,4vw,28px)', fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 1.2, margin: '0 0 6px' }}>제품 정보로 마케팅 콘텐츠 자동 생성</h1>
-            <p style={{ fontSize: 13, color: C.mu, lineHeight: 1.7, margin: 0 }}>상세페이지 · 블로그 · 카드뉴스</p>
+            <h1 style={{ fontSize: 'clamp(22px,4vw,28px)', fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 1.2, margin: '0 0 6px' }}>제품 정보로 상세페이지 자동 생성</h1>
+            <p style={{ fontSize: 13, color: C.mu, lineHeight: 1.7, margin: 0 }}>기획안 · 섹션 카드 · PNG 다운로드</p>
           </div>
 
           {/* ── 입력폼 ── */}
@@ -1177,51 +1079,13 @@ export default function App() {
             </div>
           </div>
 
-          {/* ── 콘텐츠 유형 선택 + 생성하기 ── */}
-          <div style={{ background: '#EFF6FF', borderRadius: 16, border: `1.5px solid ${allDone ? '#BFDBFE' : '#FECACA'}`, overflow: 'hidden', marginBottom: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.05)' }}>
-            <div style={{ padding: '10px 16px', background: '#DBEAFE', borderBottom: '1px solid #BFDBFE' }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#1E40AF' }}>콘텐츠 유형 선택</span>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${TASKS.length},1fr)`, gap: 8, padding: '10px 14px', borderBottom: `1px solid ${C.bd}` }}>
-              {TASKS.map(t => {
-                const on = task.id === t.id
-                const hasResult = !!(tabResults[t.id])
-                return (
-                  <button key={t.id} onClick={() => sw(t)}
-                    style={{ padding: '11px 8px', borderRadius: 10, border: on ? `2px solid ${t.col}` : `1.5px solid ${C.bd}`, background: on ? t.li : C.sur, cursor: 'pointer', textAlign: 'center', position: 'relative' }}>
-                    {hasResult && !on && <span style={{ position: 'absolute', top: 5, right: 7, width: 6, height: 6, borderRadius: '50%', background: t.col, opacity: 0.7 }} />}
-                    <div style={{ fontSize: 18, marginBottom: 3, color: on ? t.col : C.fa }}>{t.icon}</div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: on ? t.col : C.tx, letterSpacing: '-0.02em' }}>{t.label}</div>
-                    <div style={{ fontSize: 10, color: on ? t.col + '99' : C.fa, marginTop: 1 }}>{t.sub}</div>
-                  </button>
-                )
-              })}
-            </div>
-
-            {/* 블로그 전용 옵션 */}
-            {task.id === 'blog' && (
-              <div style={{ padding: '12px 16px 8px', borderBottom: `1px solid ${C.bd}`, background: '#F8F8FF' }}>
-                <BlogKeywords onKeywordsChange={setKeywordContext} />
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 11, color: C.mu, fontWeight: 600 }}>블로그 말투</span>
-                  {BLOG_TONES.map(t => (
-                    <button key={t} onClick={() => setTone(t)}
-                      style={{ padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, border: tone === t ? `1.5px solid ${TASKS[1].col}` : `1.5px solid ${C.bd}`, background: tone === t ? TASKS[1].li : C.sur, color: tone === t ? TASKS[1].col : C.mu, cursor: 'pointer' }}>
-                      {t}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 생성 버튼 */}
-            <div style={{ padding: '14px 16px' }}>
-              <button onClick={run} disabled={!allDone || loading}
-                style={{ width: '100%', padding: '14px 0', borderRadius: 10, border: 'none', background: (!allDone || loading) ? '#ECEAE5' : C.tx, color: (!allDone || loading) ? C.fa : '#fff', fontSize: 15, fontWeight: 800, cursor: (!allDone || loading) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'background .12s' }}>
-                {loading ? <><Spin />생성 중…</> : `✦ ${task.label} 생성하기`}
-              </button>
-              {!allDone && <p style={{ fontSize: 12, color: '#ef4444', textAlign: 'center', margin: '8px 0 0' }}>상품명과 핵심 특징을 입력해주세요</p>}
-            </div>
+          {/* 생성 버튼 */}
+          <div style={{ marginBottom: 12 }}>
+            <button onClick={run} disabled={!allDone || loading}
+              style={{ width: '100%', padding: '15px 0', borderRadius: 12, border: 'none', background: (!allDone || loading) ? '#ECEAE5' : C.tx, color: (!allDone || loading) ? C.fa : '#fff', fontSize: 16, fontWeight: 800, cursor: (!allDone || loading) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'background .12s' }}>
+              {loading ? <><Spin />상세페이지 생성 중…</> : '✦ 상세페이지 생성하기'}
+            </button>
+            {!allDone && <p style={{ fontSize: 12, color: '#ef4444', textAlign: 'center', margin: '8px 0 0' }}>상품명과 핵심 특징을 입력해주세요</p>}
           </div>
 
           {/* 에러 */}
@@ -1231,7 +1095,7 @@ export default function App() {
           {loading && (
             <div style={{ background: C.sur, borderRadius: 14, border: `1.5px solid ${C.bd}`, padding: '28px 24px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 22, color: C.mu, fontSize: 13 }}>
-                <Spin />{task.id === 'detail' ? '상세페이지 섹션 생성 중…' : task.id === 'card' ? '카드뉴스 5장 생성 중…' : '블로그 포스팅 생성 중…'}
+                <Spin />상세페이지 섹션 생성 중…
               </div>
               {[95, 75, 85, 60, 90, 50].map((w, i) => <div key={i} style={{ height: 10, background: C.alt, borderRadius: 5, width: `${w}%`, marginBottom: 9, animation: `pl 1.5s ease ${i * .12}s infinite` }} />)}
             </div>
@@ -1239,30 +1103,9 @@ export default function App() {
 
           {/* 결과 */}
           {result && !loading && (
-            task.id === 'detail' ? (
-              <div ref={resRef}>
-                <DetailView key={detailGenKey} result={result} savedSects={detailData} onSectsChange={saveDetailData} productInput={`${form.productName}: ${form.features}`} quiz={{}} />
-              </div>
-            ) : (
-              <div ref={resRef} style={{ background: C.sur, borderRadius: 16, border: `1.5px solid ${C.bd}`, boxShadow: '0 4px 28px rgba(0,0,0,0.06)', overflow: 'hidden', animation: 'fi .25s ease' }}>
-                <div style={{ padding: '12px 20px 10px', borderBottom: `1px solid ${C.bd}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: task.col, background: task.li, padding: '2px 9px', borderRadius: 20 }}>{task.label}</span>
-                    <span style={{ fontSize: 11, color: '#15803d', background: '#f0fdf4', padding: '2px 8px', borderRadius: 20 }}>✓ 완성</span>
-                  </div>
-                  <CopyBtn text={result} />
-                </div>
-                <div style={{ padding: '16px 20px' }}>
-                  {task.id === 'card'
-                    ? <CardNewsView key={cardGenKey} result={result} savedCards={cardData} onCardsChange={saveCardData} />
-                    : <>
-                        {topBlocks.map((b, i) => <Blk key={i} title={b.title} lines={b.lines} />)}
-                        {task.id === 'blog' && <BlogThumbnail key={result.slice(0, 40)} blogTitle={blogTitle} />}
-                      </>
-                  }
-                </div>
-              </div>
-            )
+            <div ref={resRef}>
+              <DetailView key={detailGenKey} result={result} savedSects={detailData} onSectsChange={saveDetailData} productInput={`${form.productName}: ${form.features}`} quiz={{}} />
+            </div>
           )}
 
         </main>
