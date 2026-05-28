@@ -325,32 +325,76 @@ const _PRICE_MAP = {
   '프리미엄': '프리미엄 포지션 — 고품질·차별화·감성 강조, 품격 있는 표현',
 }
 
+function _getTargetLangGuide(target) {
+  if (!target) return ''
+  const g = []
+  if (/10대|20대/.test(target)) g.push('트렌디·임팩트·짧은 표현, MZ 감성, 후기체 친숙')
+  if (/30대|40대/.test(target)) g.push('실용적 정보 중심, 가성비·효과·신뢰 강조')
+  if (/50대|60대|시니어/.test(target)) g.push('쉽고 명확한 설명, 건강·안전·신뢰, 친근하고 따뜻한 어조')
+  if (/주부/.test(target)) g.push('가족 건강·편리성·가성비 언어')
+  if (/직장인/.test(target)) g.push('시간 절약·효율·자기관리 언어')
+  if (/자취생/.test(target)) g.push('소용량·간편함·가성비 강조')
+  if (/육아|부모/.test(target)) g.push('아이·가족 안전, 성분·품질 신뢰')
+  if (/건강/.test(target)) g.push('건강 기능·성분·효능 구체적으로')
+  if (/반려동물/.test(target)) g.push('펫 케어 언어, 안전 성분 강조')
+  return g.join(' / ')
+}
+
 function _buildCustomBlock(opts = {}) {
   const {
     /* 새 심플폼 필드 */
-    category, target, pricePosition, mood,
+    features, category, target, pricePosition, mood,
     /* 기존 퀴즈 필드 (하위 호환) */
     gender, ageGroup, purchaseSituation,
     competition, differentiator, differentiatorTypes = [],
     planningStyle, brandTone = [], emphasis = [],
   } = opts
-  const lines = ['━━━ 맞춤 기획 설정 ━━━']
 
-  if (category)       lines.push(`■ 카테고리: ${category}`)
-  if (target)         lines.push(`■ 타겟 고객: ${target} → 이 타겟의 언어·관심사·구매 심리에 맞게 카피 작성`)
-  if (pricePosition)  lines.push(`■ 가격 포지션: ${_PRICE_MAP[pricePosition] || pricePosition}`)
+  const lines = [
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+    '◆ 맞춤 기획 설정 — 아래 내용을 모든 섹션 카피에 필수 반영',
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+  ]
+
+  if (features) {
+    lines.push(`■ 핵심 특징 및 차별점:`)
+    features.split('\n').filter(l => l.trim()).forEach(l => lines.push(`  ${l.trim()}`))
+    lines.push(`  → 위 특징을 Hero·특징강조·해결제안 등 각 섹션 카피에 구체적으로 녹여낼 것`)
+  }
+
+  if (category) {
+    lines.push(`■ 상품 카테고리: ${category}`)
+    lines.push(`  → ${category} 카테고리 소비자의 구매 언어·관심사를 카피 전반에 반영`)
+  }
+
+  if (target) {
+    lines.push(`■ 주요 타겟 고객: ${target}`)
+    const langGuide = _getTargetLangGuide(target)
+    if (langGuide) lines.push(`  → 표현 스타일: ${langGuide}`)
+    lines.push(`  → 타겟이 공감할 상황·언어·고민을 섹션 카피에 직접 사용`)
+  }
+
+  if (pricePosition) {
+    lines.push(`■ 가격 포지션: ${_PRICE_MAP[pricePosition] || pricePosition}`)
+    const expr = pricePosition === '프리미엄' ? '고급스럽고 품격 있는 표현, 희소성·감성 강조'
+               : pricePosition === '가성비'   ? '실용적·합리적 표현, 가격 대비 가치 수치화'
+               : '균형감 있는 표현, 품질과 가격 모두 언급'
+    lines.push(`  → ${expr}`)
+  }
+
   if (mood) {
-    lines.push(`■ 콘텐츠 분위기: ${_MOOD_MAP[mood] || mood}`)
-    lines.push(`  → 모든 카피와 섹션에 이 분위기를 일관되게 반영`)
+    lines.push(`■ 콘텐츠 분위기: ${mood}`)
+    lines.push(`  → ${_MOOD_MAP[mood] || mood}`)
+    lines.push(`  → 헤드라인부터 본문 설명까지 이 분위기를 일관되게 유지`)
   }
 
   /* 기존 퀴즈 필드 지원 */
-  const targetParts = [gender, ageGroup].filter(Boolean)
-  if (targetParts.length || purchaseSituation) {
-    if (targetParts.length) lines.push(`■ 타겟(상세): ${targetParts.join(' ')} 중심`)
-    if (purchaseSituation)  lines.push(`  구매 상황: ${purchaseSituation}`)
+  const oldTargetParts = [gender, ageGroup].filter(Boolean)
+  if (oldTargetParts.length || purchaseSituation) {
+    if (oldTargetParts.length) lines.push(`■ 타겟(보조): ${oldTargetParts.join(' ')} 중심`)
+    if (purchaseSituation) lines.push(`  구매 상황: ${purchaseSituation}`)
   }
-  if (competition)      lines.push(`■ 경쟁 상황: ${competition}`)
+  if (competition) lines.push(`■ 경쟁 상황: ${competition}`)
   if (differentiator) {
     lines.push(`■ 핵심 차별점: ${differentiator}`)
     if (differentiatorTypes.length) lines.push(`  차별점 유형: ${differentiatorTypes.join(', ')}`)
@@ -366,26 +410,37 @@ function _buildCustomBlock(opts = {}) {
     lines.push(`  → ${emphasis.map(e => _EMPH_MAP[e] || e).join(' / ')}`)
   }
 
-  lines.push('━━━━━━━━━━━━━━━━━━')
+  lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
   return lines.join('\n')
 }
 
 function _buildQuizContext(opts = {}) {
-  const { gender, ageGroup, purchaseSituation, brandTone = [], emphasis = [] } = opts
+  const { gender, ageGroup, purchaseSituation, brandTone = [], emphasis = [],
+          category, target, pricePosition, mood, features } = opts
   const parts = []
-  const target = [gender, ageGroup].filter(Boolean)
-  if (target.length) parts.push(`타겟: ${target.join(' ')} 중심${purchaseSituation ? ', ' + purchaseSituation : ''}`)
+  if (target)          parts.push(`타겟: ${target}`)
+  if (category)        parts.push(`카테고리: ${category}`)
+  if (pricePosition)   parts.push(`가격: ${pricePosition}`)
+  if (mood)            parts.push(`분위기: ${mood}`)
+  const oldTarget = [gender, ageGroup].filter(Boolean)
+  if (oldTarget.length) parts.push(`타겟: ${oldTarget.join(' ')} 중심${purchaseSituation ? ', ' + purchaseSituation : ''}`)
   if (brandTone.length) parts.push(`톤: ${brandTone.join('·')}`)
-  if (emphasis.length) parts.push(`강조: ${emphasis.join('·')}`)
-  return parts.length ? `[참고 컨텍스트] ${parts.join(' / ')}\n위 정보를 참고해 콘텐츠 톤과 타겟 언어를 조정하세요.\n\n` : ''
+  if (emphasis.length)  parts.push(`강조: ${emphasis.join('·')}`)
+  if (!parts.length) return ''
+  const ctx = ['[맞춤 컨텍스트]', ...parts]
+  if (features) ctx.push(`핵심특징: ${features.split('\n').join(' / ')}`)
+  ctx.push('위 정보를 콘텐츠 톤·타겟 언어·강조점에 필수 반영하세요.', '')
+  return ctx.join('\n') + '\n'
 }
 
 // 시스템 프롬프트
 export function getSys(id, tone = '생활형', opts = {}) {
-  const ctx = _buildQuizContext(opts)
+  const ctx         = _buildQuizContext(opts)
+  const customBlock = _buildCustomBlock(opts)
 
   if (id === 'blog') return `당신은 네이버 블로그 마케팅 전문가입니다.
 말투: ${tone}. 최소 1500자. AI티 완전 제거. 실제 사람이 쓴 느낌. 광고 문체 금지.
+${customBlock}
 ${ctx}
 반드시 아래 형식만 출력:
 ▼ 제목 후보
@@ -404,6 +459,7 @@ ${ctx}
 (10개)`
 
   if (id === 'card') return `당신은 인스타그램 카드뉴스 기획 전문가입니다.
+${customBlock}
 ${ctx}
 반드시 아래 형식만 출력:
 ▼ 콘텐츠 컨셉
@@ -448,7 +504,6 @@ ${ctx}
 (15개)`
 
   // 상세페이지
-  const customBlock = _buildCustomBlock(opts)
   const sectionsBlock = _buildSections(opts)
 
   return `당신은 스마트스토어 상세페이지 전문 기획자 겸 카피라이터입니다.

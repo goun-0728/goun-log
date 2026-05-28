@@ -11,11 +11,18 @@ import BlogThumbnail from './components/BlogThumbnail'
 
 /* ── 입력폼 옵션 ── */
 const FORM_CATEGORIES = ['식품', '농산물', '뷰티', '생활용품', '패션', '디지털', '기타']
-const FORM_TARGETS    = ['20대', '30-40대 주부', '직장인', '시니어', '전체']
+const FORM_GENDERS    = ['남성', '여성', '성별무관']
+const FORM_AGES       = ['10대', '20대', '30대', '40대', '50대', '60대 이상']
+const FORM_LIFESTYLE  = ['주부', '직장인', '자취생', '부모(육아중)', '건강관리중', '반려동물보호자', '시니어']
 const FORM_PRICES     = ['가성비', '중간', '프리미엄']
 const FORM_MOODS      = ['공감형', '감성형', '정보형', '전문가형']
 
-const EMPTY_FORM = { productName: '', features: '', category: '', target: '', pricePosition: '', mood: '' }
+const EMPTY_FORM = {
+  productName: '', features: '',
+  category: '',
+  targetGender: '', targetAges: [], targetLifestyle: [],
+  pricePosition: '', mood: '',
+}
 
 const GRAD_DIRS = [
   { k: 'none',   l: '없음' },
@@ -41,6 +48,23 @@ function SelBtn({ options, value, onChange }) {
         const sel = value === opt
         return (
           <button key={opt} onClick={() => onChange(value === opt ? '' : opt)}
+            style={{ padding:'8px 16px', borderRadius:9, border: sel ? '2px solid #1D6B45' : `1.5px solid ${C.bd}`, background: sel ? '#E9F7F0' : C.sur, color: sel ? '#1D6B45' : C.tx, fontSize:14, fontWeight: sel ? 700 : 400, cursor:'pointer', transition:'all .12s' }}>
+            {opt}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+/* ── 선택 버튼 (복수선택) ── */
+function MultiBtn({ options, values, onToggle }) {
+  return (
+    <div style={{ display:'flex', flexWrap:'wrap', gap:7 }}>
+      {options.map(opt => {
+        const sel = values.includes(opt)
+        return (
+          <button key={opt} onClick={() => onToggle(opt)}
             style={{ padding:'8px 16px', borderRadius:9, border: sel ? '2px solid #1D6B45' : `1.5px solid ${C.bd}`, background: sel ? '#E9F7F0' : C.sur, color: sel ? '#1D6B45' : C.tx, fontSize:14, fontWeight: sel ? 700 : 400, cursor:'pointer', transition:'all .12s' }}>
             {opt}
           </button>
@@ -819,7 +843,11 @@ export default function App() {
 
   // 입력 폼
   const [form, setForm] = useState({ ...EMPTY_FORM })
-  const updForm = useCallback((k, v) => setForm(f => ({ ...f, [k]: v })), [])
+  const updForm     = useCallback((k, v) => setForm(f => ({ ...f, [k]: v })), [])
+  const toggleArr   = useCallback((k, v) => setForm(f => ({
+    ...f,
+    [k]: f[k].includes(v) ? f[k].filter(x => x !== v) : [...f[k], v],
+  })), [])
 
   const allDone = !!(form.productName.trim() && form.features.trim())
 
@@ -882,6 +910,7 @@ export default function App() {
   const [titleHover, setTitleHover] = useState(false)
 
   const taRef       = useRef(null)
+  const featuresRef = useRef(null)
   const resRef      = useRef(null)
   const imgUploadRef = useRef(null)
 
@@ -901,6 +930,14 @@ export default function App() {
   useEffect(() => {
     try { localStorage.setItem('cos_history', JSON.stringify(history.slice(0, 20))) } catch {}
   }, [history])
+
+  /* 핵심 특징 textarea 자동 높이 조절 */
+  useEffect(() => {
+    const el = featuresRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = Math.max(100, el.scrollHeight) + 'px'
+  }, [form.features])
 
   const sw = t => {
     setTask(t)
@@ -930,12 +967,25 @@ export default function App() {
     saveResult(tid, '')
     setError('')
     try {
+      /* 타겟 문자열 조합 */
+      const tParts = []
+      if (form.targetGender && form.targetGender !== '성별무관') tParts.push(form.targetGender)
+      if (form.targetAges.length)      tParts.push(form.targetAges.join('·'))
+      if (form.targetLifestyle.length) tParts.push(form.targetLifestyle.join('·'))
+      const targetStr = tParts.join(', ')
+
       const baseText = `상품명: ${form.productName}\n핵심 특징: ${form.features}`
       const userPrompt = (tid === 'blog' && keywordContext)
         ? `다음 키워드를 자연스럽게 포함하고, 아래 내용을 참고해서 블로그 글을 작성해줘.\n키워드: ${keywordContext}\n참고 내용: ${baseText}`
         : baseText
       const hasImgs = tid === 'detail' && productImgs.length > 0
-      const sysBase = getSys(tid, tone, { category: form.category, target: form.target, pricePosition: form.pricePosition, mood: form.mood })
+      const sysBase = getSys(tid, tone, {
+        features: form.features,
+        category: form.category,
+        target: targetStr,
+        pricePosition: form.pricePosition,
+        mood: form.mood,
+      })
       const systemPrompt = hasImgs
         ? sysBase + '\n\n업로드된 제품 사진을 분석해서 제품의 외형·색상·패키지 디자인을 파악하고, 각 섹션 AI프롬프트에 실제 제품의 시각적 특성(색상, 형태, 질감, 소재감)을 구체적으로 반영해줘.'
         : sysBase
@@ -1052,17 +1102,21 @@ export default function App() {
               />
             </div>
 
-            {/* 핵심 특징 */}
+            {/* 핵심 특징 (auto-resize) */}
             <div style={{ marginBottom: 18 }}>
               <label style={{ display: 'block', fontSize: 14, fontWeight: 700, color: C.tx, marginBottom: 7 }}>
                 핵심 특징 <span style={{ color: '#ef4444' }}>*</span>
               </label>
               <textarea
+                ref={featuresRef}
                 value={form.features}
                 onChange={e => updForm('features', e.target.value)}
-                placeholder="예) 직접 큐어링, 무농약 재배, 제주산, 당도 높음, 300g 낱개 포장"
-                rows={3}
-                style={{ width: '100%', padding: '11px 14px', border: `1.5px solid ${form.features.trim() ? C.bd : '#FECACA'}`, borderRadius: 10, outline: 'none', resize: 'none', fontSize: 14, lineHeight: 1.8, color: C.tx, background: C.alt, fontFamily: 'inherit', boxSizing: 'border-box' }}
+                placeholder="예) 직접 큐어링, 무농약 재배, 제주산, 당도 높음, 300g 낱개 포장&#10;특징을 자세히 쓸수록 더 좋은 콘텐츠가 생성됩니다"
+                style={{ width: '100%', minHeight: 100, padding: '11px 14px',
+                  border: `1.5px solid ${form.features.trim() ? C.bd : '#FECACA'}`,
+                  borderRadius: 10, outline: 'none', resize: 'none', overflow: 'hidden',
+                  fontSize: 14, lineHeight: 1.8, color: C.tx, background: C.alt,
+                  fontFamily: 'inherit', boxSizing: 'border-box' }}
               />
             </div>
 
@@ -1072,10 +1126,23 @@ export default function App() {
               <SelBtn options={FORM_CATEGORIES} value={form.category} onChange={v => updForm('category', v)} />
             </div>
 
-            {/* 타겟 고객 */}
+            {/* 타겟 고객 (복수 선택) */}
             <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.mu, marginBottom: 8 }}>타겟 고객</label>
-              <SelBtn options={FORM_TARGETS} value={form.target} onChange={v => updForm('target', v)} />
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.mu, marginBottom: 10 }}>타겟 고객 <span style={{ fontWeight:400, fontSize:12 }}>(복수 선택 가능)</span></label>
+              <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                <div>
+                  <span style={{ fontSize:12, color:C.fa, display:'block', marginBottom:5 }}>성별</span>
+                  <SelBtn options={FORM_GENDERS} value={form.targetGender} onChange={v => updForm('targetGender', v)} />
+                </div>
+                <div>
+                  <span style={{ fontSize:12, color:C.fa, display:'block', marginBottom:5 }}>연령대</span>
+                  <MultiBtn options={FORM_AGES} values={form.targetAges} onToggle={v => toggleArr('targetAges', v)} />
+                </div>
+                <div>
+                  <span style={{ fontSize:12, color:C.fa, display:'block', marginBottom:5 }}>라이프스타일</span>
+                  <MultiBtn options={FORM_LIFESTYLE} values={form.targetLifestyle} onToggle={v => toggleArr('targetLifestyle', v)} />
+                </div>
+              </div>
             </div>
 
             {/* 가격포지션 */}
