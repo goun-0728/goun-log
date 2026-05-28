@@ -7,14 +7,14 @@ import { capturePNG } from '../utils'
 const CARD_W = 860
 const CARD_H = 640
 
-/* 패널 아이콘 버튼이 textarea 포커스를 빼앗지 않고 텍스트를 삽입하기 위한 공유 참조 */
-export const activeTextareaInfo = { ref: null, setText: null }
-
 export const NAMED_BLOCKS = [
   { key: 'mainCopy', label: '메인', x: 60, y: 300, w: 740, fontSize: 72, color: '#ffffff', fontWeight: 900 },
   { key: 'subCopy',  label: '서브', x: 60, y: 410, w: 740, fontSize: 28, color: 'rgba(255,255,255,0.85)', fontWeight: 400 },
   { key: 'bodyText', label: '내용', x: 60, y: 470, w: 740, fontSize: 20, color: 'rgba(255,255,255,0.72)', fontWeight: 400 },
 ]
+
+/* 패널 아이콘 버튼이 textarea 포커스를 빼앗지 않고 텍스트를 삽입하기 위한 공유 참조 */
+export const activeTextareaInfo = { ref: null, setText: null }
 
 const RESIZE_HANDLES = [
   { dir: 'nw', style: { top: -4, left: -4,                                        cursor: 'nw-resize' } },
@@ -28,7 +28,7 @@ const RESIZE_HANDLES = [
 ]
 
 /* ── 드래그 + 리사이즈 텍스트 블록 ── */
-function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect, onTextChange, onPosChange, onRemove, onFontResize, scale }) {
+function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect, onTextChange, onPosChange, onRemove, onFontResize, maxY = CARD_H - 20, scale }) {
   const [localEdit, setLocalEdit] = useState(false)
   const [dragState, setDragState] = useState(null)
   const [resizeDir, setResizeDir] = useState(null)
@@ -52,7 +52,7 @@ function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect,
     const sc = scale || 1
     const move = e => {
       const nx = Math.max(0, Math.min(CARD_W - w, dragState.baseX + (e.clientX / sc - dragState.startMx)))
-      const ny = Math.max(0, Math.min(CARD_H - 40, dragState.baseY + (e.clientY / sc - dragState.startMy)))
+      const ny = Math.max(0, Math.min(maxY, dragState.baseY + (e.clientY / sc - dragState.startMy)))
       onPosChange({ ...pos, x: nx, y: ny })
     }
     const up = () => setDragState(null)
@@ -97,7 +97,6 @@ function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect,
         newH = startH + (startY - newY)
       }
 
-      /* Shift 키: 모서리 드래그 시 비율 고정 */
       if (e.shiftKey && dir.length === 2) {
         if (dir.includes('e') || dir.includes('w')) {
           newH = newW / aspect
@@ -111,7 +110,6 @@ function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect,
       newW = Math.max(50, newW)
       newH = Math.max(20, newH)
 
-      /* 모서리 드래그 시 폰트 비례 변경 */
       if (dir.length === 2 && onFontResize) {
         const ratio = newW / startW
         const newFs = Math.min(200, Math.max(10, Math.round(startFontSize * ratio)))
@@ -196,37 +194,54 @@ function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect,
   )
 }
 
-/* ── 하단 그라데이션 오버레이 ── */
-function BottomOverlay({ bottomBox, editing, scale, activeBlockId, onBlockSelect, onUpdate }) {
-  const { bgColor = '#000000', intensity = 50, textBlocks = [] } = bottomBox || {}
+/* ── 하단 그라데이션 오버레이 (시각적 배경만) ── */
+function BottomOverlay({ bottomBox, editing, scale, onResizeH, onSectionSelect }) {
+  const { bgColor = '#000000', overlayH = 200 } = bottomBox || {}
+  const [resizing, setResizing] = useState(null)
 
-  const gradBg = `linear-gradient(to top, ${bgColor}, transparent ${intensity}%)`
-  const updateBlocks = newBlocks => onUpdate({ textBlocks: newBlocks })
+  useEffect(() => {
+    if (!resizing) return
+    const sc = scale || 1
+    const move = e => {
+      const dy = (e.clientY - resizing.startY) / sc
+      onResizeH(Math.max(60, Math.min(CARD_H, resizing.startH + dy)))
+    }
+    const up = () => setResizing(null)
+    window.addEventListener('mousemove', move)
+    window.addEventListener('mouseup', up)
+    return () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up) }
+  }, [resizing]) // eslint-disable-line
 
   return (
     <div
-      style={{ position: 'absolute', inset: 0, zIndex: 8, background: gradBg,
-        pointerEvents: editing ? 'auto' : 'none' }}
-      onClick={e => { if (e.target === e.currentTarget && editing) { onBlockSelect?.(null); e.stopPropagation() } }}
+      onClick={e => { if (e.target === e.currentTarget) { onSectionSelect?.(); e.stopPropagation() } }}
+      style={{
+        position: 'absolute', top: CARD_H, left: 0, right: 0, height: overlayH,
+        background: `linear-gradient(to bottom, transparent 0%, ${bgColor} 100%)`,
+        zIndex: 2, pointerEvents: editing ? 'auto' : 'none',
+      }}
     >
-      {textBlocks.map(b => (
-        <DragBlock
-          key={b.id}
-          bKey={b.id}
-          label="텍스트"
-          text={b.content || ''}
-          pos={{ x: b.x ?? 100, y: b.y ?? 440, w: b.w ?? 340, h: b.h }}
-          style={{ fontSize: b.fontSize || 28, color: b.color || '#ffffff', fontFamily: b.fontFamily || '', fontWeight: b.fontWeight || 700, textAlign: b.align || 'left' }}
-          editing={editing}
-          selected={activeBlockId === b.id}
-          onSelect={() => onBlockSelect?.(b.id)}
-          onTextChange={v => updateBlocks(textBlocks.map(tb => tb.id === b.id ? { ...tb, content: v } : tb))}
-          onPosChange={p => updateBlocks(textBlocks.map(tb => tb.id === b.id ? { ...tb, x: p.x, y: p.y, w: p.w, h: p.h } : tb))}
-          onRemove={() => { updateBlocks(textBlocks.filter(tb => tb.id !== b.id)); if (activeBlockId === b.id) onBlockSelect?.(null) }}
-          onFontResize={newFs => updateBlocks(textBlocks.map(tb => tb.id === b.id ? { ...tb, fontSize: newFs } : tb))}
-          scale={scale}
-        />
-      ))}
+      {/* 상단 경계선 (편집 시) */}
+      {editing && (
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2,
+          background: 'rgba(59,130,246,0.4)', pointerEvents: 'none' }} />
+      )}
+
+      {/* 하단 드래그 핸들 */}
+      {editing && (
+        <div
+          onMouseDown={e => {
+            e.preventDefault(); e.stopPropagation()
+            setResizing({ startY: e.clientY, startH: overlayH })
+          }}
+          style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0, height: 14,
+            cursor: 'ns-resize', background: 'rgba(59,130,246,0.15)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 20,
+          }}>
+          <div style={{ width: 48, height: 4, background: '#3b82f6', borderRadius: 2 }} />
+        </div>
+      )}
     </div>
   )
 }
@@ -316,7 +331,10 @@ export default function SectionEditor({
     return { x: def.x || 60, y: def.y || 300, w: def.w || 740, ...(dr.blockPositions?.[key] || {}) }
   }
 
-  const freeBlocks = dr.freeBlocks || []
+  const freeBlocks  = dr.freeBlocks || []
+  const overlayH    = dr.bottomBox?.overlayH ?? 0
+  const totalH      = CARD_H + (dr.bottomBox ? overlayH : 0)
+  const bbTxtBlocks = dr.bottomBox?.textBlocks || []
 
   const grad = dr.gradient?.dir && dr.gradient.dir !== 'none'
     ? mkGrad(dr.gradient.dir, dr.gradient.alpha ?? 70)
@@ -326,9 +344,11 @@ export default function SectionEditor({
   const img = dr.secImg || placeholderImg
   const dlLabel = dl ? '변환 중' : '↓ PNG'
 
+  const selectSection = useCallback(() => onSelect?.(idx), [idx, onSelect]) // eslint-disable-line
+
   return (
     <div
-      onClick={e => { onSelect?.(idx); e.stopPropagation() }}
+      onClick={e => { selectSection(); e.stopPropagation() }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{ position: 'relative', cursor: 'default' }}
@@ -363,80 +383,115 @@ export default function SectionEditor({
       {/* 카드 */}
       <div ref={wrapRef} style={{ position:'relative',background:'#e8e6e0',overflow:'hidden' }}>
         <div style={{ width:CARD_W,transformOrigin:'top left',transform:`scale(${scale})` }}>
-          <div ref={ref} data-sect-card style={{ fontFamily:"'Noto Sans KR','Apple SD Gothic Neo',sans-serif",width:CARD_W,position:'relative' }}>
+          {/* data-sect-card: 전체 높이 = 이미지 + 오버레이 */}
+          <div ref={ref} data-sect-card
+            style={{ fontFamily:"'Noto Sans KR','Apple SD Gothic Neo',sans-serif", width:CARD_W, position:'relative', height: totalH }}>
 
-            <div style={{ position:'relative', height: CARD_H, overflow: 'hidden' }}>
+            {/* 이미지 영역 (클릭 시 섹션 선택) */}
+            <div
+              style={{ position:'absolute', top:0, left:0, right:0, height:CARD_H, overflow:'hidden', zIndex:1 }}
+              onClick={selectSection}
+            >
               <ImgBox url={img} t={t} label="배경 이미지" editing={editing}
                 onImgChange={v => commit({ secImg: v })}
                 imgMeta={secMeta?.img1} onMetaChange={m => setSecMeta(p=>({...p,img1:m}))}
-                minH={CARD_H} fill />
-
-              {/* 그라데이션 오버레이 (섹션 설정) */}
+                minH={CARD_H} fill isActive={isSelected} />
               {grad && <div style={{ position:'absolute',inset:0,background:grad,pointerEvents:'none' }} />}
-
-              {/* 하단 그라데이션 오버레이 (bottomBox) */}
-              {dr.bottomBox && (
-                <BottomOverlay
-                  bottomBox={dr.bottomBox}
-                  editing={editing}
-                  scale={scale}
-                  activeBlockId={activeBlockId}
-                  onBlockSelect={onBlockSelect}
-                  onUpdate={patch => {
-                    if (patch === null) {
-                      commit({ bottomBox: null })
-                    } else {
-                      commit({ bottomBox: { ...(drRef.current.bottomBox || { bgColor: '#000000', intensity: 50, textBlocks: [], icons: [] }), ...patch } })
-                    }
-                  }}
-                />
-              )}
-
-              {/* Named 텍스트 블록 (메인/서브/내용) — bottomBox 위로 */}
-              {NAMED_BLOCKS.map(({ key, label }) => (
-                <DragBlock
-                  key={key}
-                  bKey={key}
-                  label={label}
-                  text={dr[key] || ''}
-                  pos={getNamedPos(key)}
-                  style={getNamedStyle(key)}
-                  editing={editing}
-                  selected={isSelected && activeBlockId === key}
-                  onSelect={() => { onBlockSelect?.(key); onActiveFieldChange?.(null) }}
-                  onTextChange={v => commit({ [key]: v })}
-                  onPosChange={p => commit({ blockPositions: { ...(drRef.current.blockPositions || {}), [key]: p } })}
-                  onRemove={() => { commit({ [key]: '' }); if (activeBlockId === key) onBlockSelect?.(null) }}
-                  onFontResize={newFs => {
-                    const cur = drRef.current.textStyles || {}
-                    commit({ textStyles: { ...cur, [key]: { ...(cur[key] || {}), fontSize: newFs } } })
-                  }}
-                  scale={scale}
-                />
-              ))}
-
-              {/* Free 텍스트 블록 */}
-              {freeBlocks.map(b => (
-                <DragBlock
-                  key={b.id}
-                  bKey={b.id}
-                  label="추가"
-                  text={b.content || ''}
-                  pos={{ x: b.x ?? 230, y: b.y ?? 80, w: b.w ?? 400, h: b.h }}
-                  style={{ fontSize: b.fontSize || 28, color: b.color || '#ffffff', fontFamily: b.fontFamily || '', fontWeight: b.fontWeight || 700, textAlign: b.textAlign || 'left' }}
-                  editing={editing}
-                  selected={isSelected && activeBlockId === b.id}
-                  onSelect={() => { onBlockSelect?.(b.id); onActiveFieldChange?.(null) }}
-                  onTextChange={v => commit({ freeBlocks: drRef.current.freeBlocks.map(fb => fb.id === b.id ? {...fb, content: v} : fb) })}
-                  onPosChange={p => commit({ freeBlocks: drRef.current.freeBlocks.map(fb => fb.id === b.id ? {...fb, x:p.x, y:p.y, w:p.w, h:p.h} : fb) })}
-                  onRemove={() => { commit({ freeBlocks: drRef.current.freeBlocks.filter(fb => fb.id !== b.id) }); if (activeBlockId === b.id) onBlockSelect?.(null) }}
-                  onFontResize={newFs => commit({ freeBlocks: drRef.current.freeBlocks.map(fb => fb.id === b.id ? {...fb, fontSize: newFs} : fb) })}
-                  scale={scale}
-                />
-              ))}
             </div>
 
-            <div style={{ padding:'6px 20px',textAlign:'right',fontSize:9,color:t.fg,opacity:0.1,background:t.bg }}>ContentOS</div>
+            {/* 하단 오버레이 (이미지 아래) */}
+            {dr.bottomBox && (
+              <BottomOverlay
+                bottomBox={dr.bottomBox}
+                editing={editing}
+                scale={scale}
+                onSectionSelect={selectSection}
+                onResizeH={newH => commit({ bottomBox: { ...drRef.current.bottomBox, overlayH: newH } })}
+              />
+            )}
+
+            {/* Named 텍스트 블록 — 전체 섹션 높이 기준 absolute */}
+            {NAMED_BLOCKS.map(({ key, label }) => (
+              <DragBlock
+                key={key}
+                bKey={key}
+                label={label}
+                text={dr[key] || ''}
+                pos={getNamedPos(key)}
+                style={getNamedStyle(key)}
+                editing={editing}
+                selected={isSelected && activeBlockId === key}
+                maxY={totalH - 20}
+                onSelect={() => { selectSection(); onBlockSelect?.(key); onActiveFieldChange?.(null) }}
+                onTextChange={v => commit({ [key]: v })}
+                onPosChange={p => commit({ blockPositions: { ...(drRef.current.blockPositions || {}), [key]: p } })}
+                onRemove={() => { commit({ [key]: '' }); if (activeBlockId === key) onBlockSelect?.(null) }}
+                onFontResize={newFs => {
+                  const cur = drRef.current.textStyles || {}
+                  commit({ textStyles: { ...cur, [key]: { ...(cur[key] || {}), fontSize: newFs } } })
+                }}
+                scale={scale}
+              />
+            ))}
+
+            {/* Free 텍스트 블록 */}
+            {freeBlocks.map(b => (
+              <DragBlock
+                key={b.id}
+                bKey={b.id}
+                label="추가"
+                text={b.content || ''}
+                pos={{ x: b.x ?? 230, y: b.y ?? 80, w: b.w ?? 400, h: b.h }}
+                style={{ fontSize: b.fontSize||28, color: b.color||'#ffffff', fontFamily: b.fontFamily||'', fontWeight: b.fontWeight||700, textAlign: b.textAlign||'left' }}
+                editing={editing}
+                selected={isSelected && activeBlockId === b.id}
+                maxY={totalH - 20}
+                onSelect={() => { selectSection(); onBlockSelect?.(b.id); onActiveFieldChange?.(null) }}
+                onTextChange={v => commit({ freeBlocks: drRef.current.freeBlocks.map(fb => fb.id===b.id ? {...fb, content:v} : fb) })}
+                onPosChange={p => commit({ freeBlocks: drRef.current.freeBlocks.map(fb => fb.id===b.id ? {...fb, x:p.x, y:p.y, w:p.w, h:p.h} : fb) })}
+                onRemove={() => { commit({ freeBlocks: drRef.current.freeBlocks.filter(fb => fb.id!==b.id) }); if (activeBlockId===b.id) onBlockSelect?.(null) }}
+                onFontResize={newFs => commit({ freeBlocks: drRef.current.freeBlocks.map(fb => fb.id===b.id ? {...fb, fontSize:newFs} : fb) })}
+                scale={scale}
+              />
+            ))}
+
+            {/* 오버레이 텍스트 블록 (오버레이 영역에 기본 배치, 전체 높이 내 이동 가능) */}
+            {bbTxtBlocks.map(b => (
+              <DragBlock
+                key={b.id}
+                bKey={b.id}
+                label="텍스트"
+                text={b.content || ''}
+                pos={{ x: b.x ?? 80, y: b.y ?? (CARD_H + 40), w: b.w ?? 340, h: b.h }}
+                style={{ fontSize: b.fontSize||28, color: b.color||'#ffffff', fontFamily: b.fontFamily||'', fontWeight: b.fontWeight||700, textAlign: b.align||'left' }}
+                editing={editing}
+                selected={activeBlockId === b.id}
+                maxY={totalH - 20}
+                onSelect={() => { selectSection(); onBlockSelect?.(b.id) }}
+                onTextChange={v => {
+                  const bb = drRef.current.bottomBox
+                  if (!bb) return
+                  commit({ bottomBox: { ...bb, textBlocks: bb.textBlocks.map(tb => tb.id===b.id ? {...tb, content:v} : tb) } })
+                }}
+                onPosChange={p => {
+                  const bb = drRef.current.bottomBox
+                  if (!bb) return
+                  commit({ bottomBox: { ...bb, textBlocks: bb.textBlocks.map(tb => tb.id===b.id ? {...tb, x:p.x, y:p.y, w:p.w, h:p.h} : tb) } })
+                }}
+                onRemove={() => {
+                  const bb = drRef.current.bottomBox
+                  if (!bb) return
+                  commit({ bottomBox: { ...bb, textBlocks: bb.textBlocks.filter(tb => tb.id!==b.id) } })
+                  if (activeBlockId===b.id) onBlockSelect?.(null)
+                }}
+                onFontResize={newFs => {
+                  const bb = drRef.current.bottomBox
+                  if (!bb) return
+                  commit({ bottomBox: { ...bb, textBlocks: bb.textBlocks.map(tb => tb.id===b.id ? {...tb, fontSize:newFs} : tb) } })
+                }}
+                scale={scale}
+              />
+            ))}
           </div>
         </div>
       </div>

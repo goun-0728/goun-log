@@ -201,7 +201,7 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeBlockId, onAddSection,
 
   const change  = (key, val) => onUpdate(idx, { ...sec, [key]: val })
   const setGrad = (key, val) => change('gradient', { ...grad, [key]: val })
-  const setBB   = patch => change('bottomBox', patch === null ? null : { ...(bb || { bgColor:'#000000', intensity:50, textBlocks:[] }), ...patch })
+  const setBB   = patch => change('bottomBox', patch === null ? null : { ...(bb || { bgColor:'#000000', overlayH:200, textBlocks:[] }), ...patch })
 
   /* 메인 블록 선택 */
   const isNamed    = activeBlockId && NAMED_KEYS.has(activeBlockId)
@@ -432,20 +432,11 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeBlockId, onAddSection,
                 style={{ width:34, height:22, border:'1px solid #ccc', padding:0, cursor:'pointer', borderRadius:4 }} />
               <span style={{ fontSize:12, color:C.fa }}>{bb.bgColor||'#000000'}</span>
             </label>
-            <div style={{ marginBottom:10 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
-                <span style={{ fontSize:14, color:C.mu }}>강도</span>
-                <span style={{ fontSize:14, fontWeight:700, color:C.tx }}>{bb.intensity??50}%</span>
-              </div>
-              <input type="range" min={0} max={100} step={1}
-                value={bb.intensity??50}
-                onChange={e => setBB({ intensity: +e.target.value })}
-                style={{ width:'100%', accentColor:'#3b82f6' }} />
-            </div>
+            <p style={{ fontSize:12, color:C.fa, margin:'0 0 8px' }}>높이 {bb.overlayH||200}px — 이미지 하단 핸들로 조절</p>
             <button
               onClick={() => {
                 const d = defStyle
-                const newTxt = { id:`txt_${Date.now()}`, x:80, y:440, w:340, h:null, content:'텍스트', fontSize:d.fontSize, fontFamily:d.fontFamily, color:d.color, fontWeight:d.fontWeight, align:d.align }
+                const newTxt = { id:`txt_${Date.now()}`, x:80, y:660, w:340, h:null, content:'텍스트', fontSize:d.fontSize, fontFamily:d.fontFamily, color:d.color, fontWeight:d.fontWeight, align:d.align }
                 setBB({ textBlocks: [...(bb.textBlocks||[]), newTxt] })
               }}
               style={{ width:'100%', padding:'8px 0', fontSize:14, fontWeight:700, borderRadius:7, border:'1.5px dashed #3b82f6', background:'#eff6ff', color:'#1d4ed8', cursor:'pointer', marginBottom:8 }}>
@@ -459,7 +450,7 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeBlockId, onAddSection,
           </>
         ) : (
           <button
-            onClick={() => change('bottomBox', { bgColor:'#000000', intensity:50, textBlocks:[] })}
+            onClick={() => change('bottomBox', { bgColor:'#000000', overlayH:200, textBlocks:[] })}
             style={{ width:'100%', padding:'8px 0', fontSize:14, fontWeight:700, borderRadius:7, border:'1.5px dashed #3b82f6', background:'#eff6ff', color:'#1d4ed8', cursor:'pointer', marginBottom:8 }}>
             + 하단 오버레이 추가
           </button>

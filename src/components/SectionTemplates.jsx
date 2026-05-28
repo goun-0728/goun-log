@@ -12,8 +12,8 @@ export function mkGrad(dir, alpha) {
   if (!dir || dir === 'none') return null
   if (dir === 'bottom') return `linear-gradient(to top, rgba(0,0,0,${a}) 0%, transparent 60%)`
   if (dir === 'top')    return `linear-gradient(to bottom, rgba(0,0,0,${a}) 0%, transparent 60%)`
-  if (dir === 'left')   return `linear-gradient(to left, rgba(0,0,0,${a}) 0%, transparent 60%)`
-  if (dir === 'right')  return `linear-gradient(to right, rgba(0,0,0,${a}) 0%, transparent 60%)`
+  if (dir === 'left')   return `linear-gradient(to right, rgba(0,0,0,${a}) 0%, transparent 60%)`
+  if (dir === 'right')  return `linear-gradient(to left, rgba(0,0,0,${a}) 0%, transparent 60%)`
   if (dir === 'full')   return `rgba(0,0,0,${(a * 0.55).toFixed(2)})`
   return null
 }
@@ -86,13 +86,13 @@ export function EditText({ value, onChange, editing, style, fieldKey, extraStyle
   )
 }
 
-export function ImageAdjust({ url, editing, imgMeta, onMetaChange, fixedH, fitMode = 'cover', onError }) {
+export function ImageAdjust({ url, editing, imgMeta, onMetaChange, fixedH, fitMode = 'cover', onError, isActive = false }) {
   const [dragging, setDragging] = useState(false)
   const [start, setStart]       = useState({ x: 0, y: 0 })
   const meta    = imgMeta || { scale: 1, x: 0, y: 0 }
   const divRef  = useRef(null)
   const snapRef = useRef(null)
-  snapRef.current = { editing, meta, onMetaChange }
+  snapRef.current = { editing, meta, onMetaChange, isActive }
 
   const handleMouseDown = e => {
     if (!editing) return
@@ -107,8 +107,8 @@ export function ImageAdjust({ url, editing, imgMeta, onMetaChange, fixedH, fitMo
     const el = divRef.current
     if (!el) return
     const handler = e => {
-      const { editing, meta, onMetaChange } = snapRef.current
-      if (!editing) return
+      const { editing, meta, onMetaChange, isActive } = snapRef.current
+      if (!editing || !isActive) return
       e.preventDefault()
       onMetaChange({ ...meta, scale: Math.max(0.5, Math.min(4, meta.scale + (e.deltaY > 0 ? -0.05 : 0.05))) })
     }
@@ -132,7 +132,7 @@ export function ImageAdjust({ url, editing, imgMeta, onMetaChange, fixedH, fitMo
   )
 }
 
-export function ImgBox({ url, t, label, editing = false, onImgChange, minH = 320, imgMeta, onMetaChange, fixedH, fitMode, fill }) {
+export function ImgBox({ url, t, label, editing = false, onImgChange, minH = 320, imgMeta, onMetaChange, fixedH, fitMode, fill, isActive = false }) {
   const ref = useRef(null)
   const [imgError, setImgError] = useState(false)
 
@@ -166,7 +166,7 @@ export function ImgBox({ url, t, label, editing = false, onImgChange, minH = 320
           📷 사진 교체
         </button>
       )}
-      <ImageAdjust url={url} editing={editing} imgMeta={imgMeta} onMetaChange={onMetaChange || (() => {})} fixedH={fill ? '100%' : fixedH} fitMode={fitMode} onError={() => setImgError(true)} />
+      <ImageAdjust url={url} editing={editing} imgMeta={imgMeta} onMetaChange={onMetaChange || (() => {})} fixedH={fill ? '100%' : fixedH} fitMode={fitMode} onError={() => setImgError(true)} isActive={isActive} />
       {editing && <div style={{ position: 'absolute', inset: 0, border: `2px dashed ${t?.bd || '#ccc'}`, pointerEvents: 'none', zIndex: 5 }} />}
     </div>
   )
