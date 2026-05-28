@@ -272,9 +272,10 @@ AI프롬프트: (제품 활용 라이프스타일 장면 2 — lifestyle photogr
 }
 
 function _buildSections(opts = {}) {
-  const { planningStyle } = opts
+  const { planningStyle, mood } = opts
+  const effectiveStyle = planningStyle || _MOOD_STYLE[mood] || null
   let order
-  switch (planningStyle) {
+  switch (effectiveStyle) {
     case '문제해결형':   order = ['HERO', '문제 공감', '해결 제안', '특징 강조', '비교', 'CTA']; break
     case '감성소구형':   order = ['HERO', '브랜드 스토리', '사용 상황', '추천 대상', 'CTA']; break
     case '전문성강조형': order = ['HERO', '소재설명', '특징 강조', '인증/수상', 'CTA']; break
@@ -306,53 +307,63 @@ const _EMPH_MAP = {
   '디자인/패키지': '디자인과 패키지의 감성과 차별점 강조',
 }
 
+const _MOOD_MAP = {
+  '공감형':   '타겟의 고민과 불편함을 공감하는 친근한 문체, 따뜻하고 편안한 어조, 일상적인 언어 사용',
+  '감성형':   '감성적·스토리텔링 중심, 따뜻하고 시적인 표현, 감정을 자극하는 카피',
+  '정보형':   '수치·근거·성분을 중심으로 신뢰를 주는 정보 전달형 문체, 구체적 데이터 강조',
+  '전문가형': '전문적·권위 있는 어조, 기술적 차별점과 품질 인증을 강조, 고급스러운 표현',
+}
+const _MOOD_STYLE = {
+  '공감형':   '문제해결형',
+  '감성형':   '감성소구형',
+  '정보형':   '전문성강조형',
+  '전문가형': '전문성강조형',
+}
+const _PRICE_MAP = {
+  '가성비':   '가성비/저가 포지션 — 합리적 가격 대비 높은 가치 강조, 실용적 표현',
+  '중간':     '합리적 중간가 포지션 — 품질과 가격의 균형, 신뢰와 실용성 강조',
+  '프리미엄': '프리미엄 포지션 — 고품질·차별화·감성 강조, 품격 있는 표현',
+}
+
 function _buildCustomBlock(opts = {}) {
   const {
-    category, priceRange,
+    /* 새 심플폼 필드 */
+    category, target, pricePosition, mood,
+    /* 기존 퀴즈 필드 (하위 호환) */
     gender, ageGroup, purchaseSituation,
-    pricePosition, competition,
-    differentiator, differentiatorTypes = [],
+    competition, differentiator, differentiatorTypes = [],
     planningStyle, brandTone = [], emphasis = [],
   } = opts
   const lines = ['━━━ 맞춤 기획 설정 ━━━']
 
-  if (category || priceRange) {
-    const parts = [category, priceRange].filter(Boolean)
-    lines.push(`■ 제품 카테고리/가격대: ${parts.join(' / ')}`)
+  if (category)       lines.push(`■ 카테고리: ${category}`)
+  if (target)         lines.push(`■ 타겟 고객: ${target} → 이 타겟의 언어·관심사·구매 심리에 맞게 카피 작성`)
+  if (pricePosition)  lines.push(`■ 가격 포지션: ${_PRICE_MAP[pricePosition] || pricePosition}`)
+  if (mood) {
+    lines.push(`■ 콘텐츠 분위기: ${_MOOD_MAP[mood] || mood}`)
+    lines.push(`  → 모든 카피와 섹션에 이 분위기를 일관되게 반영`)
   }
 
+  /* 기존 퀴즈 필드 지원 */
   const targetParts = [gender, ageGroup].filter(Boolean)
   if (targetParts.length || purchaseSituation) {
-    if (targetParts.length) lines.push(`■ 타겟 고객: ${targetParts.join(' ')} 중심`)
-    if (purchaseSituation) lines.push(`  구매 상황: ${purchaseSituation}`)
-    lines.push(`  → 이 타겟의 언어·관심사·구매 심리에 맞게 카피 작성`)
+    if (targetParts.length) lines.push(`■ 타겟(상세): ${targetParts.join(' ')} 중심`)
+    if (purchaseSituation)  lines.push(`  구매 상황: ${purchaseSituation}`)
   }
-
-  if (pricePosition || competition) {
-    const pp = [pricePosition, competition].filter(Boolean)
-    lines.push(`■ 시장 포지션: ${pp.join(' / ')}`)
-  }
-
+  if (competition)      lines.push(`■ 경쟁 상황: ${competition}`)
   if (differentiator) {
     lines.push(`■ 핵심 차별점: ${differentiator}`)
     if (differentiatorTypes.length) lines.push(`  차별점 유형: ${differentiatorTypes.join(', ')}`)
     lines.push(`  → 비교·특징 섹션에 이 차별점을 구체적으로 활용`)
   }
-
-  if (planningStyle) {
-    lines.push(`■ 기획 방식: ${planningStyle} → 아래 섹션 순서대로 작성`)
-  }
-
+  if (planningStyle) lines.push(`■ 기획 방식: ${planningStyle}`)
   if (brandTone.length) {
     lines.push(`■ 브랜드 톤: ${brandTone.join(', ')}`)
     lines.push(`  → ${brandTone.map(t => _TONE_MAP[t] || t).join(' / ')}`)
-    lines.push(`  → 모든 카피와 섹션에 이 톤을 일관되게 반영`)
   }
-
   if (emphasis.length) {
     lines.push(`■ 강조 포인트: ${emphasis.join(', ')}`)
     lines.push(`  → ${emphasis.map(e => _EMPH_MAP[e] || e).join(' / ')}`)
-    lines.push(`  → 카피·섹션 구성 전반에 이 강조점을 최우선 반영`)
   }
 
   lines.push('━━━━━━━━━━━━━━━━━━')

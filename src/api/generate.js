@@ -29,8 +29,13 @@ export async function generateContent({ systemPrompt, userPrompt, images = [], m
   });
 
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || `HTTP ${res.status}`);
+    let errMsg = `HTTP ${res.status}`
+    try {
+      const data = await res.json()
+      const e = data.error
+      errMsg = typeof e === 'string' ? e : (e?.message || JSON.stringify(data) || errMsg)
+    } catch {}
+    throw new Error(errMsg)
   }
 
   const data = await res.json();

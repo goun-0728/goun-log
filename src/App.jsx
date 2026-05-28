@@ -9,35 +9,13 @@ import CardNewsView from './components/CardNewsEditor'
 import BlogKeywords from './components/BlogKeywords'
 import BlogThumbnail from './components/BlogThumbnail'
 
-/* ── 퀴즈 상수 ─────────────────────────────────────── */
-const CATEGORIES = ['식품/음료', '뷰티/화장품', '생활용품', '패션/잡화', '건강/이너뷰티', '스포츠/레저', '디지털/가전', '반려동물', '기타']
-const PRICE_RANGES = ['~1만원', '1~3만원', '3~5만원', '5~10만원', '10만원이상']
-const GENDERS = ['여성', '남성', '무관']
-const AGE_GROUPS = ['20대', '30대', '40대', '50대이상', '무관']
-const PURCHASE_SITUATIONS = ['일상소비(자주구매하는생필품)', '특별한날(선물/기념일)', '문제해결(불편함/필요에의해)', '자기계발/취미', '건강/관리목적', '트렌드/유행따라']
-const PRICE_POSITIONS = ['가성비/저가', '합리적중간가', '프리미엄']
-const COMPETITION_TYPES = ['경쟁많은시장', '차별화포지션', '틈새시장']
-const DIFF_TYPES = ['원산지/성분', '제조방식', '가격경쟁력', '디자인/패키지', '브랜드스토리', '인증/수상', '편의성/속도']
-const PLANNING_STYLES = [
-  { key: '문제해결형',   desc: 'Hero → 문제공감 → 해결제안 → 특징강조 → 비교 → CTA' },
-  { key: '감성소구형',   desc: 'Hero → 감성스토리 → 사용장면 → 추천대상 → CTA' },
-  { key: '전문성강조형', desc: 'Hero → 소재설명 → 특징강조 → 인증/수상 → CTA' },
-  { key: '라이프스타일형', desc: 'Hero → 사용장면 → 사용장면2 → 추천대상 → CTA' },
-  { key: '비교우위형',   desc: 'Hero → 문제공감 → 비교 → 특징강조 → CTA' },
-  { key: '스토리텔링형', desc: 'Hero → 브랜드스토리 → 소재설명 → 사용장면 → CTA' },
-]
-const BRAND_TONES = ['따뜻한/감성적', '신뢰감/전문적', '힙/트렌디', '레트로/빈티지', '유머/B급', '고급스러운', '친근한/편안한']
-const EMPHASIS_POINTS = ['품질/성능', '원산지/성분', '가격/가성비', '편의성', '브랜드스토리', '인증/수상', '환경/윤리', '디자인/패키지']
+/* ── 입력폼 옵션 ── */
+const FORM_CATEGORIES = ['식품', '농산물', '뷰티', '생활용품', '패션', '디지털', '기타']
+const FORM_TARGETS    = ['20대', '30-40대 주부', '직장인', '시니어', '전체']
+const FORM_PRICES     = ['가성비', '중간', '프리미엄']
+const FORM_MOODS      = ['공감형', '감성형', '정보형', '전문가형']
 
-const EMPTY_QUIZ = {
-  category: '', priceRange: '',
-  gender: '', ageGroup: '', purchaseSituation: '',
-  pricePosition: '', competition: '',
-  differentiator: '', differentiatorTypes: [],
-  planningStyle: '',
-  brandTone: [],
-  emphasis: [],
-}
+const EMPTY_FORM = { productName: '', features: '', category: '', target: '', pricePosition: '', mood: '' }
 
 const GRAD_DIRS = [
   { k: 'none',   l: '없음' },
@@ -55,81 +33,21 @@ const ICON_LIST = [
   { k: '🔥', l: '불꽃' }, { k: '👑', l: '왕관' }, { k: '💎', l: '다이아' }, { k: '🎀', l: '리본' },
 ]
 
-function TplIcon({ k }) {
-  const d = '#9CA3AF', l = '#E5E7EB', a = '#6B7280'
-  const base = { borderRadius:2, overflow:'hidden', width:'100%', height:32, position:'relative', flexShrink:0 }
-  if (k === 'fullHero') return (
-    <div style={{ ...base, background:d }}>
-      <div style={{ position:'absolute',bottom:5,left:5,right:5,height:5,background:'rgba(255,255,255,0.35)',borderRadius:1 }} />
-      <div style={{ position:'absolute',bottom:12,left:5,width:'55%',height:4,background:'rgba(255,255,255,0.6)',borderRadius:1 }} />
+/* ── 선택 버튼 (단일선택) ── */
+function SelBtn({ options, value, onChange }) {
+  return (
+    <div style={{ display:'flex', flexWrap:'wrap', gap:7 }}>
+      {options.map(opt => {
+        const sel = value === opt
+        return (
+          <button key={opt} onClick={() => onChange(value === opt ? '' : opt)}
+            style={{ padding:'8px 16px', borderRadius:9, border: sel ? '2px solid #1D6B45' : `1.5px solid ${C.bd}`, background: sel ? '#E9F7F0' : C.sur, color: sel ? '#1D6B45' : C.tx, fontSize:14, fontWeight: sel ? 700 : 400, cursor:'pointer', transition:'all .12s' }}>
+            {opt}
+          </button>
+        )
+      })}
     </div>
   )
-  if (k === 'topBottom') return (
-    <div style={{ ...base, display:'flex',flexDirection:'column',gap:1 }}>
-      <div style={{ flex:1,background:l,display:'flex',alignItems:'center',paddingLeft:4 }}>
-        <div style={{ width:'55%',height:3,background:a,borderRadius:1,opacity:0.6 }} />
-      </div>
-      <div style={{ flex:1,background:d }} />
-    </div>
-  )
-  if (k === 'leftRight') return (
-    <div style={{ ...base, display:'flex',gap:1 }}>
-      <div style={{ flex:1,background:d }} />
-      <div style={{ flex:1,background:l,display:'flex',flexDirection:'column',justifyContent:'center',gap:2,padding:4 }}>
-        <div style={{ height:3,background:a,borderRadius:1,opacity:0.7 }} />
-        <div style={{ height:2,background:a,borderRadius:1,opacity:0.4 }} />
-      </div>
-    </div>
-  )
-  if (k === 'points3icon') return (
-    <div style={{ ...base, display:'flex',flexDirection:'column',gap:1 }}>
-      <div style={{ flex:2,background:d }} />
-      <div style={{ flex:1,display:'flex',gap:1 }}>
-        <div style={{ flex:1,background:l }} />
-        <div style={{ flex:1,background:l }} />
-        <div style={{ flex:1,background:l }} />
-      </div>
-    </div>
-  )
-  if (k === 'story') return (
-    <div style={{ ...base, background:l,display:'flex',flexDirection:'column',justifyContent:'center',gap:3,padding:'4px 6px' }}>
-      <div style={{ height:5,background:d,borderRadius:1,width:'80%' }} />
-      <div style={{ height:2,background:a,borderRadius:1,opacity:0.5,width:'95%' }} />
-      <div style={{ height:2,background:a,borderRadius:1,opacity:0.5,width:'70%' }} />
-    </div>
-  )
-  if (k === 'howTo') return (
-    <div style={{ ...base, display:'flex',flexDirection:'column',gap:1 }}>
-      <div style={{ height:10,background:d,display:'flex',alignItems:'center',justifyContent:'center' }}>
-        <div style={{ height:3,width:'50%',background:'rgba(255,255,255,0.6)',borderRadius:1 }} />
-      </div>
-      <div style={{ flex:1,background:'#c5c9d0' }} />
-      <div style={{ height:8,background:l,display:'flex',flexDirection:'column',justifyContent:'center',gap:1,padding:'0 4px' }}>
-        <div style={{ height:2,background:a,borderRadius:1,opacity:0.5 }} />
-      </div>
-    </div>
-  )
-  if (k === 'compare') return (
-    <div style={{ ...base, background:l,display:'flex',flexDirection:'column',gap:1,padding:3 }}>
-      <div style={{ height:3,background:d,borderRadius:1,width:'55%',margin:'1px auto 3px' }} />
-      <div style={{ flex:1,display:'flex',gap:1 }}>
-        <div style={{ flex:1,background:'#d1d5db',borderRadius:1 }} />
-        <div style={{ flex:1,background:d,borderRadius:1 }} />
-      </div>
-    </div>
-  )
-  if (k === 'specTable') return (
-    <div style={{ ...base, background:'#FDFAF5',display:'flex',flexDirection:'column',gap:2,padding:3 }}>
-      <div style={{ height:4,background:d,borderRadius:1,marginBottom:2 }} />
-      {[1,2,3].map(i => (
-        <div key={i} style={{ height:4,display:'flex',gap:1 }}>
-          <div style={{ width:'30%',background:'#d0c8b8',borderRadius:1 }} />
-          <div style={{ flex:1,background:l,borderRadius:1 }} />
-        </div>
-      ))}
-    </div>
-  )
-  return <div style={{ ...base, background:l }} />
 }
 
 /* ── 미니 컴포넌트 ─────────────────────────────────── */
@@ -899,31 +817,11 @@ export default function App() {
     })
   }, [])
 
-  // 공통 제품 정보
-  const [sharedInput, setSharedInput] = useState('')
+  // 입력 폼
+  const [form, setForm] = useState({ ...EMPTY_FORM })
+  const updForm = useCallback((k, v) => setForm(f => ({ ...f, [k]: v })), [])
 
-  // 7단계 퀴즈
-  const [quiz, setQuiz] = useState({ ...EMPTY_QUIZ })
-
-  const updQuiz = useCallback((key, val) => setQuiz(q => ({ ...q, [key]: val })), [])
-
-  useEffect(() => {
-    try { localStorage.setItem('cos_input', sharedInput) } catch {}
-  }, [sharedInput])
-
-  useEffect(() => {
-    try { localStorage.setItem('cos_quiz', JSON.stringify(quiz)) } catch {}
-  }, [quiz])
-
-  // 단계 완료 여부
-  const step1Done = !!(sharedInput.trim() && quiz.category && quiz.priceRange)
-  const step2Done = !!(quiz.gender && quiz.ageGroup && quiz.purchaseSituation)
-  const step3Done = !!(quiz.pricePosition && quiz.competition)
-  const step4Done = !!(quiz.differentiator.trim())
-  const step5Done = !!(quiz.planningStyle)
-  const step6Done = quiz.brandTone.length > 0
-  const step7Done = quiz.emphasis.length > 0
-  const allDone = step1Done && step2Done && step3Done && step4Done && step5Done && step6Done && step7Done
+  const allDone = !!(form.productName.trim() && form.features.trim())
 
   // 탭별 결과
   const [tabResults, setTabResults] = useState(() => {
@@ -984,7 +882,6 @@ export default function App() {
   const [titleHover, setTitleHover] = useState(false)
 
   const taRef       = useRef(null)
-  const diffRef     = useRef(null)
   const resRef      = useRef(null)
   const imgUploadRef = useRef(null)
 
@@ -1001,19 +898,6 @@ export default function App() {
     e.target.value = ''
   }
 
-  // textarea 자동 높이
-  useEffect(() => {
-    if (!taRef.current) return
-    taRef.current.style.height = 'auto'
-    taRef.current.style.height = Math.max(120, taRef.current.scrollHeight) + 'px'
-  }, [sharedInput])
-
-  useEffect(() => {
-    if (!diffRef.current) return
-    diffRef.current.style.height = 'auto'
-    diffRef.current.style.height = Math.max(72, diffRef.current.scrollHeight) + 'px'
-  }, [quiz.differentiator])
-
   useEffect(() => {
     try { localStorage.setItem('cos_history', JSON.stringify(history.slice(0, 20))) } catch {}
   }, [history])
@@ -1024,8 +908,7 @@ export default function App() {
   }
 
   const resetAll = () => {
-    setSharedInput('')
-    setQuiz({ ...EMPTY_QUIZ })
+    setForm({ ...EMPTY_FORM })
     setProductImgs([])
     const empty = {}
     for (const t of TASKS) {
@@ -1038,22 +921,21 @@ export default function App() {
     setTask(TASKS[0])
     setError('')
     setKeywordContext('')
-    try { localStorage.removeItem('cos_input'); localStorage.removeItem('cos_quiz') } catch {}
   }
 
   const run = async () => {
-    if (!sharedInput.trim() || !allDone || tabLoading[task.id]) return
+    if (!allDone || tabLoading[task.id]) return
     const tid = task.id
     setTabLoading(prev => ({ ...prev, [tid]: true }))
     saveResult(tid, '')
     setError('')
     try {
+      const baseText = `상품명: ${form.productName}\n핵심 특징: ${form.features}`
       const userPrompt = (tid === 'blog' && keywordContext)
-        ? `다음 키워드를 자연스럽게 포함하고, 아래 내용을 참고해서 블로그 글을 작성해줘.\n키워드: ${keywordContext}\n참고 내용: ${sharedInput.trim()}`
-        : sharedInput.trim()
+        ? `다음 키워드를 자연스럽게 포함하고, 아래 내용을 참고해서 블로그 글을 작성해줘.\n키워드: ${keywordContext}\n참고 내용: ${baseText}`
+        : baseText
       const hasImgs = tid === 'detail' && productImgs.length > 0
-      const quizOpts = { ...quiz }
-      const sysBase = getSys(tid, tone, quizOpts)
+      const sysBase = getSys(tid, tone, { category: form.category, target: form.target, pricePosition: form.pricePosition, mood: form.mood })
       const systemPrompt = hasImgs
         ? sysBase + '\n\n업로드된 제품 사진을 분석해서 제품의 외형·색상·패키지 디자인을 파악하고, 각 섹션 AI프롬프트에 실제 제품의 시각적 특성(색상, 형태, 질감, 소재감)을 구체적으로 반영해줘.'
         : sysBase
@@ -1073,11 +955,12 @@ export default function App() {
         setDetailData(null); try { localStorage.removeItem('cos_detail_data') } catch {}
         setDetailGenKey(k => k + 1)
       }
-      const h = { id: Date.now(), taskId: tid, label: task.label, preview: sharedInput.slice(0, 60), result: text, ts: new Date().toISOString() }
+      const preview = `${form.productName}: ${form.features}`.slice(0, 60)
+      const h = { id: Date.now(), taskId: tid, label: task.label, preview, result: text, ts: new Date().toISOString() }
       setHistory(p => [h, ...p].slice(0, 20))
       setTimeout(() => resRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
     } catch (e) {
-      setError('오류: ' + e.message)
+      setError('오류: ' + (e.message || JSON.stringify(e) || '알 수 없는 오류가 발생했습니다. 다시 시도해주세요.'))
     } finally {
       setTabLoading(prev => ({ ...prev, [tid]: false }))
     }
@@ -1094,16 +977,6 @@ export default function App() {
   })()
 
   const loading = tabLoading[task.id] || false
-
-  const incompletedSteps = [
-    !step1Done && 'STEP 1',
-    !step2Done && 'STEP 2',
-    !step3Done && 'STEP 3',
-    !step4Done && 'STEP 4',
-    !step5Done && 'STEP 5',
-    !step6Done && 'STEP 6',
-    !step7Done && 'STEP 7',
-  ].filter(Boolean)
 
   return (
     <>
@@ -1156,27 +1029,74 @@ export default function App() {
       <div style={{ marginLeft: histOpen ? 260 : 0, transition: 'margin-left .22s ease', paddingTop: 52, minHeight: '100vh', background: C.bg, color: C.tx }}>
         <main style={{ maxWidth: 1200, margin: '0 auto', padding: '36px 8px 100px' }}>
 
-          {/* 타이틀 (클릭 시 전체 리셋) */}
+          {/* 타이틀 */}
           <div onClick={resetAll} onMouseEnter={() => setTitleHover(true)} onMouseLeave={() => setTitleHover(false)}
-            style={{ textAlign: 'center', marginBottom: 32, cursor: 'pointer', opacity: titleHover ? 0.6 : 1, transition: 'opacity .15s' }}>
-            <h1 style={{ fontSize: 'clamp(22px,4vw,30px)', fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 1.2, margin: '0 0 8px' }}>제품 정보 하나로 마케팅 콘텐츠 완성</h1>
-            <p style={{ fontSize: 13, color: C.mu, lineHeight: 1.75, margin: 0 }}>7단계 입력 → 상세페이지 · 블로그 · 카드뉴스 자동 생성</p>
+            style={{ textAlign: 'center', marginBottom: 28, cursor: 'pointer', opacity: titleHover ? 0.6 : 1, transition: 'opacity .15s' }}>
+            <h1 style={{ fontSize: 'clamp(22px,4vw,28px)', fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 1.2, margin: '0 0 6px' }}>제품 정보로 마케팅 콘텐츠 자동 생성</h1>
+            <p style={{ fontSize: 13, color: C.mu, lineHeight: 1.7, margin: 0 }}>상세페이지 · 블로그 · 카드뉴스</p>
           </div>
 
-          {/* ── STEP 1: 제품 기본 정보 ── */}
-          <StepCard stepNum={1} label="제품 기본 정보" done={step1Done}>
-            <SubQ label="제품 정보 (필수) — 제품명, 특징, 가격, 판매 정보 등 자유롭게">
-              <textarea ref={taRef} value={sharedInput} onChange={e => setSharedInput(e.target.value)}
-                placeholder="예) 듀라론 냉감패드 — 3중 레이어 구조, 여름 특화, 19,900원, 싱글/더블/퀸 사이즈"
-                style={{ width: '100%', minHeight: 120, padding: '12px 14px', border: `1.5px solid ${sharedInput.trim() ? C.bd : '#FECACA'}`, borderRadius: 10, outline: 'none', resize: 'none', fontSize: 14, lineHeight: 1.85, color: C.tx, background: C.alt, fontFamily: 'inherit', boxSizing: 'border-box', transition: 'border-color .15s' }}
-              />
-            </SubQ>
+          {/* ── 입력폼 ── */}
+          <div style={{ background: C.sur, borderRadius: 16, border: `1px solid ${C.bd}`, padding: '24px 20px', marginBottom: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
 
-            <SubQ label="제품 사진 업로드 (선택, 최대 5장) — AI 이미지 프롬프트 정확도 향상">
+            {/* 상품명 */}
+            <div style={{ marginBottom: 18 }}>
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 700, color: C.tx, marginBottom: 7 }}>
+                상품명 <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <input
+                value={form.productName}
+                onChange={e => updForm('productName', e.target.value)}
+                placeholder="예) 제주 무농약 단호박"
+                style={{ width: '100%', padding: '11px 14px', border: `1.5px solid ${form.productName.trim() ? C.bd : '#FECACA'}`, borderRadius: 10, outline: 'none', fontSize: 15, color: C.tx, background: C.alt, fontFamily: 'inherit', boxSizing: 'border-box' }}
+              />
+            </div>
+
+            {/* 핵심 특징 */}
+            <div style={{ marginBottom: 18 }}>
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 700, color: C.tx, marginBottom: 7 }}>
+                핵심 특징 <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <textarea
+                value={form.features}
+                onChange={e => updForm('features', e.target.value)}
+                placeholder="예) 직접 큐어링, 무농약 재배, 제주산, 당도 높음, 300g 낱개 포장"
+                rows={3}
+                style={{ width: '100%', padding: '11px 14px', border: `1.5px solid ${form.features.trim() ? C.bd : '#FECACA'}`, borderRadius: 10, outline: 'none', resize: 'none', fontSize: 14, lineHeight: 1.8, color: C.tx, background: C.alt, fontFamily: 'inherit', boxSizing: 'border-box' }}
+              />
+            </div>
+
+            {/* 카테고리 */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.mu, marginBottom: 8 }}>카테고리</label>
+              <SelBtn options={FORM_CATEGORIES} value={form.category} onChange={v => updForm('category', v)} />
+            </div>
+
+            {/* 타겟 고객 */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.mu, marginBottom: 8 }}>타겟 고객</label>
+              <SelBtn options={FORM_TARGETS} value={form.target} onChange={v => updForm('target', v)} />
+            </div>
+
+            {/* 가격포지션 */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.mu, marginBottom: 8 }}>가격 포지션</label>
+              <SelBtn options={FORM_PRICES} value={form.pricePosition} onChange={v => updForm('pricePosition', v)} />
+            </div>
+
+            {/* 분위기 */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.mu, marginBottom: 8 }}>콘텐츠 분위기</label>
+              <SelBtn options={FORM_MOODS} value={form.mood} onChange={v => updForm('mood', v)} />
+            </div>
+
+            {/* 제품 사진 업로드 */}
+            <div>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.mu, marginBottom: 8 }}>제품 사진 <span style={{ fontWeight: 400 }}>(선택, 최대 5장 — AI 이미지 프롬프트 정확도 향상)</span></label>
               <input ref={imgUploadRef} type="file" accept="image/*" multiple onChange={handleProductImgs} style={{ display: 'none' }} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <button onClick={() => imgUploadRef.current?.click()} disabled={productImgs.length >= 5}
-                  style={{ padding: '5px 12px', fontSize: 11, borderRadius: 7, border: `1px solid ${C.bd}`, background: C.sur, color: productImgs.length >= 5 ? C.fa : C.mu, cursor: productImgs.length >= 5 ? 'not-allowed' : 'pointer', fontWeight: 600 }}>
+                  style={{ padding: '6px 14px', fontSize: 12, borderRadius: 7, border: `1px solid ${C.bd}`, background: C.alt, color: productImgs.length >= 5 ? C.fa : C.mu, cursor: productImgs.length >= 5 ? 'not-allowed' : 'pointer', fontWeight: 600 }}>
                   📷 사진 추가 ({productImgs.length}/5)
                 </button>
                 {productImgs.map((img, i) => (
@@ -1187,80 +1107,8 @@ export default function App() {
                   </div>
                 ))}
               </div>
-            </SubQ>
-
-            <SubQ label="카테고리">
-              <OptionBtns options={CATEGORIES} value={quiz.category} onChange={v => updQuiz('category', v)} />
-            </SubQ>
-
-            <SubQ label="가격대">
-              <OptionBtns options={PRICE_RANGES} value={quiz.priceRange} onChange={v => updQuiz('priceRange', v)} />
-            </SubQ>
-          </StepCard>
-
-          {/* ── STEP 2: 타겟 고객 ── */}
-          <StepCard stepNum={2} label="타겟 고객" done={step2Done}>
-            <SubQ label="주 구매 성별">
-              <OptionBtns options={GENDERS} value={quiz.gender} onChange={v => updQuiz('gender', v)} />
-            </SubQ>
-            <SubQ label="주 구매 연령대">
-              <OptionBtns options={AGE_GROUPS} value={quiz.ageGroup} onChange={v => updQuiz('ageGroup', v)} />
-            </SubQ>
-            <SubQ label="구매 상황">
-              <OptionBtns options={PURCHASE_SITUATIONS} value={quiz.purchaseSituation} onChange={v => updQuiz('purchaseSituation', v)} />
-            </SubQ>
-          </StepCard>
-
-          {/* ── STEP 3: 시장 포지셔닝 ── */}
-          <StepCard stepNum={3} label="시장 포지셔닝" done={step3Done}>
-            <SubQ label="가격 포지션">
-              <OptionBtns options={PRICE_POSITIONS} value={quiz.pricePosition} onChange={v => updQuiz('pricePosition', v)} />
-            </SubQ>
-            <SubQ label="경쟁 상황">
-              <OptionBtns options={COMPETITION_TYPES} value={quiz.competition} onChange={v => updQuiz('competition', v)} />
-            </SubQ>
-          </StepCard>
-
-          {/* ── STEP 4: 나만의 차별점 ── */}
-          <StepCard stepNum={4} label="나만의 차별점" done={step4Done}>
-            <SubQ label="핵심 차별점 (필수)">
-              <textarea ref={diffRef} value={quiz.differentiator} onChange={e => updQuiz('differentiator', e.target.value)}
-                placeholder="우리 제품만의 특별한 점을 입력해주세요&#10;예) 국내 유일 48시간 저온 숙성 공법, 농가 직거래 계약 재배, 첨가물 無"
-                style={{ width: '100%', minHeight: 72, padding: '10px 13px', border: `1.5px solid ${quiz.differentiator.trim() ? C.bd : '#FECACA'}`, borderRadius: 10, outline: 'none', resize: 'none', fontSize: 13.5, lineHeight: 1.8, color: C.tx, background: C.alt, fontFamily: 'inherit', boxSizing: 'border-box', transition: 'border-color .15s' }}
-              />
-            </SubQ>
-            <SubQ label="차별점 유형 (복수 선택)">
-              <OptionBtns multi options={DIFF_TYPES} value={quiz.differentiatorTypes} onChange={v => updQuiz('differentiatorTypes', v)} />
-            </SubQ>
-          </StepCard>
-
-          {/* ── STEP 5: 기획 방식 ── */}
-          <StepCard stepNum={5} label="기획 방식 — 섹션 구성 순서 결정" done={step5Done}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8 }}>
-              {PLANNING_STYLES.map(ps => {
-                const sel = quiz.planningStyle === ps.key
-                return (
-                  <button key={ps.key} onClick={() => updQuiz('planningStyle', sel ? '' : ps.key)}
-                    style={{ padding: '12px 14px', borderRadius: 10, border: sel ? '2px solid #1D6B45' : `1.5px solid ${C.bd}`, background: sel ? '#E9F7F0' : C.sur, textAlign: 'left', cursor: 'pointer', transition: 'all .12s' }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: sel ? '#1D6B45' : C.tx, marginBottom: 4 }}>{ps.key}</div>
-                    <div style={{ fontSize: 10.5, color: sel ? '#2D8A5E' : C.fa, lineHeight: 1.55 }}>{ps.desc}</div>
-                  </button>
-                )
-              })}
             </div>
-          </StepCard>
-
-          {/* ── STEP 6: 브랜드 톤 ── */}
-          <StepCard stepNum={6} label="브랜드 톤" done={step6Done}>
-            <p style={{ fontSize: 11, color: C.fa, margin: '0 0 8px' }}>최대 2개 선택 ({quiz.brandTone.length}/2)</p>
-            <OptionBtns multi maxSelect={2} options={BRAND_TONES} value={quiz.brandTone} onChange={v => updQuiz('brandTone', v)} />
-          </StepCard>
-
-          {/* ── STEP 7: 강조 포인트 ── */}
-          <StepCard stepNum={7} label="강조 포인트" done={step7Done}>
-            <p style={{ fontSize: 11, color: C.fa, margin: '0 0 8px' }}>최대 2개 선택 ({quiz.emphasis.length}/2)</p>
-            <OptionBtns multi maxSelect={2} options={EMPHASIS_POINTS} value={quiz.emphasis} onChange={v => updQuiz('emphasis', v)} />
-          </StepCard>
+          </div>
 
           {/* ── 콘텐츠 유형 선택 + 생성하기 ── */}
           <div style={{ background: '#EFF6FF', borderRadius: 16, border: `1.5px solid ${allDone ? '#BFDBFE' : '#FECACA'}`, overflow: 'hidden', marginBottom: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.05)' }}>
@@ -1299,18 +1147,13 @@ export default function App() {
               </div>
             )}
 
-            {/* 상태 + 생성 버튼 */}
-            <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                {allDone
-                  ? <p style={{ fontSize: 11, color: '#1D6B45', fontWeight: 700, margin: 0 }}>✓ 모든 단계 완료 — 생성하기를 눌러주세요</p>
-                  : <p style={{ fontSize: 11, color: '#EF4444', margin: 0 }}>미완료: {incompletedSteps.join(', ')}</p>
-                }
-              </div>
+            {/* 생성 버튼 */}
+            <div style={{ padding: '14px 16px' }}>
               <button onClick={run} disabled={!allDone || loading}
-                style={{ padding: '10px 24px', borderRadius: 9, border: 'none', background: (!allDone || loading) ? '#ECEAE5' : C.tx, color: (!allDone || loading) ? C.fa : '#fff', fontSize: 13, fontWeight: 700, cursor: (!allDone || loading) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0, transition: 'background .12s' }}>
+                style={{ width: '100%', padding: '14px 0', borderRadius: 10, border: 'none', background: (!allDone || loading) ? '#ECEAE5' : C.tx, color: (!allDone || loading) ? C.fa : '#fff', fontSize: 15, fontWeight: 800, cursor: (!allDone || loading) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'background .12s' }}>
                 {loading ? <><Spin />생성 중…</> : `✦ ${task.label} 생성하기`}
               </button>
+              {!allDone && <p style={{ fontSize: 12, color: '#ef4444', textAlign: 'center', margin: '8px 0 0' }}>상품명과 핵심 특징을 입력해주세요</p>}
             </div>
           </div>
 
@@ -1331,7 +1174,7 @@ export default function App() {
           {result && !loading && (
             task.id === 'detail' ? (
               <div ref={resRef}>
-                <DetailView key={detailGenKey} result={result} savedSects={detailData} onSectsChange={saveDetailData} productInput={sharedInput} quiz={quiz} />
+                <DetailView key={detailGenKey} result={result} savedSects={detailData} onSectsChange={saveDetailData} productInput={`${form.productName}: ${form.features}`} quiz={{}} />
               </div>
             ) : (
               <div ref={resRef} style={{ background: C.sur, borderRadius: 16, border: `1.5px solid ${C.bd}`, boxShadow: '0 4px 28px rgba(0,0,0,0.06)', overflow: 'hidden', animation: 'fi .25s ease' }}>
