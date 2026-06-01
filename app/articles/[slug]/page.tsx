@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { formatDate, getArticle, getArticles, markdownToHtml } from "@/lib/articles";
+import ArticleSidebar from "@/components/ArticleSidebar";
+import { formatDate, getPublishedArticleBySlug, getPublishedArticles } from "@/lib/articles";
+import { markdownToHtml } from "@/lib/markdown";
+import { getVisitStats, recordVisit } from "@/lib/visits";
+
+export const dynamic = "force-dynamic";
 
 type PageProps = {
   params: Promise<{
@@ -9,56 +14,57 @@ type PageProps = {
   }>;
 };
 
-export function generateStaticParams() {
-  return getArticles().map((article) => ({
-    slug: article.slug,
-  }));
-}
-
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const article = getArticle(slug);
+  const article = await getPublishedArticleBySlug(slug);
 
   if (!article) return {};
 
   return {
     title: article.title,
-    description: article.description,
+    description: article.description || undefined,
     openGraph: {
       title: article.title,
-      description: article.description,
+      description: article.description || undefined,
       type: "article",
-      publishedTime: article.date,
-      images: [article.ogImage || "/og-default.svg"],
+      publishedTime: article.published_at || undefined,
+      images: article.image_url ? [article.image_url] : ["/og-default.svg"],
     },
   };
 }
 
 export default async function ArticlePage({ params }: PageProps) {
   const { slug } = await params;
-  const article = getArticle(slug);
+  await recordVisit(`/articles/${slug}`);
+
+  const [article, recentArticles, stats] = await Promise.all([
+    getPublishedArticleBySlug(slug),
+    getPublishedArticles(5),
+    getVisitStats(),
+  ]);
 
   if (!article) {
     notFound();
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-5 pb-20 pt-8 sm:px-6 sm:pb-28 sm:pt-12">
-      <article className="max-w-[680px]">
-        <Link href="/" className="mb-12 inline-block text-[14px] text-neutral-500 transition-colors hover:text-neutral-950">
+    <main className="page-grid article-page-grid">
+      <article className="article-detail">
+        <Link href="/" className="back-link">
           홈으로
         </Link>
-        <header className="mb-12 border-b border-neutral-200 pb-9">
-          <h1 className="mb-5 text-[31px] font-semibold leading-tight tracking-normal sm:text-[42px]">
-            {article.title}
-          </h1>
-          <time className="text-[14px] text-neutral-500">{formatDate(article.date)}</time>
+        <header className="article-header">
+          <h1>{article.title}</h1>
+          <time>{formatDate(article.published_at || article.created_at)}</time>
+          {article.image_url ? (
+            <div className="article-hero-image">
+              <img src={article.image_url} alt="" />
+            </div>
+          ) : null}
         </header>
-        <div
-          className="article-body"
-          dangerouslySetInnerHTML={{ __html: markdownToHtml(article.content) }}
-        />
+        <div className="article-body" dangerouslySetInnerHTML={{ __html: markdownToHtml(article.content) }} />
       </article>
+      <ArticleSidebar recentArticles={recentArticles} stats={stats} />
     </main>
   );
 }

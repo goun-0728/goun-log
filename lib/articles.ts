@@ -1,140 +1,112 @@
-import fs from "node:fs";
-import path from "node:path";
+import { unstable_noStore as noStore } from "next/cache";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
-export type ArticleMeta = {
-  title: string;
-  date: string;
-  description: string;
-  ogImage?: string;
-};
+export type ArticleStatus = "draft" | "published";
 
-export type Article = ArticleMeta & {
+export type Article = {
+  id: string;
   slug: string;
+  title: string;
+  description: string | null;
   content: string;
+  image_url: string | null;
+  status: ArticleStatus;
+  published_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
 };
 
-const articlesDirectory = path.join(process.cwd(), "articles");
+export type ArticleInput = {
+  title: string;
+  slug: string;
+  description: string | null;
+  content: string;
+  image_url: string | null;
+  status: ArticleStatus;
+  published_at: string | null;
+};
 
-function parseFrontmatter(fileContent: string): { meta: ArticleMeta; content: string } {
-  const match = fileContent.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
-
-  if (!match) {
-    throw new Error("Article markdown must include frontmatter.");
-  }
-
-  const meta = match[1].split("\n").reduce<Record<string, string>>((acc, line) => {
-    const index = line.indexOf(":");
-    if (index === -1) return acc;
-
-    const key = line.slice(0, index).trim();
-    const value = line.slice(index + 1).trim().replace(/^"|"$/g, "");
-    acc[key] = value;
-    return acc;
-  }, {});
-
-  return {
-    meta: {
-      title: meta.title,
-      date: meta.date,
-      description: meta.description,
-      ogImage: meta.ogImage,
-    },
-    content: match[2].trim(),
-  };
+export function formatDate(date: string | null) {
+  if (!date) return "";
+  return new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(date));
 }
 
-export function getArticles(): Article[] {
-  const files = fs.readdirSync(articlesDirectory);
+export async function getPublishedArticles(limit?: number) {
+  noStore();
+  const supabase = getSupabaseAdmin();
+  let query = supabase
+    .from("articles")
+    .select("*")
+    .eq("status", "published")
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false });
 
-  return files
-    .filter((file) => file.endsWith(".md"))
-    .map((file) => {
-      const slug = file.replace(/\.md$/, "");
-      const filePath = path.join(articlesDirectory, file);
-      const { meta, content } = parseFrontmatter(fs.readFileSync(filePath, "utf8"));
+  if (limit) query = query.limit(limit);
 
-      return {
-        slug,
-        ...meta,
-        content,
-      };
-    })
-    .sort((a, b) => (a.date < b.date ? 1 : -1));
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data || []) as Article[];
 }
 
-export function getArticle(slug: string): Article | undefined {
-  return getArticles().find((article) => article.slug === slug);
+export async function getPublishedArticleBySlug(slug: string) {
+  noStore();
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("articles")
+    .select("*")
+    .eq("slug", slug)
+    .eq("status", "published")
+    .single();
+
+  if (error) return null;
+  return data as Article;
 }
 
-export function formatDate(date: string): string {
-  return date.replaceAll("-", ".");
+export async function getAdminArticles() {
+  noStore();
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("articles")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return (data || []) as Article[];
 }
 
-function inlineMarkdown(text: string): string {
-  return text
-    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-    .replace(/`([^`]+)`/g, "<code>$1</code>");
+export async function getAdminArticle(id: string) {
+  noStore();
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase.from("articles").select("*").eq("id", id).single();
+
+  if (error) return null;
+  return data as Article;
 }
 
-export function markdownToHtml(markdown: string): string {
-  const lines = markdown.split("\n");
-  const html: string[] = [];
-  let paragraph: string[] = [];
-  let listItems: string[] = [];
+export async function createArticle(input: ArticleInput) {
+  const supabase = getSupabaseAdmin();
+  const publishedAt = input.status === "published" && !input.published_at ? new Date().toISOString() : input.published_at;
+  const { error } = await supabase.from("articles").insert({ ...input, published_at: publishedAt });
+  if (error) throw error;
+}
 
-  const flushParagraph = () => {
-    if (!paragraph.length) return;
-    html.push(`<p>${inlineMarkdown(paragraph.join(" "))}</p>`);
-    paragraph = [];
-  };
+export async function updateArticle(id: string, input: ArticleInput) {
+  const supabase = getSupabaseAdmin();
+  const publishedAt = input.status === "published" && !input.published_at ? new Date().toISOString() : input.published_at;
+  const { error } = await supabase
+    .from("articles")
+    .update({ ...input, published_at: publishedAt, updated_at: new Date().toISOString() })
+    .eq("id", id);
 
-  const flushList = () => {
-    if (!listItems.length) return;
-    html.push(`<ul>${listItems.map((item) => `<li>${inlineMarkdown(item)}</li>`).join("")}</ul>`);
-    listItems = [];
-  };
+  if (error) throw error;
+}
 
-  for (const line of lines) {
-    const trimmed = line.trim();
-
-    if (!trimmed) {
-      flushParagraph();
-      flushList();
-      continue;
-    }
-
-    if (trimmed === "---") {
-      flushParagraph();
-      flushList();
-      html.push("<hr />");
-      continue;
-    }
-
-    if (trimmed.startsWith("### ")) {
-      flushParagraph();
-      flushList();
-      html.push(`<h3>${inlineMarkdown(trimmed.slice(4))}</h3>`);
-      continue;
-    }
-
-    if (trimmed.startsWith("## ")) {
-      flushParagraph();
-      flushList();
-      html.push(`<h2>${inlineMarkdown(trimmed.slice(3))}</h2>`);
-      continue;
-    }
-
-    if (trimmed.startsWith("- ")) {
-      flushParagraph();
-      listItems.push(trimmed.slice(2));
-      continue;
-    }
-
-    paragraph.push(trimmed);
-  }
-
-  flushParagraph();
-  flushList();
-
-  return html.join("\n");
+export async function deleteArticle(id: string) {
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase.from("articles").delete().eq("id", id);
+  if (error) throw error;
 }
