@@ -3,12 +3,11 @@ import ArticleSidebar from "@/components/ArticleSidebar";
 import HeroTicker from "@/components/HeroTicker";
 import HomeStats from "@/components/HomeStats";
 import { getPublishedArticles } from "@/lib/articles";
-import { getVisitStats, recordVisit } from "@/lib/visits";
+import { getVisitStats } from "@/lib/visits";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  await recordVisit("/");
   const [articles, recentArticles, stats] = await Promise.all([
     getPublishedArticles(),
     getPublishedArticles(5),

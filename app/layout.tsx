@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Noto_Sans_KR } from "next/font/google";
 import SiteHeader from "@/components/SiteHeader";
+import VisitTracker from "@/components/VisitTracker";
 import "./globals.css";
 
 const notoSansKr = Noto_Sans_KR({
@@ -40,6 +41,7 @@ export default function RootLayout({
     <html lang="ko">
       <body className={notoSansKr.variable}>
         <SiteHeader />
+        <VisitTracker />
         {children}
       </body>
     </html>

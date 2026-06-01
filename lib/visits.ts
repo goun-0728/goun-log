@@ -7,10 +7,13 @@ export type VisitStats = {
   published: number;
 };
 
-function startOfTodayIso() {
+function startOfTodayKstIso() {
   const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  return start.toISOString();
+  const kstOffsetMs = 9 * 60 * 60 * 1000;
+  const kstNow = new Date(now.getTime() + kstOffsetMs);
+  const startUtcMs = Date.UTC(kstNow.getUTCFullYear(), kstNow.getUTCMonth(), kstNow.getUTCDate()) - kstOffsetMs;
+
+  return new Date(startUtcMs).toISOString();
 }
 
 export async function recordVisit(path: string) {
@@ -32,7 +35,7 @@ export async function getVisitStats(): Promise<VisitStats> {
 
   try {
     const supabase = getSupabaseAdmin();
-    const todayStart = startOfTodayIso();
+    const todayStart = startOfTodayKstIso();
 
     const [todayVisits, totalVisits, publishedArticles] = await Promise.allSettled([
       supabase.from("site_visits").select("id", { count: "exact", head: true }).gte("visited_at", todayStart),

@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import ArticleSidebar from "@/components/ArticleSidebar";
 import { formatDate, getPublishedArticleBySlug, getPublishedArticles } from "@/lib/articles";
 import { markdownToHtml } from "@/lib/markdown";
-import { recordVisit } from "@/lib/visits";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +34,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function ArticlePage({ params }: PageProps) {
   const { slug } = await params;
-  await recordVisit(`/articles/${slug}`);
 
   const [article, recentArticles] = await Promise.all([
     getPublishedArticleBySlug(slug),
