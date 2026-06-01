@@ -37,33 +37,41 @@ export function formatDate(date: string | null) {
 
 export async function getPublishedArticles(limit?: number) {
   noStore();
-  const supabase = getSupabaseAdmin();
-  let query = supabase
-    .from("articles")
-    .select("*")
-    .eq("status", "published")
-    .order("published_at", { ascending: false, nullsFirst: false })
-    .order("created_at", { ascending: false });
+  try {
+    const supabase = getSupabaseAdmin();
+    let query = supabase
+      .from("articles")
+      .select("*")
+      .eq("status", "published")
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false });
 
-  if (limit) query = query.limit(limit);
+    if (limit) query = query.limit(limit);
 
-  const { data, error } = await query;
-  if (error) throw error;
-  return (data || []) as Article[];
+    const { data, error } = await query;
+    if (error) return [];
+    return (data || []) as Article[];
+  } catch {
+    return [];
+  }
 }
 
 export async function getPublishedArticleBySlug(slug: string) {
   noStore();
-  const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("articles")
-    .select("*")
-    .eq("slug", slug)
-    .eq("status", "published")
-    .single();
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("articles")
+      .select("*")
+      .eq("slug", slug)
+      .eq("status", "published")
+      .single();
 
-  if (error) return null;
-  return data as Article;
+    if (error) return null;
+    return data as Article;
+  } catch {
+    return null;
+  }
 }
 
 export async function getAdminArticles() {
