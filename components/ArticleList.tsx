@@ -10,7 +10,7 @@ export default function ArticleList({ articles }: { articles: Article[] }) {
   return (
     <div className="article-list">
       {articles.map((article) => (
-        <article key={article.id} className="article-list-item">
+        <article key={article.id} className={`article-list-item${article.image_url ? "" : " article-list-item-no-image"}`}>
           {article.image_url ? (
             <Link href={`/articles/${article.slug}`} className="article-thumb" aria-label={`${article.title} 보기`}>
               <img src={article.image_url} alt="" />

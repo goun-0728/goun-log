@@ -167,8 +167,8 @@ select {
 
 .page-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 54px;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 44px;
   max-width: 1180px;
   margin: 0 auto;
   padding: 54px 24px 96px;
@@ -216,14 +216,19 @@ select {
 .article-list {
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
 .article-list-item {
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
+  grid-template-columns: minmax(190px, 220px) minmax(0, 1fr);
   gap: 24px;
   padding: 28px 0;
   border-bottom: 1px solid var(--line);
+}
+
+.article-list-item-no-image {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .article-list-item:first-child {
@@ -257,6 +262,11 @@ select {
   font-size: 25px;
   line-height: 1.35;
   font-weight: 800;
+  width: 100%;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 
 .article-list-copy p {
@@ -264,6 +274,16 @@ select {
   color: var(--muted);
   font-size: 15px;
   line-height: 1.85;
+  width: 100%;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.article-list-copy {
+  min-width: 0;
+  width: 100%;
 }
 
 .site-sidebar {
