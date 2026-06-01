@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import ArticleSidebar from "@/components/ArticleSidebar";
 import { formatDate, getPublishedArticleBySlug, getPublishedArticles } from "@/lib/articles";
 import { markdownToHtml } from "@/lib/markdown";
-import { getVisitStats, recordVisit } from "@/lib/visits";
+import { recordVisit } from "@/lib/visits";
 
 export const dynamic = "force-dynamic";
 
@@ -37,10 +37,9 @@ export default async function ArticlePage({ params }: PageProps) {
   const { slug } = await params;
   await recordVisit(`/articles/${slug}`);
 
-  const [article, recentArticles, stats] = await Promise.all([
+  const [article, recentArticles] = await Promise.all([
     getPublishedArticleBySlug(slug),
     getPublishedArticles(5),
-    getVisitStats(),
   ]);
 
   if (!article) {
@@ -64,7 +63,7 @@ export default async function ArticlePage({ params }: PageProps) {
         </header>
         <div className="article-body" dangerouslySetInnerHTML={{ __html: markdownToHtml(article.content) }} />
       </article>
-      <ArticleSidebar recentArticles={recentArticles} stats={stats} />
+      <ArticleSidebar recentArticles={recentArticles} />
     </main>
   );
 }

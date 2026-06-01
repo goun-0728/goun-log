@@ -14,12 +14,16 @@ export default async function Home() {
     getPublishedArticles(5),
     getVisitStats(),
   ]);
+  const displayStats = {
+    ...stats,
+    published: stats.published || articles.length,
+  };
 
   return (
     <main>
       <HeroTicker />
       <div className="home-stats-wrap">
-        <HomeStats stats={stats} />
+        <HomeStats stats={displayStats} />
       </div>
       <div className="page-grid">
         <section className="content-column" aria-labelledby="latest-posts">
@@ -29,7 +33,7 @@ export default async function Home() {
           </div>
           <ArticleList articles={articles} />
         </section>
-        <ArticleSidebar recentArticles={recentArticles} stats={stats} />
+        <ArticleSidebar recentArticles={recentArticles} />
       </div>
     </main>
   );

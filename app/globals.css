@@ -99,8 +99,8 @@ select {
 }
 
 .hero-inner {
-  min-height: 250px;
-  padding: 28px 0 34px;
+  min-height: 220px;
+  padding: 26px 0 30px;
 }
 
 .hero-rule {
@@ -118,9 +118,9 @@ select {
 .hero-inner h1 {
   margin: 0;
   color: var(--ink);
-  font-size: clamp(72px, 13vw, 190px);
-  font-weight: 900;
-  line-height: 0.88;
+  font-size: clamp(64px, 10vw, 150px);
+  font-weight: 800;
+  line-height: 0.92;
   letter-spacing: 0;
 }
 
@@ -140,8 +140,8 @@ select {
 }
 
 .home-stat-item {
-  min-height: 150px;
-  padding: 28px 28px 24px 0;
+  min-height: 124px;
+  padding: 22px 28px 20px 0;
   border-right: 1px solid var(--line);
 }
 
@@ -152,8 +152,8 @@ select {
 .home-stat-item strong {
   display: block;
   color: var(--ink);
-  font-size: clamp(52px, 7vw, 96px);
-  font-weight: 900;
+  font-size: clamp(42px, 5vw, 76px);
+  font-weight: 800;
   line-height: 0.95;
 }
 

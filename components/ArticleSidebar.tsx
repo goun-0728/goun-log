@@ -1,16 +1,8 @@
 import Link from "next/link";
 import type { Article } from "@/lib/articles";
-import type { VisitStats as VisitStatsType } from "@/lib/visits";
 import { formatDate } from "@/lib/articles";
-import VisitStats from "@/components/VisitStats";
 
-export default function ArticleSidebar({
-  recentArticles,
-  stats,
-}: {
-  recentArticles: Article[];
-  stats: VisitStatsType;
-}) {
+export default function ArticleSidebar({ recentArticles }: { recentArticles: Article[] }) {
   return (
     <aside className="site-sidebar">
       <section className="sidebar-block">
@@ -24,7 +16,6 @@ export default function ArticleSidebar({
           ))}
         </div>
       </section>
-      <VisitStats stats={stats} />
     </aside>
   );
 }
