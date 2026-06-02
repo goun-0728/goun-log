@@ -52,12 +52,18 @@ export default function AdminArticleForm({
       return false;
     }
 
-    const nextPreviewUrl = URL.createObjectURL(file);
-    setPreviewUrl((previousUrl) => {
-      if (previousUrl.startsWith("blob:")) URL.revokeObjectURL(previousUrl);
-      return nextPreviewUrl;
-    });
-    return true;
+    try {
+      const nextPreviewUrl = URL.createObjectURL(file);
+      setPreviewUrl((previousUrl) => {
+        if (previousUrl.startsWith("blob:")) URL.revokeObjectURL(previousUrl);
+        return nextPreviewUrl;
+      });
+      return true;
+    } catch {
+      setClientError("이미지 미리보기를 만들 수 없습니다. 다른 이미지를 선택해주세요.");
+      setPreviewUrl(currentThumbnailUrl || "");
+      return false;
+    }
   }
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -72,9 +78,14 @@ export default function AdminArticleForm({
     const file = event.dataTransfer.files?.[0] || null;
     if (!file || !fileInputRef.current) return;
 
-    const dataTransfer = new DataTransfer();
-    dataTransfer.items.add(file);
-    fileInputRef.current.files = dataTransfer.files;
+    try {
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(file);
+      fileInputRef.current.files = dataTransfer.files;
+    } catch {
+      setClientError("드래그 앤 드롭 처리 중 오류가 발생했습니다. 이미지 선택 버튼을 사용해주세요.");
+      return;
+    }
 
     if (!validateAndPreview(file)) fileInputRef.current.value = "";
   }

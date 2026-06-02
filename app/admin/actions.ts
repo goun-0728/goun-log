@@ -25,7 +25,14 @@ async function parseArticleForm(formData: FormData, currentThumbnailUrl?: string
   const status: ArticleStatus =
     statusValue === "published" || statusValue === "scheduled" ? statusValue : "draft";
   const publishedAtValue = clean(formData.get("published_at"));
-  const uploadedThumbnailUrl = await uploadArticleThumbnail(formData.get("thumbnail_file"));
+  let uploadedThumbnailUrl: string | null = null;
+
+  try {
+    uploadedThumbnailUrl = await uploadArticleThumbnail(formData.get("thumbnail_file"));
+  } catch (error) {
+    if (error instanceof ImageUploadError) throw error;
+    throw new ImageUploadError("대표 이미지 업로드에 실패했습니다. Supabase Storage 설정을 확인해주세요.");
+  }
 
   if (status === "scheduled" && !publishedAtValue) {
     throw new Error("PUBLISHED_AT_REQUIRED");

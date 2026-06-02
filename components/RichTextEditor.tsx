@@ -101,16 +101,32 @@ export default function RichTextEditor({ name, defaultValue = "" }: RichTextEdit
   }
   const activeEditor = editor;
 
+  function showUploadError(message: string) {
+    setError(message);
+    window.alert(message);
+  }
+
   async function uploadBodyImage(file: File) {
     setError("");
     const formData = new FormData();
     formData.append("image", file);
 
-    const response = await fetch("/api/admin/upload-image", {
-      method: "POST",
-      body: formData,
-    });
-    const result = (await response.json()) as { ok: boolean; url?: string; error?: string };
+    let response: Response;
+    try {
+      response = await fetch("/api/admin/upload-image", {
+        method: "POST",
+        body: formData,
+      });
+    } catch {
+      throw new Error("이미지 업로드 요청에 실패했습니다. 네트워크 상태를 확인해주세요.");
+    }
+
+    let result: { ok: boolean; url?: string; error?: string };
+    try {
+      result = (await response.json()) as { ok: boolean; url?: string; error?: string };
+    } catch {
+      throw new Error("이미지 업로드 응답을 처리할 수 없습니다.");
+    }
 
     if (!response.ok || !result.ok || !result.url) {
       throw new Error(result.error || "이미지 업로드에 실패했습니다.");
@@ -125,7 +141,7 @@ export default function RichTextEditor({ name, defaultValue = "" }: RichTextEdit
     if (!file) return;
 
     uploadBodyImage(file).catch((error) => {
-      setError(error instanceof Error ? error.message : "이미지 업로드에 실패했습니다.");
+      showUploadError(error instanceof Error ? error.message : "이미지 업로드에 실패했습니다.");
     });
   }
 
