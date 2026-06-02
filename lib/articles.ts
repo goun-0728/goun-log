@@ -1,7 +1,7 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
-export type ArticleStatus = "draft" | "published";
+export type ArticleStatus = "draft" | "published" | "scheduled";
 
 export type Article = {
   id: string;
@@ -22,7 +22,7 @@ export type ArticleInput = {
   slug: string;
   description: string | null;
   content: string;
-  thumbnail_url: string | null;
+  image_url: string | null;
   status: ArticleStatus;
   published_at: string | null;
 };
@@ -114,12 +114,32 @@ export function formatDate(date: string | null) {
 }
 
 export function getArticleThumbnailUrl(article: Pick<Article, "image_url" | "thumbnail_url">) {
-  return article.thumbnail_url || article.image_url || null;
+  return article.image_url || article.thumbnail_url || null;
+}
+
+export function getStatusLabel(status: ArticleStatus) {
+  if (status === "published") return "발행";
+  if (status === "scheduled") return "예약발행";
+  return "임시저장";
+}
+
+async function publishDueScheduledArticles() {
+  try {
+    const supabase = getSupabaseAdmin();
+    await supabase
+      .from("articles")
+      .update({ status: "published", updated_at: new Date().toISOString() })
+      .eq("status", "scheduled")
+      .lte("published_at", new Date().toISOString());
+  } catch {
+    // Public pages should still render with fallback data if Supabase is unavailable.
+  }
 }
 
 export async function getPublishedArticles(limit?: number) {
   noStore();
   try {
+    await publishDueScheduledArticles();
     const supabase = getSupabaseAdmin();
     let query = supabase
       .from("articles")
@@ -142,6 +162,7 @@ export async function getPublishedArticles(limit?: number) {
 export async function getPopularArticles(limit = 5) {
   noStore();
   try {
+    await publishDueScheduledArticles();
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("articles")
@@ -162,6 +183,7 @@ export async function getPopularArticles(limit = 5) {
 export async function getPublishedArticleBySlug(slug: string) {
   noStore();
   try {
+    await publishDueScheduledArticles();
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("articles")

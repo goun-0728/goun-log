@@ -22,16 +22,21 @@ function clean(value: FormDataEntryValue | null) {
 
 async function parseArticleForm(formData: FormData, currentThumbnailUrl?: string | null): Promise<ArticleInput> {
   const statusValue = clean(formData.get("status")) || "draft";
-  const status: ArticleStatus = statusValue === "published" ? "published" : "draft";
+  const status: ArticleStatus =
+    statusValue === "published" || statusValue === "scheduled" ? statusValue : "draft";
   const publishedAtValue = clean(formData.get("published_at"));
   const uploadedThumbnailUrl = await uploadArticleThumbnail(formData.get("thumbnail_file"));
+
+  if (status === "scheduled" && !publishedAtValue) {
+    throw new Error("PUBLISHED_AT_REQUIRED");
+  }
 
   return {
     title: clean(formData.get("title")) || "",
     slug: clean(formData.get("slug")) || "",
     description: clean(formData.get("description")),
     content: clean(formData.get("content")) || "",
-    thumbnail_url: uploadedThumbnailUrl || currentThumbnailUrl || null,
+    image_url: uploadedThumbnailUrl || currentThumbnailUrl || null,
     status,
     published_at: publishedAtValue ? new Date(publishedAtValue).toISOString() : null,
   };
@@ -83,6 +88,9 @@ export async function createArticleAction(formData: FormData) {
     input = await parseArticleForm(formData);
   } catch (error) {
     if (error instanceof ImageUploadError) redirect("/admin/articles/new?error=image-upload");
+    if (error instanceof Error && error.message === "PUBLISHED_AT_REQUIRED") {
+      redirect("/admin/articles/new?error=published-at-required");
+    }
     throw error;
   }
 
@@ -102,11 +110,14 @@ export async function updateArticleAction(id: string, formData: FormData) {
     input = await parseArticleForm(formData, currentThumbnailUrl);
   } catch (error) {
     if (error instanceof ImageUploadError) redirect(`/admin/articles/${id}/edit?error=image-upload`);
+    if (error instanceof Error && error.message === "PUBLISHED_AT_REQUIRED") {
+      redirect(`/admin/articles/${id}/edit?error=published-at-required`);
+    }
     throw error;
   }
 
   await updateArticle(id, input);
-  if (input.thumbnail_url && currentThumbnailUrl && input.thumbnail_url !== currentThumbnailUrl) {
+  if (input.image_url && currentThumbnailUrl && input.image_url !== currentThumbnailUrl) {
     await deleteArticleThumbnail(currentThumbnailUrl);
   }
   revalidatePath("/");

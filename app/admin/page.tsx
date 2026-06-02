@@ -2,13 +2,14 @@ import Link from "next/link";
 import { deleteArticleAction, logoutAction } from "@/app/admin/actions";
 import AdminDeleteButton from "@/components/AdminDeleteButton";
 import { requireAdmin } from "@/lib/auth";
-import { formatDate, getAdminArticles, getArticleThumbnailUrl } from "@/lib/articles";
+import { formatDate, getAdminArticles, getArticleThumbnailUrl, getStatusLabel } from "@/lib/articles";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
   const email = await requireAdmin();
   const articles = await getAdminArticles();
+  const scheduledCount = articles.filter((article) => article.status === "scheduled").length;
 
   return (
     <main className="admin-page">
@@ -16,7 +17,9 @@ export default async function AdminPage() {
         <div>
           <p className="eyebrow">Admin</p>
           <h1>글 관리</h1>
-          <p className="muted-copy">{email}</p>
+          <p className="muted-copy">
+            {email} · 예약발행 {scheduledCount}개
+          </p>
         </div>
         <div className="admin-actions">
           <Link href="/admin/articles/new" className="admin-primary-link">
@@ -52,7 +55,7 @@ export default async function AdminPage() {
                 <span>{article.description}</span>
               </div>
               <span>{article.slug}</span>
-              <span>{article.status}</span>
+              <span>{getStatusLabel(article.status)}</span>
               <span>{formatDate(article.published_at || article.created_at)}</span>
               <div className="admin-row-actions">
                 <Link href={`/admin/articles/${article.id}/edit`}>수정</Link>

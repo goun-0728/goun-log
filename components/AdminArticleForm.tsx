@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Article } from "@/lib/articles";
-import { getArticleThumbnailUrl } from "@/lib/articles";
+import { getArticleThumbnailUrl, getStatusLabel } from "@/lib/articles";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -10,7 +10,6 @@ const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 export default function AdminArticleForm({
   action,
   article,
-  submitLabel,
   uploadError,
 }: {
   action: (formData: FormData) => Promise<void>;
@@ -20,6 +19,10 @@ export default function AdminArticleForm({
 }) {
   const publishedAt = article?.published_at ? article.published_at.slice(0, 16) : "";
   const currentThumbnailUrl = article ? getArticleThumbnailUrl(article) : null;
+  const errorMessage =
+    uploadError === "published-at-required"
+      ? "예약발행은 발행일/시간 입력이 필요합니다."
+      : "대표 이미지 업로드에 실패했습니다. 파일 형식과 크기를 확인해주세요.";
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState(currentThumbnailUrl || "");
   const [clientError, setClientError] = useState("");
@@ -77,9 +80,7 @@ export default function AdminArticleForm({
 
   return (
     <form action={action} className="admin-form" encType="multipart/form-data">
-      {(uploadError || clientError) ? (
-        <p className="admin-error">{clientError || "대표 이미지 업로드에 실패했습니다. 파일 형식과 크기를 확인해주세요."}</p>
-      ) : null}
+      {uploadError || clientError ? <p className="admin-error">{clientError || errorMessage}</p> : null}
 
       <label>
         <span>제목</span>
@@ -136,21 +137,26 @@ export default function AdminArticleForm({
       </div>
 
       <div className="admin-form-grid">
-        <label>
-          <span>상태</span>
-          <select name="status" defaultValue={article?.status || "draft"}>
-            <option value="draft">draft</option>
-            <option value="published">published</option>
-          </select>
-        </label>
+        <div className="admin-status-panel">
+          <span className="admin-field-label">현재 상태</span>
+          <strong>{getStatusLabel(article?.status || "draft")}</strong>
+        </div>
         <label>
           <span>발행일</span>
           <input name="published_at" type="datetime-local" defaultValue={publishedAt} />
         </label>
       </div>
-      <button type="submit" className="admin-primary-button">
-        {submitLabel}
-      </button>
+      <div className="admin-submit-actions">
+        <button type="submit" name="status" value="draft" className="admin-secondary-button">
+          임시저장
+        </button>
+        <button type="submit" name="status" value="scheduled" className="admin-secondary-button">
+          예약발행
+        </button>
+        <button type="submit" name="status" value="published" className="admin-primary-button">
+          발행하기
+        </button>
+      </div>
     </form>
   );
 }

@@ -8,11 +8,11 @@ import { getVisitStats } from "@/lib/visits";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [articles, popularArticles, stats] = await Promise.all([
+  const [articles, popularArticles] = await Promise.all([
     getPublishedArticles(),
     getPopularArticles(5),
-    getVisitStats(),
   ]);
+  const stats = await getVisitStats();
   const displayStats = {
     ...stats,
     published: stats.published || articles.length,
