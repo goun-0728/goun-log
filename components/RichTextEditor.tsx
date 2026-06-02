@@ -55,10 +55,18 @@ type RichTextEditorProps = {
   defaultValue?: string;
 };
 
+type UploadImageResponse = {
+  ok: boolean;
+  url?: string;
+  error?: string;
+};
+
 export default function RichTextEditor({ name, defaultValue = "" }: RichTextEditorProps) {
   const imageInputRef = useRef<HTMLInputElement>(null);
-  const [html, setHtml] = useState(defaultValue);
+  const [html, setHtml] = useState(defaultValue || "<p></p>");
   const [error, setError] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -101,48 +109,38 @@ export default function RichTextEditor({ name, defaultValue = "" }: RichTextEdit
   }
   const activeEditor = editor;
 
-  function showUploadError(message: string) {
-    setError(message);
-    window.alert(message);
-  }
-
   async function uploadBodyImage(file: File) {
     setError("");
-    const formData = new FormData();
-    formData.append("image", file);
+    setIsUploading(true);
 
-    let response: Response;
     try {
-      response = await fetch("/api/admin/upload-image", {
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const response = await fetch("/api/admin/upload-image", {
         method: "POST",
         body: formData,
       });
+      const result = (await response.json().catch(() => null)) as UploadImageResponse | null;
+
+      if (!response.ok || !result?.ok || !result.url) {
+        setError(result?.error || "본문 이미지 업로드에 실패했습니다. 글 작성은 계속할 수 있습니다.");
+        return;
+      }
+
+      activeEditor.chain().focus().setImage({ src: result.url }).run();
     } catch {
-      throw new Error("이미지 업로드 요청에 실패했습니다. 네트워크 상태를 확인해주세요.");
+      setError("본문 이미지 업로드 요청에 실패했습니다. 글 작성은 계속할 수 있습니다.");
+    } finally {
+      setIsUploading(false);
     }
-
-    let result: { ok: boolean; url?: string; error?: string };
-    try {
-      result = (await response.json()) as { ok: boolean; url?: string; error?: string };
-    } catch {
-      throw new Error("이미지 업로드 응답을 처리할 수 없습니다.");
-    }
-
-    if (!response.ok || !result.ok || !result.url) {
-      throw new Error(result.error || "이미지 업로드에 실패했습니다.");
-    }
-
-    activeEditor.chain().focus().setImage({ src: result.url }).run();
   }
 
   function handleImageChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+    const file = event.target.files?.[0] || null;
     event.target.value = "";
     if (!file) return;
-
-    uploadBodyImage(file).catch((error) => {
-      showUploadError(error instanceof Error ? error.message : "이미지 업로드에 실패했습니다.");
-    });
+    void uploadBodyImage(file);
   }
 
   function setLink() {
@@ -162,8 +160,8 @@ export default function RichTextEditor({ name, defaultValue = "" }: RichTextEdit
       .extendMarkRange("link")
       .setLink({
         href,
-        target: openNewWindow ? "_blank" : null,
-        rel: openNewWindow ? "noopener noreferrer" : null,
+        target: openNewWindow ? "_blank" : undefined,
+        rel: openNewWindow ? "noopener noreferrer" : undefined,
       })
       .run();
   }
@@ -172,6 +170,7 @@ export default function RichTextEditor({ name, defaultValue = "" }: RichTextEdit
     <div className="rich-editor">
       <input type="hidden" name={name} value={html} />
       {error ? <p className="admin-error">{error}</p> : null}
+
       <div className="rich-toolbar" aria-label="본문 편집 도구">
         <select
           aria-label="제목 스타일"
@@ -188,6 +187,7 @@ export default function RichTextEditor({ name, defaultValue = "" }: RichTextEdit
           <option value="3">H3</option>
           <option value="4">H4</option>
         </select>
+
         <select
           aria-label="글자 크기"
           defaultValue=""
@@ -204,6 +204,7 @@ export default function RichTextEditor({ name, defaultValue = "" }: RichTextEdit
           <option value="28px">28</option>
           <option value="36px">36</option>
         </select>
+
         <button type="button" onClick={() => activeEditor.chain().focus().toggleBold().run()} aria-label="굵게">
           B
         </button>
@@ -213,18 +214,20 @@ export default function RichTextEditor({ name, defaultValue = "" }: RichTextEdit
         <button type="button" onClick={() => activeEditor.chain().focus().toggleUnderline().run()} aria-label="밑줄">
           U
         </button>
+
         <label className="rich-color-control">
           글자
           <input type="color" defaultValue="#111111" onChange={(event) => activeEditor.chain().focus().setColor(event.target.value).run()} />
         </label>
         <label className="rich-color-control">
-          형광
+          형광펜
           <input
             type="color"
             defaultValue="#fff2a8"
             onChange={(event) => activeEditor.chain().focus().toggleHighlight({ color: event.target.value }).run()}
           />
         </label>
+
         <button type="button" onClick={() => activeEditor.chain().focus().setTextAlign("left").run()}>
           왼쪽
         </button>
@@ -243,8 +246,8 @@ export default function RichTextEditor({ name, defaultValue = "" }: RichTextEdit
         <button type="button" onClick={setLink}>
           링크
         </button>
-        <button type="button" onClick={() => imageInputRef.current?.click()}>
-          본문 이미지
+        <button type="button" onClick={() => imageInputRef.current?.click()} disabled={isUploading}>
+          {isUploading ? "업로드 중" : "본문 이미지"}
         </button>
         <button type="button" onClick={() => activeEditor.chain().focus().setHorizontalRule().run()}>
           구분선
@@ -260,6 +263,7 @@ export default function RichTextEditor({ name, defaultValue = "" }: RichTextEdit
           onChange={handleImageChange}
         />
       </div>
+
       <EditorContent editor={activeEditor} />
     </div>
   );

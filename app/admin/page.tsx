@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { deleteArticleAction, logoutAction } from "@/app/admin/actions";
 import AdminDeleteButton from "@/components/AdminDeleteButton";
-import { requireAdmin } from "@/lib/auth";
 import { formatDate, getAdminArticles, getArticleThumbnailUrl, getStatusLabel } from "@/lib/articles";
+import { requireAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 

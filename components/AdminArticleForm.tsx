@@ -1,29 +1,33 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import RichTextEditor from "@/components/RichTextEditor";
 import type { Article } from "@/lib/articles";
 import { getArticleThumbnailUrl, getStatusLabel } from "@/lib/articles";
-import RichTextEditor from "@/components/RichTextEditor";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
-export default function AdminArticleForm({
-  action,
-  article,
-  uploadError,
-}: {
+type AdminArticleFormProps = {
   action: (formData: FormData) => Promise<void>;
   article?: Article;
-  submitLabel: string;
-  uploadError?: string;
-}) {
+  submitLabel?: string;
+  error?: string;
+};
+
+const errorMessages: Record<string, string> = {
+  "image-upload": "대표 이미지 업로드에 실패했습니다. 이미지를 제외하고 다시 저장해주세요.",
+  "missing-title": "제목을 입력해주세요.",
+  "missing-slug": "슬러그를 입력해주세요.",
+  "missing-content": "본문을 입력해주세요.",
+  "published-at-required": "예약발행은 발행일과 시간이 필요합니다.",
+  "duplicate-slug": "이미 사용 중인 슬러그입니다. 다른 슬러그를 입력해주세요.",
+  "save-failed": "글 저장에 실패했습니다. 입력값과 Supabase 연결 상태를 확인해주세요.",
+};
+
+export default function AdminArticleForm({ action, article, error }: AdminArticleFormProps) {
   const publishedAt = article?.published_at ? article.published_at.slice(0, 16) : "";
   const currentThumbnailUrl = article ? getArticleThumbnailUrl(article) : null;
-  const errorMessage =
-    uploadError === "published-at-required"
-      ? "예약발행은 발행일/시간 입력이 필요합니다."
-      : "대표 이미지 업로드에 실패했습니다. 파일 형식과 크기를 확인해주세요.";
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState(currentThumbnailUrl || "");
   const [clientError, setClientError] = useState("");
@@ -37,13 +41,14 @@ export default function AdminArticleForm({
 
   function validateAndPreview(file: File | null) {
     setClientError("");
+
     if (!file) {
       setPreviewUrl(currentThumbnailUrl || "");
       return true;
     }
 
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      setClientError("JPG, JPEG, PNG, WEBP 파일만 업로드할 수 있습니다.");
+      setClientError("JPG, PNG, WEBP 파일만 업로드할 수 있습니다.");
       return false;
     }
 
@@ -92,16 +97,18 @@ export default function AdminArticleForm({
 
   return (
     <form action={action} className="admin-form" encType="multipart/form-data">
-      {uploadError || clientError ? <p className="admin-error">{clientError || errorMessage}</p> : null}
+      {error || clientError ? <p className="admin-error">{clientError || errorMessages[error || ""] || "오류가 발생했습니다."}</p> : null}
 
       <label>
         <span>제목</span>
         <input name="title" defaultValue={article?.title || ""} required />
       </label>
+
       <label>
         <span>슬러그</span>
         <input name="slug" defaultValue={article?.slug || ""} required />
       </label>
+
       <label>
         <span>요약 description</span>
         <textarea name="description" rows={3} defaultValue={article?.description || ""} />
@@ -133,9 +140,10 @@ export default function AdminArticleForm({
           ) : (
             <div className="admin-upload-placeholder">
               <strong>이미지를 선택하거나 여기에 놓아주세요.</strong>
-              <span>JPG, JPEG, PNG, WEBP / 최대 5MB</span>
+              <span>선택사항입니다. JPG, PNG, WEBP / 최대 5MB</span>
             </div>
           )}
+
           <label className="admin-upload-button">
             이미지 선택
             <input
@@ -147,6 +155,7 @@ export default function AdminArticleForm({
             />
           </label>
         </div>
+        <p className="muted-copy">업로드가 실패해도 글은 이미지 없이 저장됩니다.</p>
       </div>
 
       <div className="admin-form-grid">
@@ -159,6 +168,7 @@ export default function AdminArticleForm({
           <input name="published_at" type="datetime-local" defaultValue={publishedAt} />
         </label>
       </div>
+
       <div className="admin-submit-actions">
         <button type="submit" name="status" value="draft" className="admin-secondary-button">
           임시저장

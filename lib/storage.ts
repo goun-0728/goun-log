@@ -9,7 +9,7 @@ const ALLOWED_IMAGE_TYPES = new Map([
 ]);
 
 export class ImageUploadError extends Error {
-  constructor(message = "Image upload failed.") {
+  constructor(message = "이미지 업로드에 실패했습니다.") {
     super(message);
     this.name = "ImageUploadError";
   }
@@ -20,7 +20,7 @@ function isFile(value: FormDataEntryValue | null): value is File {
 }
 
 function buildImagePath(file: File) {
-  const extension = ALLOWED_IMAGE_TYPES.get(file.type);
+  const extension = ALLOWED_IMAGE_TYPES.get(file.type) || "jpg";
   const safeName = file.name
     .replace(/\.[^/.]+$/, "")
     .toLowerCase()
@@ -35,7 +35,7 @@ export async function uploadArticleImage(value: FormDataEntryValue | null) {
   if (!isFile(value)) return null;
 
   if (!ALLOWED_IMAGE_TYPES.has(value.type)) {
-    throw new ImageUploadError("JPG, JPEG, PNG, WEBP 파일만 업로드할 수 있습니다.");
+    throw new ImageUploadError("JPG, PNG, WEBP 파일만 업로드할 수 있습니다.");
   }
 
   if (value.size > MAX_IMAGE_SIZE) {
@@ -60,13 +60,17 @@ export const uploadArticleThumbnail = uploadArticleImage;
 export async function deleteArticleThumbnail(publicUrl: string | null | undefined) {
   if (!publicUrl) return;
 
-  const marker = `/storage/v1/object/public/${ARTICLE_IMAGE_BUCKET}/`;
-  const markerIndex = publicUrl.indexOf(marker);
-  if (markerIndex === -1) return;
+  try {
+    const marker = `/storage/v1/object/public/${ARTICLE_IMAGE_BUCKET}/`;
+    const markerIndex = publicUrl.indexOf(marker);
+    if (markerIndex === -1) return;
 
-  const path = decodeURIComponent(publicUrl.slice(markerIndex + marker.length));
-  if (!path) return;
+    const path = decodeURIComponent(publicUrl.slice(markerIndex + marker.length));
+    if (!path) return;
 
-  const supabase = getSupabaseAdmin();
-  await supabase.storage.from(ARTICLE_IMAGE_BUCKET).remove([path]);
+    const supabase = getSupabaseAdmin();
+    await supabase.storage.from(ARTICLE_IMAGE_BUCKET).remove([path]);
+  } catch {
+    // Deleting an old image must not block article updates or deletes.
+  }
 }

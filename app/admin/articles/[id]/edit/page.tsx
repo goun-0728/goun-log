@@ -3,8 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { updateArticleAction } from "@/app/admin/actions";
 import AdminArticleForm from "@/components/AdminArticleForm";
-import { requireAdmin } from "@/lib/auth";
 import { getAdminArticle } from "@/lib/articles";
+import { requireAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "글 수정 | GOUN LOG",
@@ -34,7 +34,7 @@ export default async function EditArticlePage({ params, searchParams }: PageProp
         <p className="eyebrow">Edit Article</p>
         <h1>글 수정</h1>
       </div>
-      <AdminArticleForm action={updateArticleAction.bind(null, id)} article={article} submitLabel="저장" uploadError={error} />
+      <AdminArticleForm action={updateArticleAction.bind(null, id)} article={article} error={error} />
     </main>
   );
 }

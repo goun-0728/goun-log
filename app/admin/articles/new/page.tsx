@@ -25,7 +25,7 @@ export default async function NewArticlePage({
         <p className="eyebrow">New Article</p>
         <h1>새 글 작성</h1>
       </div>
-      <AdminArticleForm action={createArticleAction} submitLabel="저장" uploadError={error} />
+      <AdminArticleForm action={createArticleAction} error={error} />
     </main>
   );
 }

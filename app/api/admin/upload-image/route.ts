@@ -22,6 +22,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: error.message }, { status: 400 });
     }
 
+    console.error("Admin image upload failed.", error);
     return NextResponse.json(
       { ok: false, error: "이미지 업로드에 실패했습니다. Supabase Storage 설정을 확인해주세요." },
       { status: 500 },

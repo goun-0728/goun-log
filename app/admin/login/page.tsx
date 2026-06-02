@@ -6,12 +6,12 @@ export const metadata: Metadata = {
 };
 
 const errorMessages: Record<string, string> = {
-  "invalid-login": "이메일/비밀번호가 틀렸습니다.",
+  "invalid-login": "이메일 또는 비밀번호가 맞지 않습니다.",
   "not-admin": "허용된 관리자 이메일이 아닙니다.",
   "missing-admin-email": "ADMIN_EMAIL 환경변수가 설정되어 있지 않습니다.",
   supabase: "Supabase 연결 오류가 발생했습니다.",
   unauthorized: "허용된 관리자 이메일이 아닙니다.",
-  login: "이메일/비밀번호가 틀렸습니다.",
+  login: "이메일 또는 비밀번호가 맞지 않습니다.",
 };
 
 export default async function AdminLoginPage({
