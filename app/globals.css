@@ -846,12 +846,17 @@ select {
 }
 
 .rich-toolbar {
+  position: sticky;
+  top: 12px;
+  z-index: 50;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   padding: 10px;
   border-bottom: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.62);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 8px 18px rgba(17, 17, 17, 0.06);
+  backdrop-filter: blur(8px);
 }
 
 .rich-toolbar button,
@@ -891,7 +896,7 @@ select {
 
 .rich-editor-content {
   min-height: 360px;
-  padding: 18px;
+  padding: 16px 18px 18px;
   outline: none;
   font-size: 16px;
   line-height: 1.85;
@@ -1000,6 +1005,21 @@ select {
 
   .admin-form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .rich-toolbar {
+    top: 8px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+  }
+
+  .rich-toolbar button,
+  .rich-toolbar select,
+  .rich-color-control {
+    flex: 0 0 auto;
+    white-space: nowrap;
   }
 }
 
