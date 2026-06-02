@@ -3,25 +3,35 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { clearAdminSession, getConfiguredAdminEmail, requireAdmin, setAdminSession } from "@/lib/auth";
-import { createArticle, deleteArticle, updateArticle, type ArticleInput, type ArticleStatus } from "@/lib/articles";
+import {
+  createArticle,
+  deleteArticle,
+  getAdminArticle,
+  getArticleThumbnailUrl,
+  updateArticle,
+  type ArticleInput,
+  type ArticleStatus,
+} from "@/lib/articles";
 import { getSupabaseAuthClient } from "@/lib/supabase/client";
+import { deleteArticleThumbnail, ImageUploadError, uploadArticleThumbnail } from "@/lib/storage";
 
 function clean(value: FormDataEntryValue | null) {
   const text = typeof value === "string" ? value.trim() : "";
   return text || null;
 }
 
-function parseArticleForm(formData: FormData): ArticleInput {
+async function parseArticleForm(formData: FormData, currentThumbnailUrl?: string | null): Promise<ArticleInput> {
   const statusValue = clean(formData.get("status")) || "draft";
   const status: ArticleStatus = statusValue === "published" ? "published" : "draft";
   const publishedAtValue = clean(formData.get("published_at"));
+  const uploadedThumbnailUrl = await uploadArticleThumbnail(formData.get("thumbnail_file"));
 
   return {
     title: clean(formData.get("title")) || "",
     slug: clean(formData.get("slug")) || "",
     description: clean(formData.get("description")),
     content: clean(formData.get("content")) || "",
-    image_url: clean(formData.get("image_url")),
+    thumbnail_url: uploadedThumbnailUrl || currentThumbnailUrl || null,
     status,
     published_at: publishedAtValue ? new Date(publishedAtValue).toISOString() : null,
   };
@@ -67,7 +77,16 @@ export async function logoutAction() {
 
 export async function createArticleAction(formData: FormData) {
   await requireAdmin();
-  await createArticle(parseArticleForm(formData));
+
+  let input: ArticleInput;
+  try {
+    input = await parseArticleForm(formData);
+  } catch (error) {
+    if (error instanceof ImageUploadError) redirect("/admin/articles/new?error=image-upload");
+    throw error;
+  }
+
+  await createArticle(input);
   revalidatePath("/");
   revalidatePath("/admin");
   redirect("/admin");
@@ -75,7 +94,21 @@ export async function createArticleAction(formData: FormData) {
 
 export async function updateArticleAction(id: string, formData: FormData) {
   await requireAdmin();
-  await updateArticle(id, parseArticleForm(formData));
+  const currentArticle = await getAdminArticle(id);
+  const currentThumbnailUrl = currentArticle ? getArticleThumbnailUrl(currentArticle) : null;
+
+  let input: ArticleInput;
+  try {
+    input = await parseArticleForm(formData, currentThumbnailUrl);
+  } catch (error) {
+    if (error instanceof ImageUploadError) redirect(`/admin/articles/${id}/edit?error=image-upload`);
+    throw error;
+  }
+
+  await updateArticle(id, input);
+  if (input.thumbnail_url && currentThumbnailUrl && input.thumbnail_url !== currentThumbnailUrl) {
+    await deleteArticleThumbnail(currentThumbnailUrl);
+  }
   revalidatePath("/");
   revalidatePath("/admin");
   redirect("/admin");
@@ -83,7 +116,10 @@ export async function updateArticleAction(id: string, formData: FormData) {
 
 export async function deleteArticleAction(id: string) {
   await requireAdmin();
+  const currentArticle = await getAdminArticle(id);
+  const currentThumbnailUrl = currentArticle ? getArticleThumbnailUrl(currentArticle) : null;
   await deleteArticle(id);
+  await deleteArticleThumbnail(currentThumbnailUrl);
   revalidatePath("/");
   revalidatePath("/admin");
   redirect("/admin");

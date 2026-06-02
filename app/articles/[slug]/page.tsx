@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import ArticleSidebar from "@/components/ArticleSidebar";
-import { formatDate, getPublishedArticleBySlug, getPublishedArticles } from "@/lib/articles";
+import { formatDate, getArticleThumbnailUrl, getPublishedArticleBySlug, getPublishedArticles } from "@/lib/articles";
 import { markdownToHtml } from "@/lib/markdown";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +18,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const article = await getPublishedArticleBySlug(slug);
 
   if (!article) return {};
+  const thumbnailUrl = getArticleThumbnailUrl(article);
 
   return {
     title: article.title,
@@ -27,7 +28,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description: article.description || undefined,
       type: "article",
       publishedTime: article.published_at || undefined,
-      images: article.image_url ? [article.image_url] : ["/og-default.svg"],
+      images: thumbnailUrl ? [thumbnailUrl] : ["/og-default.svg"],
     },
   };
 }
@@ -43,6 +44,7 @@ export default async function ArticlePage({ params }: PageProps) {
   if (!article) {
     notFound();
   }
+  const thumbnailUrl = getArticleThumbnailUrl(article);
 
   return (
     <main className="page-grid article-page-grid">
@@ -53,9 +55,9 @@ export default async function ArticlePage({ params }: PageProps) {
         <header className="article-header">
           <h1>{article.title}</h1>
           <time>{formatDate(article.published_at || article.created_at)}</time>
-          {article.image_url ? (
+          {thumbnailUrl ? (
             <div className="article-hero-image">
-              <img src={article.image_url} alt="" />
+              <img src={thumbnailUrl} alt="" />
             </div>
           ) : null}
         </header>

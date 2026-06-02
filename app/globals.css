@@ -607,7 +607,7 @@ select {
 
 .admin-table-header {
   display: grid;
-  grid-template-columns: minmax(220px, 1.8fr) minmax(120px, 0.9fr) minmax(90px, 0.5fr) minmax(110px, 0.6fr) auto;
+  grid-template-columns: 86px minmax(220px, 1.8fr) minmax(120px, 0.9fr) minmax(90px, 0.5fr) minmax(110px, 0.6fr) auto;
   gap: 18px;
   padding: 12px 0;
   border-bottom: 1px solid var(--line);
@@ -618,7 +618,7 @@ select {
 
 .admin-table-row {
   display: grid;
-  grid-template-columns: minmax(220px, 1.8fr) minmax(120px, 0.9fr) minmax(90px, 0.5fr) minmax(110px, 0.6fr) auto;
+  grid-template-columns: 86px minmax(220px, 1.8fr) minmax(120px, 0.9fr) minmax(90px, 0.5fr) minmax(110px, 0.6fr) auto;
   align-items: center;
   gap: 18px;
   padding: 18px 0;
@@ -627,6 +627,30 @@ select {
 
 .admin-title-cell {
   min-width: 0;
+}
+
+.admin-list-thumb {
+  width: 86px;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--line);
+  background: var(--surface-strong);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-list-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.admin-list-thumb span {
+  margin: 0;
+  color: var(--faint);
+  font-size: 12px;
 }
 
 .admin-table-row strong,
@@ -662,6 +686,14 @@ select {
   font-weight: 800;
 }
 
+.admin-field-label {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
 .admin-form input,
 .admin-form textarea,
 .admin-form select {
@@ -688,6 +720,69 @@ select {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+}
+
+.admin-upload-zone {
+  position: relative;
+  min-height: 220px;
+  border: 1px dashed var(--line);
+  background: var(--surface-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.admin-upload-zone.is-dragging {
+  border-color: var(--accent-red);
+  background: #fff5f3;
+}
+
+.admin-upload-zone img {
+  width: 100%;
+  height: 100%;
+  max-height: 360px;
+  object-fit: cover;
+  display: block;
+}
+
+.admin-upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 34px 18px;
+  text-align: center;
+}
+
+.admin-upload-placeholder strong {
+  font-size: 15px;
+}
+
+.admin-upload-placeholder span {
+  margin: 0;
+  color: var(--faint);
+}
+
+.admin-upload-button {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: #ffffff;
+  padding: 9px 14px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.admin-upload-button input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 @media (max-width: 860px) {

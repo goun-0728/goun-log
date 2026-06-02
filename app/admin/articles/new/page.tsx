@@ -8,8 +8,13 @@ export const metadata: Metadata = {
   title: "새 글 작성 | GOUN LOG",
 };
 
-export default async function NewArticlePage() {
+export default async function NewArticlePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   await requireAdmin();
+  const { error } = await searchParams;
 
   return (
     <main className="admin-page">
@@ -20,7 +25,7 @@ export default async function NewArticlePage() {
         <p className="eyebrow">New Article</p>
         <h1>새 글 작성</h1>
       </div>
-      <AdminArticleForm action={createArticleAction} submitLabel="저장" />
+      <AdminArticleForm action={createArticleAction} submitLabel="저장" uploadError={error} />
     </main>
   );
 }
