@@ -5,6 +5,10 @@ import { getSupabaseAuthClient } from "@/lib/supabase/client";
 const ACCESS_COOKIE = "goun_admin_access_token";
 const REFRESH_COOKIE = "goun_admin_refresh_token";
 
+export function getConfiguredAdminEmail() {
+  return process.env.ADMIN_EMAIL?.trim().toLowerCase() || null;
+}
+
 export async function setAdminSession(accessToken: string, refreshToken: string) {
   const cookieStore = await cookies();
   const secure = process.env.NODE_ENV === "production";
@@ -35,18 +39,26 @@ export async function clearAdminSession() {
 export async function getCurrentAdminEmail() {
   const cookieStore = await cookies();
   const token = cookieStore.get(ACCESS_COOKIE)?.value;
-  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminEmail = getConfiguredAdminEmail();
 
   if (!token || !adminEmail) return null;
 
-  const supabase = getSupabaseAuthClient();
-  const { data, error } = await supabase.auth.getUser(token);
+  try {
+    const supabase = getSupabaseAuthClient();
+    const { data, error } = await supabase.auth.getUser(token);
 
-  if (error || !data.user?.email) return null;
-  return data.user.email === adminEmail ? data.user.email : null;
+    if (error || !data.user?.email) return null;
+
+    const userEmail = data.user.email.trim().toLowerCase();
+    return userEmail === adminEmail ? data.user.email : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function requireAdmin() {
+  if (!getConfiguredAdminEmail()) redirect("/admin/login?error=missing-admin-email");
+
   const email = await getCurrentAdminEmail();
   if (!email) redirect("/admin/login");
   return email;

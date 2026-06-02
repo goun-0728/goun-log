@@ -7,7 +7,7 @@ import { requireAdmin } from "@/lib/auth";
 import { getAdminArticle } from "@/lib/articles";
 
 export const metadata: Metadata = {
-  title: "글 수정",
+  title: "글 수정 | GOUN LOG",
 };
 
 type PageProps = {
@@ -32,7 +32,7 @@ export default async function EditArticlePage({ params }: PageProps) {
         <p className="eyebrow">Edit Article</p>
         <h1>글 수정</h1>
       </div>
-      <AdminArticleForm action={updateArticleAction.bind(null, id)} article={article} submitLabel="수정 저장" />
+      <AdminArticleForm action={updateArticleAction.bind(null, id)} article={article} submitLabel="저장" />
     </main>
   );
 }

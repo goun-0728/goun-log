@@ -5,7 +5,7 @@ import AdminArticleForm from "@/components/AdminArticleForm";
 import { requireAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = {
-  title: "새 글 작성",
+  title: "새 글 작성 | GOUN LOG",
 };
 
 export default async function NewArticlePage() {

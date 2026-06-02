@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { deleteArticleAction, logoutAction } from "@/app/admin/actions";
+import AdminDeleteButton from "@/components/AdminDeleteButton";
 import { requireAdmin } from "@/lib/auth";
 import { formatDate, getAdminArticles } from "@/lib/articles";
 
@@ -30,18 +31,26 @@ export default async function AdminPage() {
       </div>
 
       <div className="admin-table">
+        <div className="admin-table-header">
+          <span>제목</span>
+          <span>슬러그</span>
+          <span>상태</span>
+          <span>발행일</span>
+          <span>관리</span>
+        </div>
         {articles.map((article) => (
           <div key={article.id} className="admin-table-row">
-            <div>
+            <div className="admin-title-cell">
               <strong>{article.title}</strong>
-              <span>
-                {article.status} · {formatDate(article.published_at || article.created_at)}
-              </span>
+              <span>{article.description}</span>
             </div>
+            <span>{article.slug}</span>
+            <span>{article.status}</span>
+            <span>{formatDate(article.published_at || article.created_at)}</span>
             <div className="admin-row-actions">
               <Link href={`/admin/articles/${article.id}/edit`}>수정</Link>
               <form action={deleteArticleAction.bind(null, article.id)}>
-                <button type="submit">삭제</button>
+                <AdminDeleteButton />
               </form>
             </div>
           </div>

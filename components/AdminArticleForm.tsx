@@ -22,11 +22,11 @@ export default function AdminArticleForm({
         <input name="slug" defaultValue={article?.slug || ""} required />
       </label>
       <label>
-        <span>요약</span>
+        <span>요약 description</span>
         <textarea name="description" rows={3} defaultValue={article?.description || ""} />
       </label>
       <label>
-        <span>본문</span>
+        <span>본문 content</span>
         <textarea name="content" rows={18} defaultValue={article?.content || ""} required />
       </label>
       <label>

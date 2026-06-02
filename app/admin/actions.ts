@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { clearAdminSession, requireAdmin, setAdminSession } from "@/lib/auth";
+import { clearAdminSession, getConfiguredAdminEmail, requireAdmin, setAdminSession } from "@/lib/auth";
 import { createArticle, deleteArticle, updateArticle, type ArticleInput, type ArticleStatus } from "@/lib/articles";
 import { getSupabaseAuthClient } from "@/lib/supabase/client";
 
@@ -28,22 +28,35 @@ function parseArticleForm(formData: FormData): ArticleInput {
 }
 
 export async function loginAction(formData: FormData) {
-  const email = clean(formData.get("email")) || "";
+  const email = (clean(formData.get("email")) || "").toLowerCase();
   const password = clean(formData.get("password")) || "";
-  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminEmail = getConfiguredAdminEmail();
 
-  if (!adminEmail || email !== adminEmail) {
-    redirect("/admin/login?error=unauthorized");
+  if (!adminEmail) {
+    redirect("/admin/login?error=missing-admin-email");
   }
 
-  const supabase = getSupabaseAuthClient();
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-  if (error || !data.session) {
-    redirect("/admin/login?error=login");
+  if (email !== adminEmail) {
+    redirect("/admin/login?error=not-admin");
   }
 
-  await setAdminSession(data.session.access_token, data.session.refresh_token);
+  let session;
+
+  try {
+    const supabase = getSupabaseAuthClient();
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error || !data.session) {
+      redirect("/admin/login?error=invalid-login");
+    }
+
+    session = data.session;
+  } catch (error) {
+    if (typeof error === "object" && error !== null && "digest" in error) throw error;
+    redirect("/admin/login?error=supabase");
+  }
+
+  await setAdminSession(session.access_token, session.refresh_token);
   redirect("/admin");
 }
 
