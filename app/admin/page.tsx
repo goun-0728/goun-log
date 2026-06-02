@@ -1,15 +1,19 @@
 import Link from "next/link";
 import { deleteArticleAction, logoutAction } from "@/app/admin/actions";
-import AdminDeleteButton from "@/components/AdminDeleteButton";
-import { formatDate, getAdminArticles, getArticleThumbnailUrl, getStatusLabel } from "@/lib/articles";
 import { requireAdmin } from "@/lib/auth";
+import { formatDate, getAdminArticles } from "@/lib/articles";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminPage() {
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ notice?: string }>;
+}) {
   const email = await requireAdmin();
   const articles = await getAdminArticles();
   const scheduledCount = articles.filter((article) => article.status === "scheduled").length;
+  const { notice } = await searchParams;
 
   return (
     <main className="admin-page">
@@ -18,7 +22,7 @@ export default async function AdminPage() {
           <p className="eyebrow">Admin</p>
           <h1>글 관리</h1>
           <p className="muted-copy">
-            {email} · 예약발행 {scheduledCount}개
+            {email} · 예약 글 {scheduledCount}개
           </p>
         </div>
         <div className="admin-actions">
@@ -33,39 +37,25 @@ export default async function AdminPage() {
         </div>
       </div>
 
-      <div className="admin-table">
-        <div className="admin-table-header">
-          <span>이미지</span>
-          <span>제목</span>
-          <span>슬러그</span>
-          <span>상태</span>
-          <span>발행일</span>
-          <span>관리</span>
-        </div>
-        {articles.map((article) => {
-          const thumbnailUrl = getArticleThumbnailUrl(article);
+      {notice ? <p className="admin-error">{notice}</p> : null}
 
-          return (
-            <div key={article.id} className="admin-table-row">
-              <div className="admin-list-thumb">
-                {thumbnailUrl ? <img src={thumbnailUrl} alt="" /> : <span>없음</span>}
-              </div>
-              <div className="admin-title-cell">
-                <strong>{article.title}</strong>
-                <span>{article.description}</span>
-              </div>
-              <span>{article.slug}</span>
-              <span>{getStatusLabel(article.status)}</span>
-              <span>{formatDate(article.published_at || article.created_at)}</span>
-              <div className="admin-row-actions">
-                <Link href={`/admin/articles/${article.id}/edit`}>수정</Link>
-                <form action={deleteArticleAction.bind(null, article.id)}>
-                  <AdminDeleteButton />
-                </form>
-              </div>
+      <div className="admin-table">
+        {articles.map((article) => (
+          <div key={article.id} className="admin-table-row">
+            <div>
+              <strong>{article.title}</strong>
+              <span>
+                {article.status} · {formatDate(article.published_at || article.created_at)}
+              </span>
             </div>
-          );
-        })}
+            <div className="admin-row-actions">
+              <Link href={`/admin/articles/${article.id}/edit`}>수정</Link>
+              <form action={deleteArticleAction.bind(null, article.id)}>
+                <button type="submit">삭제</button>
+              </form>
+            </div>
+          </div>
+        ))}
         {!articles.length ? <p className="empty-state">등록된 글이 없습니다.</p> : null}
       </div>
     </main>

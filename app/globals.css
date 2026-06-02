@@ -137,6 +137,7 @@ select {
   grid-template-columns: repeat(3, 1fr);
   width: 100%;
   margin: 0;
+  gap: 0;
   border-top: 1px solid var(--ink);
   border-bottom: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.2);
@@ -154,13 +155,13 @@ select {
   justify-content: center;
 }
 
-.home-stat-item + .home-stat-item::before {
+.home-stat-item:not(:last-child)::after {
   content: "";
   position: absolute;
-  left: 0;
-  top: 18%;
+  top: 17.5%;
+  right: 0;
   width: 1px;
-  height: 64%;
+  height: 65%;
   background: var(--line);
 }
 
@@ -307,7 +308,7 @@ select {
   margin: 8px 0 10px;
   font-size: 25px;
   line-height: 1.35;
-  font-weight: 800;
+  font-weight: 600;
   width: 100%;
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -429,9 +430,9 @@ select {
 
 .article-header h1 {
   margin: 0 0 16px;
-  font-size: clamp(34px, 6vw, 58px);
-  font-weight: 900;
-  line-height: 1.12;
+  font-size: clamp(30px, 4vw, 40px);
+  font-weight: 800;
+  line-height: 1.25;
 }
 
 .article-hero-image {
@@ -711,6 +712,37 @@ select {
   gap: 16px;
 }
 
+.admin-editor-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid var(--line);
+  background: rgba(244, 241, 234, 0.96);
+  backdrop-filter: blur(12px);
+  padding: 12px;
+}
+
+.admin-editor-toolbar strong,
+.admin-editor-toolbar span {
+  display: block;
+}
+
+.admin-editor-toolbar strong {
+  font-size: 14px;
+  color: var(--foreground);
+}
+
+.admin-editor-toolbar span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
 .admin-form label {
   display: flex;
   flex-direction: column;
@@ -757,6 +789,37 @@ select {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+}
+
+.admin-editor-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid var(--line);
+  background: rgba(244, 241, 234, 0.96);
+  backdrop-filter: blur(12px);
+  padding: 12px;
+}
+
+.admin-editor-toolbar strong,
+.admin-editor-toolbar span {
+  display: block;
+}
+
+.admin-editor-toolbar strong {
+  font-size: 14px;
+  color: var(--foreground);
+}
+
+.admin-editor-toolbar span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .admin-status-panel {
@@ -949,6 +1012,10 @@ select {
   margin: 24px 0;
 }
 
+.admin-inline-field {
+  margin: 8px 0 12px;
+}
+
 @media (max-width: 860px) {
   .site-header {
     flex-direction: column;
@@ -973,6 +1040,10 @@ select {
   .home-stat-item {
     min-height: auto;
     padding: 16px 10px;
+  }
+
+  .home-stat-item::after {
+    display: none;
   }
 
   .page-grid {

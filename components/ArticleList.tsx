@@ -9,18 +9,12 @@ function matchesSearch(article: Article, query: string) {
   const keyword = query.trim().toLowerCase();
   if (!keyword) return true;
 
-  return [article.title, article.description || "", article.content]
-    .join(" ")
-    .toLowerCase()
-    .includes(keyword);
+  return [article.title, article.description || "", article.content].join(" ").toLowerCase().includes(keyword);
 }
 
 export default function ArticleList({ articles }: { articles: Article[] }) {
   const [query, setQuery] = useState("");
-  const filteredArticles = useMemo(
-    () => articles.filter((article) => matchesSearch(article, query)),
-    [articles, query],
-  );
+  const filteredArticles = useMemo(() => articles.filter((article) => matchesSearch(article, query)), [articles, query]);
 
   if (!articles.length) {
     return <p className="empty-state">아직 발행된 글이 없습니다.</p>;
@@ -54,11 +48,11 @@ export default function ArticleList({ articles }: { articles: Article[] }) {
                   </Link>
                 ) : null}
                 <div className="article-list-copy">
-                  <time>{formatDate(article.published_at || article.created_at)}</time>
                   <h2>
                     <Link href={`/articles/${article.slug}`}>{article.title}</Link>
                   </h2>
                   {article.description ? <p>{article.description}</p> : null}
+                  <time>{formatDate(article.published_at || article.created_at)}</time>
                 </div>
               </article>
             );

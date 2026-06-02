@@ -11,17 +11,11 @@ const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 type AdminArticleFormProps = {
   action: (formData: FormData) => Promise<void>;
   article?: Article;
-  submitLabel?: string;
   error?: string;
 };
 
 const errorMessages: Record<string, string> = {
   "image-upload": "대표 이미지 업로드에 실패했습니다. 이미지를 제외하고 다시 저장해주세요.",
-  "missing-title": "제목을 입력해주세요.",
-  "missing-slug": "슬러그를 입력해주세요.",
-  "missing-content": "본문을 입력해주세요.",
-  "published-at-required": "예약발행은 발행일과 시간이 필요합니다.",
-  "duplicate-slug": "이미 사용 중인 슬러그입니다. 다른 슬러그를 입력해주세요.",
   "save-failed": "글 저장에 실패했습니다. 입력값과 Supabase 연결 상태를 확인해주세요.",
 };
 
@@ -97,16 +91,34 @@ export default function AdminArticleForm({ action, article, error }: AdminArticl
 
   return (
     <form action={action} className="admin-form" encType="multipart/form-data">
+      <div className="admin-editor-toolbar">
+        <div>
+          <strong>{article ? "글 수정" : "새 글 작성"}</strong>
+          <span>저장 버튼은 긴 글을 작성할 때도 항상 상단에 고정됩니다.</span>
+        </div>
+        <div className="admin-submit-actions">
+          <button type="submit" name="status" value="draft" className="admin-secondary-button">
+            임시저장
+          </button>
+          <button type="submit" name="status" value="scheduled" className="admin-secondary-button">
+            예약발행
+          </button>
+          <button type="submit" name="status" value="published" className="admin-primary-button">
+            발행하기
+          </button>
+        </div>
+      </div>
+
       {error || clientError ? <p className="admin-error">{clientError || errorMessages[error || ""] || "오류가 발생했습니다."}</p> : null}
 
       <label>
-        <span>제목</span>
+        <span>제목 title</span>
         <input name="title" defaultValue={article?.title || ""} required />
       </label>
 
       <label>
-        <span>슬러그</span>
-        <input name="slug" defaultValue={article?.slug || ""} required />
+        <span>슬러그 slug</span>
+        <input name="slug" defaultValue={article?.slug || ""} placeholder="비워두면 제목으로 자동 생성됩니다." />
       </label>
 
       <label>
@@ -120,8 +132,12 @@ export default function AdminArticleForm({ action, article, error }: AdminArticl
       </div>
 
       <div>
-        <span className="admin-field-label">대표 이미지 업로드</span>
+        <span className="admin-field-label">대표 이미지 image_url</span>
         <input type="hidden" name="current_thumbnail_url" value={currentThumbnailUrl || ""} />
+        <label className="admin-inline-field">
+          <span>이미지 URL</span>
+          <input name="image_url" type="url" defaultValue={currentThumbnailUrl || ""} placeholder="https://..." />
+        </label>
         <div
           className={`admin-upload-zone${isDragging ? " is-dragging" : ""}`}
           onDragEnter={(event) => {
@@ -139,7 +155,7 @@ export default function AdminArticleForm({ action, article, error }: AdminArticl
             <img src={previewUrl} alt="대표 이미지 미리보기" />
           ) : (
             <div className="admin-upload-placeholder">
-              <strong>이미지를 선택하거나 여기에 놓아주세요.</strong>
+              <strong>이미지를 선택하거나 URL을 입력해주세요.</strong>
               <span>선택사항입니다. JPG, PNG, WEBP / 최대 5MB</span>
             </div>
           )}
@@ -155,7 +171,7 @@ export default function AdminArticleForm({ action, article, error }: AdminArticl
             />
           </label>
         </div>
-        <p className="muted-copy">업로드가 실패해도 글은 이미지 없이 저장됩니다.</p>
+        <p className="muted-copy">업로드가 실패해도 글은 URL 이미지나 이미지 없이 저장됩니다.</p>
       </div>
 
       <div className="admin-form-grid">
@@ -164,21 +180,9 @@ export default function AdminArticleForm({ action, article, error }: AdminArticl
           <strong>{getStatusLabel(article?.status || "draft")}</strong>
         </div>
         <label>
-          <span>발행일</span>
+          <span>예약/발행일 published_at</span>
           <input name="published_at" type="datetime-local" defaultValue={publishedAt} />
         </label>
-      </div>
-
-      <div className="admin-submit-actions">
-        <button type="submit" name="status" value="draft" className="admin-secondary-button">
-          임시저장
-        </button>
-        <button type="submit" name="status" value="scheduled" className="admin-secondary-button">
-          예약발행
-        </button>
-        <button type="submit" name="status" value="published" className="admin-primary-button">
-          발행하기
-        </button>
       </div>
     </form>
   );
