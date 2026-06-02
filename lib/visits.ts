@@ -28,6 +28,15 @@ function makeHeaders(key: string) {
   };
 }
 
+function describeError(error: unknown) {
+  if (!(error instanceof Error)) return "Unknown error";
+
+  const cause = "cause" in error ? (error as Error & { cause?: unknown }).cause : undefined;
+  if (cause instanceof Error) return `${error.message}; cause=${cause.message}`;
+  if (cause) return `${error.message}; cause=${JSON.stringify(cause)}`;
+  return error.message;
+}
+
 function parseCount(contentRange: string | null) {
   if (!contentRange) return 0;
   const total = contentRange.split("/").pop();
@@ -56,7 +65,7 @@ async function countRows(table: string, filters?: Record<string, string>) {
 
   if (!response.ok) {
     const body = await response.text().catch(() => "");
-    throw new Error(`${table} count failed: ${response.status} ${body}`);
+    throw new Error(`${table} count failed at ${endpoint.toString()}: ${response.status} ${body}`);
   }
 
   return parseCount(response.headers.get("content-range"));
@@ -66,6 +75,7 @@ export async function recordVisit(path: string): Promise<VisitRecordResult> {
   try {
     const { url, key } = getSupabaseRestConfig();
     const endpoint = new URL("/rest/v1/site_visits", url);
+    console.log("Recording site visit through Supabase REST:", endpoint.toString());
     const response = await fetch(endpoint, {
       method: "POST",
       headers: {
@@ -79,14 +89,14 @@ export async function recordVisit(path: string): Promise<VisitRecordResult> {
 
     if (!response.ok) {
       const body = await response.text().catch(() => "");
-      const message = `site_visits insert failed: ${response.status} ${body}`;
+      const message = `site_visits insert failed at ${endpoint.toString()}: ${response.status} ${body}`;
       console.error(message);
       return { ok: false, error: message };
     }
 
     return { ok: true };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown visit tracking error";
+    const message = describeError(error);
     console.error("Failed to record site visit:", message);
     return { ok: false, error: message };
   }
@@ -118,7 +128,7 @@ export async function getVisitStats(): Promise<VisitStats> {
       published: publishedArticles.status === "fulfilled" ? publishedArticles.value : 0,
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown stats error";
+    const message = describeError(error);
     console.error("Failed to fetch visit stats:", message);
     return fallback;
   }
