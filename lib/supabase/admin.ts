@@ -57,12 +57,15 @@ export function getSupabaseRestConfig() {
 export function getSupabaseAdminDiagnostics() {
   const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const rawKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const keyPayload = decodeJwtPayload(rawKey?.trim());
+  const trimmedUrl = rawUrl?.trim() || "";
+  const trimmedKey = rawKey?.trim() || "";
+  const normalizedUrl = trimmedUrl ? normalizeSupabaseUrl(trimmedUrl) : "";
+  const keyPayload = decodeJwtPayload(trimmedKey);
 
   let host = "";
   let projectRefFromUrl = "";
   try {
-    const parsed = rawUrl ? new URL(normalizeSupabaseUrl(rawUrl)) : null;
+    const parsed = normalizedUrl ? new URL(normalizedUrl) : null;
     host = parsed?.host || "";
     projectRefFromUrl = host.split(".")[0] || "";
   } catch {
@@ -70,8 +73,12 @@ export function getSupabaseAdminDiagnostics() {
   }
 
   return {
-    hasUrl: Boolean(rawUrl?.trim()),
-    hasServiceRoleKey: Boolean(rawKey?.trim()),
+    rawSupabaseUrl: rawUrl || "",
+    trimmedSupabaseUrl: trimmedUrl,
+    normalizedSupabaseUrl: normalizedUrl,
+    hasUrl: Boolean(trimmedUrl),
+    hasServiceRoleKey: Boolean(trimmedKey),
+    serviceRoleKeyLength: trimmedKey.length,
     host,
     projectRefFromUrl,
     serviceRoleKeyRole: typeof keyPayload?.role === "string" ? keyPayload.role : null,
