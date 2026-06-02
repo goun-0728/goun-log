@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import RichTextEditor from "@/components/RichTextEditor";
 import type { Article } from "@/lib/articles";
-import { getArticleThumbnailUrl, getStatusLabel } from "@/lib/articles";
+import { getArticleThumbnailUrl, getStatusLabel, isSafeImageUrl } from "@/lib/article-shared";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -15,7 +15,7 @@ type AdminArticleFormProps = {
 };
 
 const errorMessages: Record<string, string> = {
-  "image-upload": "대표 이미지 업로드에 실패했습니다. 이미지를 제외하고 다시 저장해주세요.",
+  "image-upload": "이미지 업로드에 실패했습니다. 이미지를 제외하고 다시 저장해주세요.",
   "save-failed": "글 저장에 실패했습니다. 입력값과 Supabase 연결 상태를 확인해주세요.",
 };
 
@@ -89,19 +89,21 @@ export default function AdminArticleForm({ action, article, error }: AdminArticl
     if (!validateAndPreview(file)) fileInputRef.current.value = "";
   }
 
+  const canPreviewImage = previewUrl.startsWith("blob:") || isSafeImageUrl(previewUrl);
+
   return (
     <form action={action} className="admin-form" encType="multipart/form-data">
       <div className="admin-editor-toolbar">
         <div>
           <strong>{article ? "글 수정" : "새 글 작성"}</strong>
-          <span>저장 버튼은 긴 글을 작성할 때도 항상 상단에 고정됩니다.</span>
+          <span>저장 버튼은 글 작성 중에도 상단에 고정됩니다.</span>
         </div>
         <div className="admin-submit-actions">
           <button type="submit" name="status" value="draft" className="admin-secondary-button">
-            임시저장
+            임시 저장
           </button>
           <button type="submit" name="status" value="scheduled" className="admin-secondary-button">
-            예약발행
+            예약 발행
           </button>
           <button type="submit" name="status" value="published" className="admin-primary-button">
             발행하기
@@ -151,7 +153,7 @@ export default function AdminArticleForm({ action, article, error }: AdminArticl
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
         >
-          {previewUrl ? (
+          {previewUrl && canPreviewImage ? (
             <img src={previewUrl} alt="대표 이미지 미리보기" />
           ) : (
             <div className="admin-upload-placeholder">

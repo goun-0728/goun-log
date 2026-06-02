@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import SafeImage from "@/components/SafeImage";
 import type { Article } from "@/lib/articles";
-import { formatDate, getArticleThumbnailUrl } from "@/lib/articles";
+import { formatDate, getArticleThumbnailUrl } from "@/lib/article-shared";
 
 function matchesSearch(article: Article, query: string) {
   const keyword = query.trim().toLowerCase();
@@ -44,7 +45,7 @@ export default function ArticleList({ articles }: { articles: Article[] }) {
               <article key={article.id} className={`article-list-item${thumbnailUrl ? "" : " article-list-item-no-image"}`}>
                 {thumbnailUrl ? (
                   <Link href={`/articles/${article.slug}`} className="article-thumb" aria-label={`${article.title} 보기`}>
-                    <img src={thumbnailUrl} alt="" />
+                    <SafeImage src={thumbnailUrl} alt="" />
                   </Link>
                 ) : null}
                 <div className="article-list-copy">

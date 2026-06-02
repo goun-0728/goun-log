@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import ArticleSidebar from "@/components/ArticleSidebar";
-import { formatDate, getArticleThumbnailUrl, getPublishedArticleBySlug, getPublishedArticles } from "@/lib/articles";
+import SafeImage from "@/components/SafeImage";
+import { formatDate, getPublishedArticleBySlug, getPublishedArticles } from "@/lib/articles";
+import { getArticleThumbnailUrl } from "@/lib/article-shared";
 import { renderArticleContent } from "@/lib/content";
 
 export const dynamic = "force-dynamic";
@@ -36,14 +38,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function ArticlePage({ params }: PageProps) {
   const { slug } = await params;
 
-  const [article, recentArticles] = await Promise.all([
-    getPublishedArticleBySlug(slug),
-    getPublishedArticles(5),
-  ]);
+  const [article, recentArticles] = await Promise.all([getPublishedArticleBySlug(slug), getPublishedArticles(5)]);
 
   if (!article) {
     notFound();
   }
+
   const thumbnailUrl = getArticleThumbnailUrl(article);
 
   return (
@@ -57,11 +57,11 @@ export default async function ArticlePage({ params }: PageProps) {
           <time>{formatDate(article.published_at || article.created_at)}</time>
           {thumbnailUrl ? (
             <div className="article-hero-image">
-              <img src={thumbnailUrl} alt="" />
+              <SafeImage src={thumbnailUrl} alt={article.title} />
             </div>
           ) : null}
         </header>
-        <div className="article-body" dangerouslySetInnerHTML={{ __html: renderArticleContent(article.content) }} />
+        <div className="article-body" dangerouslySetInnerHTML={{ __html: renderArticleContent(article.content || "") }} />
       </article>
       <ArticleSidebar recentArticles={recentArticles} />
     </main>
