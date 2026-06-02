@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Article } from "@/lib/articles";
 import { getArticleThumbnailUrl, getStatusLabel } from "@/lib/articles";
+import RichTextEditor from "@/components/RichTextEditor";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -94,10 +95,11 @@ export default function AdminArticleForm({
         <span>요약 description</span>
         <textarea name="description" rows={3} defaultValue={article?.description || ""} />
       </label>
-      <label>
-        <span>본문 content</span>
-        <textarea name="content" rows={18} defaultValue={article?.content || ""} required />
-      </label>
+
+      <div>
+        <span className="admin-field-label">본문 content</span>
+        <RichTextEditor name="content" defaultValue={article?.content || ""} />
+      </div>
 
       <div>
         <span className="admin-field-label">대표 이미지 업로드</span>

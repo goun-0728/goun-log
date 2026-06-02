@@ -28,10 +28,10 @@ function buildImagePath(file: File) {
     .replace(/^-+|-+$/g, "")
     .slice(0, 48);
 
-  return `articles/${Date.now()}-${crypto.randomUUID()}-${safeName || "thumbnail"}.${extension}`;
+  return `articles/${Date.now()}-${crypto.randomUUID()}-${safeName || "image"}.${extension}`;
 }
 
-export async function uploadArticleThumbnail(value: FormDataEntryValue | null) {
+export async function uploadArticleImage(value: FormDataEntryValue | null) {
   if (!isFile(value)) return null;
 
   if (!ALLOWED_IMAGE_TYPES.has(value.type)) {
@@ -39,7 +39,7 @@ export async function uploadArticleThumbnail(value: FormDataEntryValue | null) {
   }
 
   if (value.size > MAX_IMAGE_SIZE) {
-    throw new ImageUploadError("대표 이미지는 5MB 이하만 업로드할 수 있습니다.");
+    throw new ImageUploadError("이미지는 5MB 이하만 업로드할 수 있습니다.");
   }
 
   const supabase = getSupabaseAdmin();
@@ -54,6 +54,8 @@ export async function uploadArticleThumbnail(value: FormDataEntryValue | null) {
   const { data } = supabase.storage.from(ARTICLE_IMAGE_BUCKET).getPublicUrl(path);
   return data.publicUrl;
 }
+
+export const uploadArticleThumbnail = uploadArticleImage;
 
 export async function deleteArticleThumbnail(publicUrl: string | null | undefined) {
   if (!publicUrl) return;

@@ -459,6 +459,13 @@ select {
   font-weight: 800;
 }
 
+.article-body h1 {
+  margin: 3rem 0 1rem;
+  font-size: 2rem;
+  line-height: 1.35;
+  font-weight: 900;
+}
+
 .article-body h3 {
   margin: 2.2rem 0 0.75rem;
   font-size: 1.18rem;
@@ -466,7 +473,15 @@ select {
   font-weight: 800;
 }
 
-.article-body ul {
+.article-body h4 {
+  margin: 1.8rem 0 0.65rem;
+  font-size: 1.05rem;
+  line-height: 1.5;
+  font-weight: 800;
+}
+
+.article-body ul,
+.article-body ol {
   margin: 0 0 1.5rem;
   padding-left: 1.25rem;
   color: #25231f;
@@ -481,6 +496,19 @@ select {
   margin: 3rem 0;
   border: 0;
   border-top: 1px solid var(--line);
+}
+
+.article-body a {
+  color: var(--accent-red);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.article-body img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 24px 0;
 }
 
 .simple-page,
@@ -810,6 +838,110 @@ select {
   height: 1px;
   opacity: 0;
   pointer-events: none;
+}
+
+.rich-editor {
+  border: 1px solid var(--line);
+  background: var(--surface-strong);
+}
+
+.rich-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.rich-toolbar button,
+.rich-toolbar select,
+.rich-color-control {
+  min-height: 34px;
+  border: 1px solid var(--line);
+  background: #ffffff;
+  color: var(--ink);
+  padding: 6px 9px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.rich-toolbar button:hover,
+.rich-toolbar select:focus {
+  border-color: var(--accent-red);
+}
+
+.rich-color-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rich-color-control input {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.rich-hidden-file {
+  display: none;
+}
+
+.rich-editor-content {
+  min-height: 360px;
+  padding: 18px;
+  outline: none;
+  font-size: 16px;
+  line-height: 1.85;
+}
+
+.rich-editor-content p {
+  margin: 0 0 14px;
+}
+
+.rich-editor-content h1,
+.rich-editor-content h2,
+.rich-editor-content h3,
+.rich-editor-content h4 {
+  margin: 24px 0 12px;
+  line-height: 1.35;
+}
+
+.rich-editor-content h1 {
+  font-size: 32px;
+}
+
+.rich-editor-content h2 {
+  font-size: 26px;
+}
+
+.rich-editor-content h3 {
+  font-size: 22px;
+}
+
+.rich-editor-content h4 {
+  font-size: 18px;
+}
+
+.rich-editor-content ul,
+.rich-editor-content ol {
+  margin: 0 0 14px 22px;
+  padding: 0;
+}
+
+.rich-editor-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 16px 0;
+}
+
+.rich-editor-content hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 24px 0;
 }
 
 @media (max-width: 860px) {

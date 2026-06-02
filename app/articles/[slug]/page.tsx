@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ArticleSidebar from "@/components/ArticleSidebar";
 import { formatDate, getArticleThumbnailUrl, getPublishedArticleBySlug, getPublishedArticles } from "@/lib/articles";
-import { markdownToHtml } from "@/lib/markdown";
+import { renderArticleContent } from "@/lib/content";
 
 export const dynamic = "force-dynamic";
 
@@ -61,7 +61,7 @@ export default async function ArticlePage({ params }: PageProps) {
             </div>
           ) : null}
         </header>
-        <div className="article-body" dangerouslySetInnerHTML={{ __html: markdownToHtml(article.content) }} />
+        <div className="article-body" dangerouslySetInnerHTML={{ __html: renderArticleContent(article.content) }} />
       </article>
       <ArticleSidebar recentArticles={recentArticles} />
     </main>
