@@ -1042,8 +1042,13 @@ select {
     padding: 16px 10px;
   }
 
-  .home-stat-item::after {
-    display: none;
+  .home-stat-item strong {
+    font-size: clamp(24px, 7vw, 38px);
+  }
+
+  .home-stat-item span {
+    font-size: 11px;
+    line-height: 1.35;
   }
 
   .page-grid {
@@ -1112,21 +1117,16 @@ select {
     font-size: clamp(44px, 15vw, 72px);
   }
 
-  .home-stats {
-    grid-template-columns: 1fr;
-    width: 100%;
-  }
-
   .home-stat-item {
-    border-bottom: 1px solid var(--line);
+    padding: 14px 6px;
   }
 
-  .home-stat-item + .home-stat-item::before {
-    display: none;
+  .home-stat-item strong {
+    font-size: clamp(22px, 8vw, 32px);
   }
 
-  .home-stat-item:last-child {
-    border-bottom: 0;
+  .home-stat-item span {
+    font-size: 10px;
   }
 
   .article-search {
