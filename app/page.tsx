@@ -2,15 +2,15 @@ import ArticleList from "@/components/ArticleList";
 import ArticleSidebar from "@/components/ArticleSidebar";
 import HeroTicker from "@/components/HeroTicker";
 import HomeStats from "@/components/HomeStats";
-import { getPublishedArticles } from "@/lib/articles";
+import { getPopularArticles, getPublishedArticles } from "@/lib/articles";
 import { getVisitStats } from "@/lib/visits";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [articles, recentArticles, stats] = await Promise.all([
+  const [articles, popularArticles, stats] = await Promise.all([
     getPublishedArticles(),
-    getPublishedArticles(5),
+    getPopularArticles(5),
     getVisitStats(),
   ]);
   const displayStats = {
@@ -32,7 +32,7 @@ export default async function Home() {
           </div>
           <ArticleList articles={articles} />
         </section>
-        <ArticleSidebar recentArticles={recentArticles} />
+        <ArticleSidebar recentArticles={popularArticles} />
       </div>
     </main>
   );

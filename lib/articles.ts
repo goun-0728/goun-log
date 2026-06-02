@@ -129,6 +129,26 @@ export async function getPublishedArticles(limit?: number) {
   }
 }
 
+export async function getPopularArticles(limit = 5) {
+  noStore();
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("articles")
+      .select("*")
+      .eq("status", "published")
+      .order("view_count", { ascending: false, nullsFirst: false })
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .limit(limit);
+
+    if (!error && data?.length) return data as Article[];
+  } catch {
+    // Some v1 tables do not have view_count yet. Fall back to latest published articles.
+  }
+
+  return getPublishedArticles(limit);
+}
+
 export async function getPublishedArticleBySlug(slug: string) {
   noStore();
   try {

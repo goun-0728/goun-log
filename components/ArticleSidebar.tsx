@@ -6,7 +6,7 @@ export default function ArticleSidebar({ recentArticles }: { recentArticles: Art
   return (
     <aside className="site-sidebar">
       <section className="sidebar-block">
-        <h2>최근 글</h2>
+        <h2>인기글</h2>
         <div className="recent-list">
           {recentArticles.map((article) => (
             <Link key={article.id} href={`/articles/${article.slug}`}>
