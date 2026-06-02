@@ -1,5 +1,5 @@
 import { unstable_noStore as noStore } from "next/cache";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getSupabaseRestConfig } from "@/lib/supabase/admin";
 
 export type VisitStats = {
   today: number;
@@ -21,14 +21,67 @@ function startOfTodayKstIso() {
   return new Date(startUtcMs).toISOString();
 }
 
+function makeHeaders(key: string) {
+  return {
+    apikey: key,
+    authorization: `Bearer ${key}`,
+  };
+}
+
+function parseCount(contentRange: string | null) {
+  if (!contentRange) return 0;
+  const total = contentRange.split("/").pop();
+  if (!total || total === "*") return 0;
+  return Number.parseInt(total, 10) || 0;
+}
+
+async function countRows(table: string, filters?: Record<string, string>) {
+  const { url, key } = getSupabaseRestConfig();
+  const endpoint = new URL(`/rest/v1/${table}`, url);
+  endpoint.searchParams.set("select", "id");
+
+  for (const [name, value] of Object.entries(filters || {})) {
+    endpoint.searchParams.set(name, value);
+  }
+
+  const response = await fetch(endpoint, {
+    method: "GET",
+    headers: {
+      ...makeHeaders(key),
+      Prefer: "count=exact",
+      Range: "0-0",
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`${table} count failed: ${response.status} ${body}`);
+  }
+
+  return parseCount(response.headers.get("content-range"));
+}
+
 export async function recordVisit(path: string): Promise<VisitRecordResult> {
   try {
-    const supabase = getSupabaseAdmin();
-    const { error } = await supabase.from("site_visits").insert({ path });
+    const { url, key } = getSupabaseRestConfig();
+    const endpoint = new URL("/rest/v1/site_visits", url);
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        ...makeHeaders(key),
+        "Content-Type": "application/json",
+        Prefer: "return=minimal",
+      },
+      body: JSON.stringify({ path }),
+      cache: "no-store",
+    });
 
-    if (error) {
-      console.error("Failed to insert site visit:", error.message);
-      return { ok: false, error: error.message };
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      const message = `site_visits insert failed: ${response.status} ${body}`;
+      console.error(message);
+      return { ok: false, error: message };
     }
 
     return { ok: true };
@@ -48,32 +101,21 @@ export async function getVisitStats(): Promise<VisitStats> {
   };
 
   try {
-    const supabase = getSupabaseAdmin();
     const todayStart = startOfTodayKstIso();
-
     const [todayVisits, totalVisits, publishedArticles] = await Promise.allSettled([
-      supabase.from("site_visits").select("id", { count: "exact", head: true }).gte("visited_at", todayStart),
-      supabase.from("site_visits").select("id", { count: "exact", head: true }),
-      supabase.from("articles").select("id", { count: "exact", head: true }).eq("status", "published"),
+      countRows("site_visits", { visited_at: `gte.${todayStart}` }),
+      countRows("site_visits"),
+      countRows("articles", { status: "eq.published" }),
     ]);
 
-    if (todayVisits.status === "fulfilled" && todayVisits.value.error) {
-      console.error("Failed to fetch today visits:", todayVisits.value.error.message);
-    }
-    if (totalVisits.status === "fulfilled" && totalVisits.value.error) {
-      console.error("Failed to fetch total visits:", totalVisits.value.error.message);
-    }
-    if (publishedArticles.status === "fulfilled" && publishedArticles.value.error) {
-      console.error("Failed to fetch published article count:", publishedArticles.value.error.message);
-    }
+    if (todayVisits.status === "rejected") console.error(todayVisits.reason);
+    if (totalVisits.status === "rejected") console.error(totalVisits.reason);
+    if (publishedArticles.status === "rejected") console.error(publishedArticles.reason);
 
     return {
-      today: todayVisits.status === "fulfilled" && !todayVisits.value.error ? todayVisits.value.count || 0 : 0,
-      total: totalVisits.status === "fulfilled" && !totalVisits.value.error ? totalVisits.value.count || 0 : 0,
-      published:
-        publishedArticles.status === "fulfilled" && !publishedArticles.value.error
-          ? publishedArticles.value.count || 0
-          : 0,
+      today: todayVisits.status === "fulfilled" ? todayVisits.value : 0,
+      total: totalVisits.status === "fulfilled" ? totalVisits.value : 0,
+      published: publishedArticles.status === "fulfilled" ? publishedArticles.value : 0,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown stats error";

@@ -25,6 +25,20 @@ export function getSupabaseAdmin() {
   });
 }
 
+export function getSupabaseRestConfig() {
+  const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const rawKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!rawUrl || !rawKey) {
+    throw new Error("Supabase admin environment variables are missing.");
+  }
+
+  return {
+    url: normalizeSupabaseUrl(rawUrl),
+    key: rawKey.trim(),
+  };
+}
+
 export function getSupabaseAdminDiagnostics() {
   const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const rawKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
