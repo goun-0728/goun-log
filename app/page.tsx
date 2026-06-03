@@ -12,22 +12,48 @@ const generatorUrl = "https://contentos-one-theta.vercel.app/";
 const experienceItems = [
   {
     title: "직접 판매하며 검증한 전략",
-    description: "이론이 아닌, 실제 해본 과정과 방법을 공유합니다.",
+    description: (
+      <>
+        이론이 아닌, 실제 해본
+        <br />
+        과정과 방법을 공유합니다.
+      </>
+    ),
     icon: "○",
   },
   {
     title: "상세페이지 구조 연구",
-    description: "판매 흐름을 이해하기 쉬운 구조와 메시지를 계속 연구합니다.",
+    description: (
+      <>
+        판매 흐름을 이해하기 쉬운
+        <br />
+        구조와 메시지를 계속 연구합니다.
+      </>
+    ),
     icon: "◇",
   },
   {
     title: "광고·마케팅 실전 노하우",
-    description: "광고 세팅부터 운영까지, 경험에서 얻은 인사이트를 어렵지 않게 나눕니다.",
+    description: (
+      <>
+        광고 세팅부터 운영까지,
+        <br />
+        경험에서 얻은 인사이트를
+        <br />
+        어렵지 않게 나눕니다.
+      </>
+    ),
     icon: "△",
   },
   {
     title: "함께 성장하는 파트너",
-    description: "정답은 없지만, 함께 고민하며 성장하는 파트너가 되고 싶습니다.",
+    description: (
+      <>
+        정답은 없지만, 함께 고민하며
+        <br />
+        성장하는 파트너가 되고 싶습니다.
+      </>
+    ),
     icon: "□",
   },
 ];
@@ -35,17 +61,35 @@ const experienceItems = [
 const consultingItems = [
   {
     title: "1:1 맞춤 상담",
-    description: "현재 상황을 이야기하고 함께 방향을 잡아가요.",
+    description: (
+      <>
+        현재 상황을 이야기하고
+        <br />
+        함께 방향을 잡아가요.
+      </>
+    ),
     icon: "○",
   },
   {
     title: "실전 교육",
-    description: "온라인/오프라인 교육으로 실무에 바로 적용해요.",
+    description: (
+      <>
+        온라인/오프라인 교육으로
+        <br />
+        실무에 바로 적용해요.
+      </>
+    ),
     icon: "◇",
   },
   {
     title: "지속적인 소통",
-    description: "한 번의 상담으로 끝이 아닌 꾸준한 소통을 지향해요.",
+    description: (
+      <>
+        한 번의 상담으로 끝이 아닌
+        <br />
+        꾸준한 소통을 이어갑니다.
+      </>
+    ),
     icon: "□",
   },
 ];
@@ -121,7 +165,20 @@ export default async function Home() {
               <span aria-hidden="true">☕</span>
               생성은 무료입니다.
               <br />
-              마음에 들 때만 다운로드하세요.
+              <br />
+              상세페이지 제작을 업체에 맡기면
+              <br />
+              적게는 몇 만원, 많게는 몇십만원 이상
+              <br />
+              비용이 발생하기도 합니다.
+              <br />
+              <br />
+              먼저 원하는 대로 만들어보세요.
+              <br />
+              마음에 들면 다운로드하고,
+              <br />
+              아니면 비용 없이 생성만 해보셔도 됩니다.
+              <br />
               <br />
               다운로드는 1건 2,900원입니다.
             </p>
@@ -131,11 +188,7 @@ export default async function Home() {
 
       <section className="experience-section" aria-labelledby="experience-title">
         <div className="home-section-heading">
-          <h2 id="experience-title">
-            GOUN LOG는
-            <br />
-            직접 경험한 것만 다룹니다.
-          </h2>
+          <h2 id="experience-title">직접 경험고 느낀것만 기록합니다.</h2>
           <span />
         </div>
         <div className="experience-grid">
