@@ -7,6 +7,8 @@ import { getVisitStats } from "@/lib/visits";
 
 export const dynamic = "force-dynamic";
 
+const generatorUrl = "https://contentos-one-theta.vercel.app/";
+
 const experienceItems = [
   {
     title: "직접 판매하며 검증한 전략",
@@ -15,18 +17,18 @@ const experienceItems = [
   },
   {
     title: "상세페이지 구조 연구",
-    description: "판매 흐름을 높이는 구조와 메시지를 계속 연구합니다.",
-    icon: "✎",
+    description: "판매 흐름을 이해하기 쉬운 구조와 메시지를 계속 연구합니다.",
+    icon: "◇",
   },
   {
     title: "광고·마케팅 실전 노하우",
     description: "광고 세팅부터 운영까지, 경험에서 얻은 인사이트를 어렵지 않게 나눕니다.",
-    icon: "↗",
+    icon: "△",
   },
   {
     title: "함께 성장하는 파트너",
     description: "정답은 없지만, 함께 고민하며 성장하는 파트너가 되고 싶습니다.",
-    icon: "◎",
+    icon: "□",
   },
 ];
 
@@ -34,7 +36,7 @@ const consultingItems = [
   {
     title: "1:1 맞춤 상담",
     description: "현재 상황을 이야기하고 함께 방향을 잡아가요.",
-    icon: "▢",
+    icon: "○",
   },
   {
     title: "실전 교육",
@@ -44,7 +46,7 @@ const consultingItems = [
   {
     title: "지속적인 소통",
     description: "한 번의 상담으로 끝이 아닌 꾸준한 소통을 지향해요.",
-    icon: "∞",
+    icon: "□",
   },
 ];
 
@@ -61,9 +63,9 @@ export default async function Home() {
       <section className="home-hero" aria-labelledby="home-title">
         <div className="home-hero-copy">
           <h1 id="home-title">
-            잘 팔리는 구조를 만들면
+            제품사진만 있다면,
             <br />
-            매출은 달라집니다.
+            상세페이지 초안을 쉽게 만들어볼 수 있습니다.
           </h1>
           <p>
             직접 온라인 판매를 하며 부딪히고 배운 것들을
@@ -72,54 +74,54 @@ export default async function Home() {
           </p>
 
           <div className="hero-cta-grid" aria-label="주요 바로가기">
-            <Link href="/tools/detail-page-generator" className="hero-cta-card hero-cta-primary">
-              <span className="hero-cta-icon">✳</span>
+            <a href={generatorUrl} target="_blank" rel="noopener noreferrer" className="hero-cta-card hero-cta-primary">
+              <span className="hero-cta-icon" aria-hidden="true">
+                ✳
+              </span>
               <strong>AI 상세페이지 생성기</strong>
               <small>
-                상품만 입력하면 AI가
+                제품사진을 준비해주세요.
                 <br />
-                상세페이지 초안을 만들어줘요.
+                생성은 무료이고, 다운로드할 때만 결제합니다.
               </small>
-              <em>→</em>
-            </Link>
+              <em aria-hidden="true">→</em>
+            </a>
             <Link href="/contact" className="hero-cta-card">
-              <span className="hero-cta-icon">♧</span>
+              <span className="hero-cta-icon" aria-hidden="true">
+                ♧
+              </span>
               <strong>교육·컨설팅 안내</strong>
               <small>
                 온라인 판매가 막막할 때,
                 <br />
                 같이 고민하고 방법을 찾아드려요.
               </small>
-              <em>→</em>
+              <em aria-hidden="true">→</em>
             </Link>
           </div>
 
           <p className="coffee-note">
             <span aria-hidden="true">☕</span>
-            커피 한 잔 값으로 완성하는 상세페이지
+            생성은 무료입니다.
             <br />
-            다운로드 시 2,900원 (고화질 PNG)
+            마음에 들 때만 다운로드하세요.
+            <br />
+            다운로드는 1건 2,900원입니다.
           </p>
         </div>
 
-        <div className="hero-preview" aria-label="상세페이지 생성 예시">
-          <div className="hero-laptop">
-            <div className="hero-product-copy">
-              <p>바다의 신선함을 그대로 담았습니다</p>
-              <h2>프리미엄 반건조 오징어</h2>
-              <span>선명한 비주얼과 자연스러운 메시지 구조</span>
+        <div className="hero-preview" aria-label="상세페이지 생성기 예시 이미지">
+          <div className="hero-showcase-frame">
+            <div className="hero-showcase-fallback">
+              <span>AI 상세페이지 생성기</span>
+              <strong>
+                제품사진만 준비해도
+                <br />
+                초안을 만들어볼 수 있어요.
+              </strong>
+              <small>public/images/home-showcase.png</small>
             </div>
-            <div className="hero-product-plate" />
-            <div className="hero-product-tabs">
-              <span>상품 포인트</span>
-              <span>추천 대상</span>
-              <span>구매 이유</span>
-            </div>
-          </div>
-          <div className="download-badge">
-            <span>DOWNLOAD</span>
-            <strong>2,900원</strong>
-            <small>고화질 PNG</small>
+            <SafeImage src="/images/home-showcase.png" alt="AI 상세페이지 생성기 예시 화면" className="hero-showcase-image" />
           </div>
         </div>
       </section>

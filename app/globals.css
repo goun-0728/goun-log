@@ -203,126 +203,59 @@ select {
 
 .hero-preview {
   position: relative;
-  min-height: 520px;
+  min-height: 500px;
 }
 
-.hero-laptop {
+.hero-showcase-frame {
   position: absolute;
   right: 0;
-  top: 26px;
+  top: 24px;
   width: min(100%, 620px);
-  min-height: 420px;
-  border: 18px solid #070707;
-  border-bottom-width: 34px;
-  border-radius: 22px 22px 12px 12px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.78) 0%, rgba(244, 241, 234, 0.94) 68%),
-    radial-gradient(circle at 76% 32%, #f4c7a6 0 12%, transparent 13%),
-    var(--surface-strong);
-  box-shadow: 0 34px 60px rgba(27, 23, 20, 0.2);
+  aspect-ratio: 16 / 11;
   overflow: hidden;
-}
-
-.hero-laptop::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: -48px;
-  width: 108%;
-  height: 24px;
-  transform: translateX(-50%);
-  border-radius: 0 0 42px 42px;
-  background: linear-gradient(90deg, #b7b7b7, #eeeeee 45%, #9b9b9b);
-}
-
-.hero-product-copy {
-  position: relative;
-  z-index: 2;
-  max-width: 260px;
-  padding: 58px 0 0 58px;
-}
-
-.hero-product-copy p {
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.7;
-}
-
-.hero-product-copy h2 {
-  margin: 20px 0 12px;
-  font-size: 29px;
-  line-height: 1.35;
-}
-
-.hero-product-copy span {
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.hero-product-plate {
-  position: absolute;
-  right: 58px;
-  top: 46px;
-  width: 250px;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 42% 38%, #f4dfca 0 18%, transparent 19%),
-    repeating-linear-gradient(112deg, #a84c2c 0 12px, #d9855f 12px 24px, #f0c0a0 24px 29px);
-  box-shadow: inset 0 0 0 26px rgba(255, 255, 255, 0.62), 0 18px 42px rgba(94, 57, 35, 0.25);
-}
-
-.hero-product-tabs {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  padding: 28px 42px;
-  border-top: 1px solid rgba(217, 212, 202, 0.8);
-  background: rgba(255, 255, 255, 0.72);
-}
-
-.hero-product-tabs span {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(183, 42, 42, 0.16);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.68);
-  padding: 14px 10px;
-  color: #2c2925;
-  font-size: 13px;
-  font-weight: 800;
-  text-align: center;
+  background:
+    radial-gradient(circle at 78% 28%, rgba(183, 42, 42, 0.14), transparent 28%),
+    linear-gradient(135deg, #ffffff 0%, #f5f0e8 100%);
+  box-shadow: 0 28px 64px rgba(39, 32, 25, 0.13);
 }
 
-.download-badge {
+.hero-showcase-image {
   position: absolute;
-  right: 0;
-  bottom: 18px;
-  width: 156px;
-  height: 156px;
-  border-radius: 50%;
-  background: #b91419;
-  color: #ffffff;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.hero-showcase-fallback {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
-  box-shadow: 0 22px 40px rgba(128, 14, 18, 0.28);
+  gap: 14px;
+  padding: 48px;
+  color: var(--ink);
 }
 
-.download-badge span,
-.download-badge small {
-  font-size: 13px;
+.hero-showcase-fallback span {
+  color: var(--accent-red);
+  font-size: 14px;
   font-weight: 900;
 }
 
-.download-badge strong {
-  margin: 7px 0 4px;
-  font-size: 34px;
-  line-height: 1;
+.hero-showcase-fallback strong {
+  font-size: clamp(28px, 3vw, 42px);
+  line-height: 1.35;
+}
+
+.hero-showcase-fallback small {
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .home-stats-soft {
@@ -1670,22 +1603,11 @@ select {
     min-height: 420px;
   }
 
-  .hero-laptop {
+  .hero-showcase-frame {
     position: relative;
     top: 0;
     width: 100%;
     min-height: 360px;
-  }
-
-  .download-badge {
-    right: 8px;
-    bottom: 0;
-    width: 124px;
-    height: 124px;
-  }
-
-  .download-badge strong {
-    font-size: 26px;
   }
 
   .experience-grid {
@@ -1836,35 +1758,12 @@ select {
     min-height: 350px;
   }
 
-  .hero-laptop {
-    border-width: 12px;
-    border-bottom-width: 26px;
+  .hero-showcase-frame {
     min-height: 310px;
   }
 
-  .hero-product-copy {
-    padding: 34px 0 0 28px;
-  }
-
-  .hero-product-copy h2 {
-    max-width: 170px;
-    font-size: 22px;
-  }
-
-  .hero-product-plate {
-    right: 24px;
-    top: 46px;
-    width: 155px;
-  }
-
-  .hero-product-tabs {
-    gap: 8px;
-    padding: 18px 14px;
-  }
-
-  .hero-product-tabs span {
-    padding: 10px 6px;
-    font-size: 11px;
+  .hero-showcase-fallback {
+    padding: 28px;
   }
 
   .experience-section,
