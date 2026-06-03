@@ -126,7 +126,7 @@ export default async function Home() {
               <small>
                 온라인 판매가 막막할 때,
                 <br />
-                같이 고민하고 방법을 찾아드려요.
+                같이 고민하고 방법을 찾아봐요.
               </small>
               <em aria-hidden="true">→</em>
             </Link>
@@ -161,27 +161,21 @@ export default async function Home() {
               <em aria-hidden="true">→</em>
             </a>
 
-            <p className="coffee-note hero-price-note">
-              <span aria-hidden="true">☕</span>
-              생성은 무료입니다.
-              <br />
-              <br />
-              상세페이지 제작을 업체에 맡기면
-              <br />
-              적게는 몇 만원, 많게는 몇십만원 이상
-              <br />
-              비용이 발생하기도 합니다.
-              <br />
-              <br />
-              먼저 원하는 대로 만들어보세요.
-              <br />
-              마음에 들면 다운로드하고,
-              <br />
-              아니면 비용 없이 생성만 해보셔도 됩니다.
-              <br />
-              <br />
-              다운로드는 1건 2,900원입니다.
-            </p>
+            <div className="hero-free-card">
+              <h2>생성은 무료입니다.</h2>
+              <p>
+                상세페이지 제작을 업체에 맡기면
+                <br />
+                적게는 몇 만원, 많게는 10만원 이상 비용이 발생하기도 합니다.
+              </p>
+              <p>먼저 원하는 대로 만들어보세요.</p>
+              <p>
+                마음에 들면 다운로드하고,
+                <br />
+                아니면 비용 없이 생성만 해보셔도 됩니다.
+              </p>
+              <strong>다운로드는 1건 2,900원입니다.</strong>
+            </div>
           </div>
         </div>
       </section>

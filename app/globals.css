@@ -214,7 +214,7 @@ select {
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.62);
   box-shadow: 0 28px 64px rgba(39, 32, 25, 0.13);
-  padding: 20px;
+  padding: 22px;
 }
 
 .hero-showcase-frame {
@@ -231,19 +231,41 @@ select {
 
 .hero-generator-card {
   width: 100%;
-  margin-top: 18px;
+  margin-top: 20px;
 }
 
-.hero-price-note {
+.hero-free-card {
   width: 100%;
-  margin-top: 14px;
-  margin-bottom: 0;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.75;
-  text-align: left;
+  margin-top: 18px;
+  border: 1px solid rgba(183, 42, 42, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.86);
+  padding: 24px 26px;
+  color: #3c3934;
+  font-size: 15px;
+  line-height: 1.85;
   word-break: keep-all;
   overflow-wrap: normal;
+}
+
+.hero-free-card h2 {
+  margin: 0 0 16px;
+  color: var(--ink);
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.hero-free-card p {
+  margin: 0 0 14px;
+}
+
+.hero-free-card strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 800;
 }
 
 .hero-showcase-image {
@@ -252,7 +274,7 @@ select {
   z-index: 2;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
 }
 
@@ -1642,7 +1664,7 @@ select {
   }
 
   .hero-generator-card,
-  .hero-price-note {
+  .hero-free-card {
     width: 100%;
   }
 
@@ -1787,7 +1809,7 @@ select {
   }
 
   .coffee-note,
-  .hero-price-note {
+  .hero-free-card {
     text-align: left;
   }
 
@@ -1797,6 +1819,11 @@ select {
 
   .hero-showcase-card {
     padding: 14px;
+  }
+
+  .hero-free-card {
+    padding: 20px;
+    font-size: 14px;
   }
 
   .hero-showcase-fallback {
