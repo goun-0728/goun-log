@@ -557,34 +557,175 @@ select {
 .hero-section {
   max-width: 1180px;
   margin: 0 auto;
-  padding: 30px 24px 0;
+  padding: 28px 24px 0;
 }
 
-.hero-inner {
-  min-height: 180px;
-  padding: 24px 0 28px;
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 18px;
+  align-items: stretch;
+  word-break: keep-all;
 }
 
-.hero-rule {
-  height: 1.5px;
-  background: var(--accent-red);
+.hero-copy-card,
+.hero-tool-card {
+  min-width: 0;
+  min-height: 520px;
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  background: rgba(255, 255, 255, 0.58);
 }
 
-.hero-inner p {
-  margin: 0 0 18px;
+.hero-copy-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 42px;
+  padding: 34px;
+}
+
+.hero-kicker {
+  margin: 0 0 20px;
   color: var(--muted);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
 }
 
-.hero-inner h1 {
+.hero-copy-card h1 {
   margin: 0;
   color: var(--ink);
-  font-size: clamp(48px, 7vw, 110px);
-  font-weight: 700;
-  line-height: 0.98;
+  font-size: clamp(38px, 4.1vw, 62px);
+  font-weight: 800;
+  line-height: 1.18;
   letter-spacing: 0;
-  overflow-wrap: anywhere;
+}
+
+.hero-description {
+  margin: 24px 0 0;
+  color: #3f3c37;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.75;
+}
+
+.hero-consult-card {
+  margin-top: auto;
+  padding: 24px;
+  border: 1px solid var(--line);
+  background: rgba(251, 250, 247, 0.92);
+}
+
+.hero-consult-card strong,
+.hero-free-card strong,
+.home-showcase-copy strong,
+.hero-tool-button strong {
+  display: block;
+  color: var(--ink);
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.hero-consult-card strong {
+  font-size: 18px;
+}
+
+.hero-consult-card p {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.hero-tool-card {
+  display: grid;
+  grid-template-rows: minmax(260px, 1fr) auto auto;
+  gap: 16px;
+  padding: 18px;
+}
+
+.home-showcase {
+  position: relative;
+  min-height: 260px;
+  overflow: hidden;
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  background: #eee7dc;
+}
+
+.home-showcase img {
+  width: 100%;
+  height: 100%;
+  min-height: 260px;
+  display: block;
+  object-fit: cover;
+}
+
+.home-showcase-copy {
+  position: absolute;
+  left: 24px;
+  bottom: 22px;
+  max-width: min(330px, calc(100% - 48px));
+  padding: 18px 20px;
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  background: rgba(251, 250, 247, 0.92);
+}
+
+.home-showcase-copy strong {
+  font-size: 22px;
+}
+
+.home-showcase-copy span {
+  display: block;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.hero-tool-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 22px;
+  border: 1px solid rgba(183, 42, 42, 0.22);
+  background: var(--accent-red);
+  color: #ffffff;
+}
+
+.hero-tool-button strong {
+  color: #ffffff;
+  font-size: 18px;
+}
+
+.hero-tool-button span {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 13px;
+  line-height: 1.55;
+  text-align: right;
+}
+
+.hero-free-card {
+  padding: 22px;
+  border: 1px solid var(--line);
+  background: rgba(251, 250, 247, 0.94);
+}
+
+.hero-free-card strong {
+  font-size: 18px;
+}
+
+.hero-free-card p,
+.hero-free-card b {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.hero-free-card b {
+  display: block;
+  color: var(--ink);
+  font-weight: 800;
 }
 
 .home-stats-wrap {
@@ -1722,9 +1863,26 @@ select {
     padding-top: 0;
   }
 
-  .hero-inner {
-    min-height: 150px;
-    padding-top: 24px;
+  .hero-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-copy-card,
+  .hero-tool-card {
+    min-height: auto;
+  }
+
+  .hero-copy-card {
+    padding: 28px;
+  }
+
+  .hero-tool-button {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .hero-tool-button span {
+    text-align: left;
   }
 
   .home-stats {
@@ -1812,8 +1970,44 @@ select {
     font-size: 22px;
   }
 
-  .hero-inner h1 {
-    font-size: clamp(44px, 15vw, 72px);
+  .hero-copy-card {
+    padding: 24px 20px;
+    gap: 34px;
+  }
+
+  .hero-copy-card h1 {
+    font-size: clamp(32px, 10vw, 48px);
+    line-height: 1.2;
+  }
+
+  .hero-description {
+    font-size: 15px;
+  }
+
+  .hero-consult-card,
+  .hero-free-card {
+    padding: 20px;
+  }
+
+  .hero-tool-card {
+    padding: 14px;
+  }
+
+  .home-showcase,
+  .home-showcase img {
+    min-height: 220px;
+  }
+
+  .home-showcase-copy {
+    left: 14px;
+    right: 14px;
+    bottom: 14px;
+    max-width: none;
+    padding: 15px 16px;
+  }
+
+  .home-showcase-copy strong {
+    font-size: 19px;
   }
 
   .home-stat-item {
