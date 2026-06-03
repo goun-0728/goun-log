@@ -6,6 +6,7 @@ export type VisitStats = {
   total: number;
   published: number;
   generations: number;
+  generationsReady: boolean;
 };
 
 export type VisitRecordResult = {
@@ -135,6 +136,7 @@ export async function getVisitStats(): Promise<VisitStats> {
     total: 0,
     published: 0,
     generations: 0,
+    generationsReady: false,
   };
 
   try {
@@ -146,11 +148,14 @@ export async function getVisitStats(): Promise<VisitStats> {
       getGenerationCount(),
     ]);
 
+    const showGenerationStats = process.env.GENERATION_STATS_VISIBLE === "true";
+
     return {
       today: todayVisits.status === "fulfilled" ? todayVisits.value : 0,
       total: totalVisits.status === "fulfilled" ? totalVisits.value : 0,
       published: publishedArticles.status === "fulfilled" ? publishedArticles.value : 0,
       generations: generations.status === "fulfilled" ? generations.value : 0,
+      generationsReady: showGenerationStats && generations.status === "fulfilled",
     };
   } catch {
     return fallback;

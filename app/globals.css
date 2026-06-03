@@ -125,10 +125,8 @@ select {
   line-height: 1.9;
 }
 
-.hero-cta-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px;
+.hero-consulting-action {
+  max-width: 260px;
   margin-top: 42px;
 }
 
@@ -203,13 +201,14 @@ select {
 
 .hero-preview {
   position: relative;
+  display: flex;
   min-height: 500px;
+  flex-direction: column;
+  align-items: flex-end;
 }
 
 .hero-showcase-frame {
-  position: absolute;
-  right: 0;
-  top: 24px;
+  position: relative;
   width: min(100%, 620px);
   aspect-ratio: 16 / 11;
   overflow: hidden;
@@ -219,6 +218,22 @@ select {
     radial-gradient(circle at 78% 28%, rgba(183, 42, 42, 0.14), transparent 28%),
     linear-gradient(135deg, #ffffff 0%, #f5f0e8 100%);
   box-shadow: 0 28px 64px rgba(39, 32, 25, 0.13);
+}
+
+.hero-generator-card {
+  width: min(100%, 330px);
+  margin-top: 18px;
+  align-self: flex-start;
+}
+
+.hero-price-note {
+  width: min(100%, 330px);
+  margin-top: 14px;
+  margin-right: auto;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+  text-align: left;
 }
 
 .hero-showcase-image {
@@ -409,12 +424,15 @@ select {
   margin: 0 0 14px;
   font-size: 20px;
   line-height: 1.5;
+  color: var(--ink) !important;
+  font-weight: 800 !important;
 }
 
-.latest-card-body > p:not(.latest-card-category) {
+.latest-card-description {
   margin: 0 0 16px;
-  color: #33302c;
+  color: #666158 !important;
   font-size: 14px;
+  font-weight: 400;
   line-height: 1.75;
 }
 
@@ -1592,11 +1610,14 @@ select {
     min-height: auto;
   }
 
-  .hero-cta-grid,
   .latest-card-grid,
   .consulting-section,
   .site-footer-grid {
     grid-template-columns: 1fr;
+  }
+
+  .hero-consulting-action {
+    max-width: none;
   }
 
   .hero-preview {
@@ -1608,6 +1629,12 @@ select {
     top: 0;
     width: 100%;
     min-height: 360px;
+  }
+
+  .hero-generator-card,
+  .hero-price-note {
+    width: 100%;
+    align-self: stretch;
   }
 
   .experience-grid {
@@ -1750,7 +1777,8 @@ select {
     font-size: 16px;
   }
 
-  .coffee-note {
+  .coffee-note,
+  .hero-price-note {
     text-align: left;
   }
 

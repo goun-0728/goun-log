@@ -73,19 +73,7 @@ export default async function Home() {
             기록하고, 도구로 만들고, 함께 나눕니다.
           </p>
 
-          <div className="hero-cta-grid" aria-label="주요 바로가기">
-            <a href={generatorUrl} target="_blank" rel="noopener noreferrer" className="hero-cta-card hero-cta-primary">
-              <span className="hero-cta-icon" aria-hidden="true">
-                ✳
-              </span>
-              <strong>AI 상세페이지 생성기</strong>
-              <small>
-                제품사진을 준비해주세요.
-                <br />
-                생성은 무료이고, 다운로드할 때만 결제합니다.
-              </small>
-              <em aria-hidden="true">→</em>
-            </a>
+          <div className="hero-consulting-action">
             <Link href="/contact" className="hero-cta-card">
               <span className="hero-cta-icon" aria-hidden="true">
                 ♧
@@ -99,15 +87,6 @@ export default async function Home() {
               <em aria-hidden="true">→</em>
             </Link>
           </div>
-
-          <p className="coffee-note">
-            <span aria-hidden="true">☕</span>
-            생성은 무료입니다.
-            <br />
-            마음에 들 때만 다운로드하세요.
-            <br />
-            다운로드는 1건 2,900원입니다.
-          </p>
         </div>
 
         <div className="hero-preview" aria-label="상세페이지 생성기 예시 이미지">
@@ -123,6 +102,28 @@ export default async function Home() {
             </div>
             <SafeImage src="/images/home-showcase.png" alt="AI 상세페이지 생성기 예시 화면" className="hero-showcase-image" />
           </div>
+
+          <a href={generatorUrl} target="_blank" rel="noopener noreferrer" className="hero-cta-card hero-cta-primary hero-generator-card">
+            <span className="hero-cta-icon" aria-hidden="true">
+              ✳
+            </span>
+            <strong>AI 상세페이지 생성기</strong>
+            <small>
+              제품사진을 준비해주세요.
+              <br />
+              생성은 무료이고, 다운로드할 때만 결제합니다.
+            </small>
+            <em aria-hidden="true">→</em>
+          </a>
+
+          <p className="coffee-note hero-price-note">
+            <span aria-hidden="true">☕</span>
+            생성은 무료입니다.
+            <br />
+            마음에 들 때만 다운로드하세요.
+            <br />
+            다운로드는 1건 2,900원입니다.
+          </p>
         </div>
       </section>
 
@@ -169,7 +170,7 @@ export default async function Home() {
                   <h3>
                     <Link href={`/articles/${article.slug}`}>{article.title}</Link>
                   </h3>
-                  {article.description ? <p>{article.description}</p> : null}
+                  {article.description ? <p className="latest-card-description">{article.description}</p> : null}
                   <time>{formatDate(article.published_at || article.created_at)}</time>
                 </div>
               </article>
