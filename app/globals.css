@@ -324,6 +324,99 @@ select {
   font-size: 13px;
 }
 
+.home-hero {
+  grid-template-columns: minmax(0, 40fr) minmax(0, 60fr);
+  gap: 40px;
+  align-items: stretch;
+  word-break: keep-all;
+  overflow-wrap: normal;
+}
+
+.home-hero .hero-copy-card,
+.home-hero .hero-showcase-card {
+  min-height: 560px;
+  border: 1px solid rgba(217, 212, 202, 0.95);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.58);
+  box-shadow: 0 22px 58px rgba(39, 32, 25, 0.08);
+}
+
+.home-hero .hero-copy-card {
+  justify-content: center;
+  gap: 0;
+  padding: clamp(42px, 5vw, 72px) clamp(30px, 4vw, 52px);
+}
+
+.home-hero .home-hero-copy h1 {
+  max-width: 100%;
+  font-size: clamp(28px, 3.15vw, 44px);
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.home-hero .home-hero-copy > p {
+  margin-top: 26px;
+  color: #2b2925;
+  font-size: clamp(15px, 1.35vw, 18px);
+  line-height: 1.8;
+}
+
+.home-hero .hero-consulting-action {
+  width: min(100%, 300px);
+  margin-top: clamp(42px, 7vw, 84px);
+}
+
+.home-hero .hero-consulting-action .hero-cta-card {
+  min-height: 138px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 18px 42px rgba(39, 32, 25, 0.08);
+}
+
+.home-hero .hero-showcase-card {
+  display: grid;
+  grid-template-rows: minmax(220px, auto) auto minmax(0, 1fr);
+  gap: 18px;
+  padding: 20px;
+}
+
+.home-hero .hero-showcase-frame {
+  aspect-ratio: 16 / 9;
+  min-height: 220px;
+  border-radius: 8px;
+  background: #f5efe6;
+}
+
+.home-hero .hero-showcase-image {
+  object-fit: cover;
+}
+
+.home-hero .hero-generator-card {
+  margin-top: 0;
+  min-height: 112px;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.home-hero .hero-free-card {
+  margin-top: 0;
+  border-color: rgba(183, 42, 42, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.86);
+  padding: 24px 28px;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.home-hero .hero-free-card h2 {
+  margin-bottom: 14px;
+  font-size: 19px;
+}
+
+.home-hero .hero-free-card p {
+  margin-bottom: 12px;
+}
+
 .home-stats-soft {
   padding: 0;
   margin-top: 34px;
@@ -1801,12 +1894,21 @@ select {
 
   .home-hero {
     grid-template-columns: 1fr;
-    gap: 32px;
+    gap: 24px;
     min-height: auto;
   }
 
-  .hero-copy-card {
+  .home-hero .hero-copy-card {
     min-height: auto;
+  }
+
+  .home-hero .hero-showcase-card {
+    min-height: auto;
+  }
+
+  .home-hero .hero-consulting-action {
+    width: 100%;
+    margin-top: 38px;
   }
 
   .latest-card-grid,
@@ -2028,10 +2130,11 @@ select {
   }
 
   .home-hero-copy > p {
-    font-size: 18px;
+    font-size: 15px;
+    line-height: 1.75;
   }
 
-  .hero-copy-card {
+  .home-hero .hero-copy-card {
     padding: 30px 24px;
   }
 

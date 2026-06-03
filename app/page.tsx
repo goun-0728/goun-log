@@ -178,7 +178,7 @@ export default async function Home() {
                 <br />
                 아니면 비용 없이 생성만 해보셔도 됩니다.
               </p>
-              <strong>다운로드는 1건 2,900원입니다.</strong>
+              <strong>상세페이지 1건당 2,900원 입니다.</strong>
             </div>
           </div>
         </div>
