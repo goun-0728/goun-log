@@ -90,40 +90,42 @@ export default async function Home() {
         </div>
 
         <div className="hero-preview" aria-label="상세페이지 생성기 예시 이미지">
-          <div className="hero-showcase-frame">
-            <div className="hero-showcase-fallback">
-              <span>AI 상세페이지 생성기</span>
-              <strong>
-                제품사진만 준비해도
-                <br />
-                초안을 만들어볼 수 있어요.
-              </strong>
-              <small>public/images/home-showcase.png</small>
+          <div className="hero-showcase-card">
+            <div className="hero-showcase-frame">
+              <div className="hero-showcase-fallback">
+                <span>AI 상세페이지 생성기</span>
+                <strong>
+                  제품사진만 준비해도
+                  <br />
+                  초안을 만들어볼 수 있어요.
+                </strong>
+                <small>public/images/home-showcase.png</small>
+              </div>
+              <SafeImage src="/images/home-showcase.png" alt="AI 상세페이지 생성기 예시 화면" className="hero-showcase-image" />
             </div>
-            <SafeImage src="/images/home-showcase.png" alt="AI 상세페이지 생성기 예시 화면" className="hero-showcase-image" />
-          </div>
 
-          <a href={generatorUrl} target="_blank" rel="noopener noreferrer" className="hero-cta-card hero-cta-primary hero-generator-card">
-            <span className="hero-cta-icon" aria-hidden="true">
-              ✳
-            </span>
-            <strong>AI 상세페이지 생성기</strong>
-            <small>
-              제품사진을 준비해주세요.
+            <a href={generatorUrl} target="_blank" rel="noopener noreferrer" className="hero-cta-card hero-cta-primary hero-generator-card">
+              <span className="hero-cta-icon" aria-hidden="true">
+                ✳
+              </span>
+              <strong>AI 상세페이지 생성기</strong>
+              <small>
+                제품사진을 준비해주세요.
+                <br />
+                생성은 무료이고, 다운로드할 때만 결제합니다.
+              </small>
+              <em aria-hidden="true">→</em>
+            </a>
+
+            <p className="coffee-note hero-price-note">
+              <span aria-hidden="true">☕</span>
+              생성은 무료입니다.
               <br />
-              생성은 무료이고, 다운로드할 때만 결제합니다.
-            </small>
-            <em aria-hidden="true">→</em>
-          </a>
-
-          <p className="coffee-note hero-price-note">
-            <span aria-hidden="true">☕</span>
-            생성은 무료입니다.
-            <br />
-            마음에 들 때만 다운로드하세요.
-            <br />
-            다운로드는 1건 2,900원입니다.
-          </p>
+              마음에 들 때만 다운로드하세요.
+              <br />
+              다운로드는 1건 2,900원입니다.
+            </p>
+          </div>
         </div>
       </section>
 

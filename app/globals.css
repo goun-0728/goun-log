@@ -102,8 +102,8 @@ select {
 
 .home-hero {
   display: grid;
-  grid-template-columns: minmax(0, 0.92fr) minmax(380px, 1fr);
-  gap: 56px;
+  grid-template-columns: minmax(0, 45fr) minmax(0, 55fr);
+  gap: 48px;
   align-items: center;
   min-height: 560px;
 }
@@ -126,19 +126,22 @@ select {
 }
 
 .hero-consulting-action {
-  max-width: 260px;
+  max-width: 320px;
   margin-top: 42px;
 }
 
 .hero-cta-card {
   position: relative;
-  min-height: 130px;
+  display: flex;
+  min-height: 150px;
+  flex-direction: column;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.72);
   padding: 24px 46px 22px 24px;
   box-shadow: 0 18px 42px rgba(39, 32, 25, 0.06);
   word-break: keep-all;
+  overflow: hidden;
 }
 
 .hero-cta-primary {
@@ -201,35 +204,40 @@ select {
 
 .hero-preview {
   position: relative;
-  display: flex;
-  min-height: 500px;
-  flex-direction: column;
-  align-items: flex-end;
+  min-width: 0;
+}
+
+.hero-showcase-card {
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(183, 42, 42, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 28px 64px rgba(39, 32, 25, 0.13);
+  padding: 20px;
 }
 
 .hero-showcase-frame {
   position: relative;
-  width: min(100%, 620px);
-  aspect-ratio: 16 / 11;
+  width: 100%;
+  aspect-ratio: 16 / 9;
   overflow: hidden;
-  border: 1px solid rgba(183, 42, 42, 0.16);
+  border: 1px solid var(--line);
   border-radius: 8px;
   background:
     radial-gradient(circle at 78% 28%, rgba(183, 42, 42, 0.14), transparent 28%),
     linear-gradient(135deg, #ffffff 0%, #f5f0e8 100%);
-  box-shadow: 0 28px 64px rgba(39, 32, 25, 0.13);
 }
 
 .hero-generator-card {
-  width: min(100%, 330px);
+  width: 100%;
   margin-top: 18px;
-  align-self: flex-start;
 }
 
 .hero-price-note {
-  width: min(100%, 330px);
+  width: 100%;
   margin-top: 14px;
-  margin-right: auto;
+  margin-bottom: 0;
   color: var(--muted);
   font-size: 12px;
   line-height: 1.6;
@@ -1621,20 +1629,16 @@ select {
   }
 
   .hero-preview {
-    min-height: 420px;
+    min-height: auto;
   }
 
   .hero-showcase-frame {
-    position: relative;
-    top: 0;
     width: 100%;
-    min-height: 360px;
   }
 
   .hero-generator-card,
   .hero-price-note {
     width: 100%;
-    align-self: stretch;
   }
 
   .experience-grid {
@@ -1783,15 +1787,15 @@ select {
   }
 
   .hero-preview {
-    min-height: 350px;
+    min-height: auto;
   }
 
-  .hero-showcase-frame {
-    min-height: 310px;
+  .hero-showcase-card {
+    padding: 14px;
   }
 
   .hero-showcase-fallback {
-    padding: 28px;
+    padding: 22px;
   }
 
   .experience-section,
