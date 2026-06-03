@@ -9,37 +9,6 @@ export const dynamic = "force-dynamic";
 
 const generatorUrl = "https://contentos-one-theta.vercel.app/";
 
-const consultingItems = [
-  {
-    title: "1:1 맞춤 상담",
-    paragraphs: [
-      "온라인 판매를 시작했는데 무엇부터 해야 할지 막막하신가요?",
-      "현재 상황을 이야기해주시면 함께 방향을 정리해드립니다.",
-    ],
-  },
-  {
-    title: "실전 교육",
-    paragraphs: [
-      "어려운 이론보다 실제로 상품을 등록하고, 상세페이지를 만들고, 광고를 운영했던 경험을 쉽게 알려드립니다.",
-      "초보자도 따라할 수 있도록 차근차근 설명해드려요.",
-    ],
-  },
-  {
-    title: "지속적인 소통",
-    paragraphs: [
-      "한 번 상담으로 끝나는 것이 아니라 궁금한 점이 생기면 편하게 질문할 수 있는 관계를 지향합니다.",
-      "운영하면서 생기는 고민을 함께 해결해 나갑니다.",
-    ],
-  },
-];
-
-const consultingMoments = [
-  "스마트스토어를 처음 시작할 때",
-  "상세페이지가 어려울 때",
-  "광고를 시작해야 할지 고민될 때",
-  "스마트스토어 업로드가 부담될 때",
-];
-
 const experienceItems = [
   {
     title: "직접 판매하며 검증한 전략",
@@ -73,91 +42,45 @@ export default async function Home() {
 
   return (
     <main className="home-page">
-      <section className="home-hero final-hero" aria-labelledby="home-title">
-        <div className="home-hero-copy final-hero-copy">
+      <section className="single-hero" aria-labelledby="home-title">
+        <div className="single-hero-copy">
           <h1 id="home-title">
             제품사진만 있다면,
             <br />
-            상세페이지 초안을 쉽게
+            상세페이지 초안을
             <br />
-            만들어볼 수 있습니다.
+            쉽게 만들어 볼 수 있습니다.
           </h1>
-          <p>
-            직접 온라인 판매를 하며 부딪히고 배운 것들을
-            <br />
-            기록하고, 도구로 만들고, 함께 나눕니다.
-          </p>
 
-          <a href={generatorUrl} target="_blank" rel="noopener noreferrer" className="final-hero-generator">
-            <span aria-hidden="true">＊</span>
-            <strong>AI 상세페이지 생성기</strong>
-            <small>
-              제품사진을 준비해주세요.
-              <br />
-              생성은 무료이고, 다운로드할 때만 결제합니다.
-            </small>
+          <div className="single-hero-description">
+            <p>
+              <strong>[생성은 무료입니다.]</strong>
+            </p>
+            <p>
+              상세페이지 제작을 업체에 맡기면 적게는 몇 만원에서 많게는 몇 십만원 이상의 비용이 발생합니다.
+            </p>
+            <p>원하는대로 만들어보시고, 마음에 들면 다운로드 하고, 아니면 비용없이 생성만 해보셔도 됩니다.</p>
+            <p>
+              <strong>
+                [상세페이지 1건당 <span>2,900원</span>입니다.]
+              </strong>
+            </p>
+          </div>
+
+          <a href={generatorUrl} target="_blank" rel="noopener noreferrer" className="single-hero-button">
+            <span aria-hidden="true">✣</span>
+            <strong>상세페이지 생성하기</strong>
             <em aria-hidden="true">→</em>
           </a>
-
-          <Link href="/contact" className="final-hero-consult">
-            <strong>교육·컨설팅 안내</strong>
-            <small>
-              온라인 판매가 막막할 때,
-              <br />
-              같이 고민하고 방법을 찾아봐요.
-            </small>
-            <em aria-hidden="true">→</em>
-          </Link>
         </div>
 
-        <div className="hero-preview final-hero-preview" aria-label="상세페이지 생성기 예시 이미지">
-          <div className="showcase-visual">
-            <SafeImage src="/images/home-showcase.png" alt="AI 상세페이지 생성기 쇼케이스" className="showcase-image" />
-            <div className="price-badge" aria-label="다운로드 가격">
-              <span>DOWNLOAD</span>
-              <strong>2,900원</strong>
-              <small>고화질 PNG</small>
-            </div>
+        <div className="single-hero-preview" aria-label="상세페이지 생성기 미리보기">
+          <SafeImage src="/images/home-showcase.png" alt="AI 상세페이지 생성기 쇼케이스" className="single-showcase-image" />
+          <div className="price-badge single-price-badge" aria-label="다운로드 가격">
+            <span>DOWNLOAD</span>
+            <strong>2,900원</strong>
+            <small>고화질 PNG</small>
           </div>
-
-          <div className="hero-free-card final-free-card">
-            <h2>생성은 무료입니다.</h2>
-            <p>상세페이지 제작을 업체에 맡기면 적게는 몇 만원, 많게는 10만원 이상 비용이 발생하기도 합니다.</p>
-            <p>먼저 원하는 대로 만들어보세요. 마음에 들면 다운로드하고, 아니면 비용 없이 생성만 해보셔도 됩니다.</p>
-            <strong>상세페이지 1건당 2,900원 입니다.</strong>
-          </div>
-        </div>
-      </section>
-
-      <section className="consulting-section final-consulting-section" aria-labelledby="consulting-title">
-        <div className="final-section-heading">
-          <h2 id="consulting-title">교육 · 컨설팅 안내</h2>
-          <span />
-          <p>
-            온라인 판매가 처음이거나 막막할 때,
-            <br />
-            옆에서 같이 고민하는 사람이고 싶습니다.
-          </p>
-        </div>
-
-        <div className="final-consulting-grid">
-          {consultingItems.map((item) => (
-            <article key={item.title} className="final-consulting-card">
-              <h3>{item.title}</h3>
-              {item.paragraphs.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
-              ))}
-            </article>
-          ))}
-          <article className="final-consulting-card final-consulting-card-accent">
-            <h3>교육 · 컨설팅이 필요한 순간</h3>
-            <ul>
-              {consultingMoments.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-            <p>혼자 시작하기 막막할 때, 함께 길을 찾아드릴게요.</p>
-          </article>
         </div>
       </section>
 
