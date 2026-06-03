@@ -26,6 +26,9 @@ export default async function AdminPage({
           </p>
         </div>
         <div className="admin-actions">
+          <Link href="/admin/news" className="admin-secondary-button">
+            기사 수집
+          </Link>
           <Link href="/admin/articles/new" className="admin-primary-link">
             새 글 작성
           </Link>

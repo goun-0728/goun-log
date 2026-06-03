@@ -596,6 +596,15 @@ select {
   font-size: 14px;
 }
 
+.admin-success {
+  margin: 16px 0;
+  padding: 10px 12px;
+  border: 1px solid #b8d4bd;
+  background: #f3fbf4;
+  color: #1f6b2d;
+  font-size: 14px;
+}
+
 .admin-topbar {
   display: flex;
   align-items: flex-start;
@@ -1016,6 +1025,98 @@ select {
   margin: 8px 0 12px;
 }
 
+.admin-news-page {
+  max-width: 1080px;
+}
+
+.news-filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 22px 0;
+}
+
+.news-filter-tabs a {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.42);
+  color: var(--muted);
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.news-filter-tabs a.is-active {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #ffffff;
+}
+
+.news-admin-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.news-admin-item {
+  border-top: 1px solid var(--line);
+  padding: 22px 0;
+}
+
+.news-admin-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--faint);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.news-admin-meta span {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.36);
+  padding: 5px 8px;
+}
+
+.news-admin-item h2 {
+  margin: 14px 0 8px;
+  font-size: 22px;
+  line-height: 1.45;
+}
+
+.news-original-link {
+  color: var(--accent-red);
+  font-size: 14px;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.news-summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.news-summary-grid div {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.42);
+  padding: 14px;
+}
+
+.news-summary-grid h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.news-summary-grid p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.8;
+  white-space: pre-line;
+}
+
 @media (max-width: 860px) {
   .site-header {
     flex-direction: column;
@@ -1096,6 +1197,10 @@ select {
   .rich-color-control {
     flex: 0 0 auto;
     white-space: nowrap;
+  }
+
+  .news-summary-grid {
+    grid-template-columns: 1fr;
   }
 }
 
