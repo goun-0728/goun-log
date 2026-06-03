@@ -2721,3 +2721,94 @@ select {
   }
 }
 
+/* 100% viewport fit override */
+html,
+body {
+  overflow-x: hidden;
+}
+
+.home-page {
+  max-width: 1280px;
+  padding-top: 28px;
+}
+
+.site-header,
+.site-footer {
+  max-width: 1280px;
+}
+
+.single-hero {
+  grid-template-columns: minmax(0, 46fr) minmax(0, 54fr);
+  gap: clamp(24px, 3vw, 44px);
+  min-height: auto;
+  padding: clamp(28px, 3vw, 44px);
+  border-radius: 16px;
+}
+
+.single-hero-copy h1 {
+  max-width: 520px;
+  font-size: clamp(30px, 2.35vw, 42px);
+  line-height: 1.32;
+}
+
+.single-hero-description {
+  max-width: 520px;
+  margin-top: 22px;
+  font-size: clamp(14px, 0.98vw, 16px);
+  line-height: 1.78;
+}
+
+.single-hero-description p {
+  margin-bottom: 7px;
+}
+
+.single-hero-button {
+  width: min(100%, 360px);
+  min-height: 64px;
+  margin-top: 24px;
+  padding: 14px 22px;
+}
+
+.single-hero-button span,
+.single-hero-button em {
+  font-size: 24px;
+}
+
+.single-hero-button strong {
+  font-size: clamp(17px, 1.18vw, 20px);
+}
+
+.single-showcase-image {
+  max-height: min(430px, 42vh);
+}
+
+.single-price-badge {
+  width: clamp(96px, 8.4vw, 128px);
+  right: clamp(6px, 1.5vw, 20px);
+  bottom: clamp(0px, 1.2vw, 16px);
+}
+
+.price-badge span {
+  font-size: 11px;
+}
+
+.single-price-badge strong {
+  font-size: clamp(19px, 1.8vw, 26px);
+}
+
+.single-price-badge small {
+  font-size: clamp(11px, 1vw, 14px);
+}
+
+@media (max-width: 920px) {
+  .home-page,
+  .site-header,
+  .site-footer {
+    max-width: 1180px;
+  }
+
+  .single-showcase-image {
+    max-height: 420px;
+  }
+}
+
