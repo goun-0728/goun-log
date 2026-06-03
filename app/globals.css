@@ -135,9 +135,9 @@ select {
   word-break: keep-all;
 }
 
-/* ② p 텍스트 크기 확대 */
+/* ② p 텍스트 크기 확대 + 위아래 간격 */
 .home-hero-copy > p {
-  margin: 26px 0 0;
+  margin: 32px 0 0;
   color: #292724;
   font-size: 22px;
   line-height: 1.9;
@@ -145,7 +145,7 @@ select {
 
 .hero-consulting-action {
   max-width: 320px;
-  margin-top: 58px;
+  margin-top: 36px;
 }
 
 .hero-cta-card {
@@ -315,7 +315,7 @@ select {
 }
 
 .hero-showcase-fallback strong {
-  font-size: clamp(28px, 3vw, 42px);
+  font-size: clamp(20px, 2.2vw, 30px);
   line-height: 1.35;
 }
 

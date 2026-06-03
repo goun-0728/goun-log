@@ -143,9 +143,9 @@ export default async function Home() {
               <div className="hero-showcase-fallback">
                 <span>AI 상세페이지 생성기</span>
                 <strong>
-                  제품사진만 준비해도
+                  제품사진만 준비해도 초안을
                   <br />
-                  초안을 만들어볼 수 있어요.
+                  만들어볼 수 있어요.
                 </strong>
                 <small>public/images/home-showcase.png</small>
               </div>
