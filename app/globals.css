@@ -104,15 +104,31 @@ select {
   display: grid;
   grid-template-columns: minmax(0, 45fr) minmax(0, 55fr);
   gap: 48px;
-  align-items: center;
+  align-items: stretch;
   min-height: 560px;
+}
+
+.home-hero-copy {
+  min-width: 0;
+}
+
+.hero-copy-card {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  justify-content: center;
+  border: 1px solid rgba(217, 212, 202, 0.95);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.42);
+  box-shadow: 0 22px 58px rgba(39, 32, 25, 0.08);
+  padding: clamp(36px, 5vw, 72px) clamp(28px, 4vw, 52px);
 }
 
 .home-hero-copy h1 {
   margin: 0;
   color: var(--ink);
-  font-size: clamp(32px, 3.6vw, 48px);
-  font-weight: 700;
+  font-size: clamp(34px, 3.8vw, 50px);
+  font-weight: 800;
   line-height: 1.28;
   letter-spacing: 0;
   word-break: keep-all;
@@ -127,7 +143,7 @@ select {
 
 .hero-consulting-action {
   max-width: 320px;
-  margin-top: 42px;
+  margin-top: 58px;
 }
 
 .hero-cta-card {
@@ -208,6 +224,7 @@ select {
 }
 
 .hero-showcase-card {
+  min-height: 100%;
   width: 100%;
   overflow: hidden;
   border: 1px solid rgba(183, 42, 42, 0.16);
@@ -1645,6 +1662,10 @@ select {
     min-height: auto;
   }
 
+  .hero-copy-card {
+    min-height: auto;
+  }
+
   .latest-card-grid,
   .consulting-section,
   .site-footer-grid {
@@ -1806,6 +1827,10 @@ select {
 
   .home-hero-copy > p {
     font-size: 16px;
+  }
+
+  .hero-copy-card {
+    padding: 30px 24px;
   }
 
   .coffee-note,

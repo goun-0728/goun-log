@@ -106,30 +106,34 @@ export default async function Home() {
     <main className="home-page">
       <section className="home-hero" aria-labelledby="home-title">
         <div className="home-hero-copy">
-          <h1 id="home-title">
-            제품사진만 있다면,
-            <br />
-            상세페이지 초안을 쉽게 만들어볼 수 있습니다.
-          </h1>
-          <p>
-            직접 온라인 판매를 하며 부딪히고 배운 것들을
-            <br />
-            기록하고, 도구로 만들고, 함께 나눕니다.
-          </p>
+          <div className="hero-copy-card">
+            <h1 id="home-title">
+              제품사진만 있다면,
+              <br />
+              상세페이지 초안을 쉽게
+              <br />
+              만들어볼 수 있습니다.
+            </h1>
+            <p>
+              직접 온라인 판매를 하며 부딪히고 배운 것들을
+              <br />
+              기록하고, 도구로 만들고, 함께 나눕니다.
+            </p>
 
-          <div className="hero-consulting-action">
-            <Link href="/contact" className="hero-cta-card">
-              <span className="hero-cta-icon" aria-hidden="true">
-                ♧
-              </span>
-              <strong>교육·컨설팅 안내</strong>
-              <small>
-                온라인 판매가 막막할 때,
-                <br />
-                같이 고민하고 방법을 찾아봐요.
-              </small>
-              <em aria-hidden="true">→</em>
-            </Link>
+            <div className="hero-consulting-action">
+              <Link href="/contact" className="hero-cta-card">
+                <span className="hero-cta-icon" aria-hidden="true">
+                  ♧
+                </span>
+                <strong>교육·컨설팅 안내</strong>
+                <small>
+                  온라인 판매가 막막할 때,
+                  <br />
+                  같이 고민하고 방법을 찾아봐요.
+                </small>
+                <em aria-hidden="true">→</em>
+              </Link>
+            </div>
           </div>
         </div>
 
