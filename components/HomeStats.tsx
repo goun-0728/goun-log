@@ -5,8 +5,8 @@ const formatter = new Intl.NumberFormat("ko-KR");
 export default function HomeStats({ stats }: { stats: VisitStats }) {
   const items = [
     { label: "누적 글 수", value: stats.published },
-    { label: "오늘 방문자", value: stats.today },
-    { label: "누적 방문자", value: stats.total },
+    { label: "누적 상세페이지 생성 수", value: stats.generations },
+    { label: "누적 방문자 수", value: stats.total },
   ];
 
   return (

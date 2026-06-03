@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { C, DS, DS_KEYS, TPL_LABELS, TPL_COMPAT, TASKS, getSys, EXTRA_SECTIONS, getExtraSectSys, mkSec } from './constants'
 import { parseBlocks, parseSections, capturePNG, downloadURL } from './utils'
 import { generateContent } from './api/generate'
+import { trackGenerationCount } from './api/trackGeneration'
 import SectionEditor, { NAMED_BLOCKS, activeTextareaInfo } from './components/SectionEditor'
 import { FONT_OPTS, selectionStore } from './components/SectionTemplates'
 
@@ -919,6 +920,7 @@ export default function App() {
 
   const run = async () => {
     if (!allDone || loading) return
+    void trackGenerationCount()
     setLoading(true)
     setResult('')
     setError('')

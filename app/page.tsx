@@ -126,10 +126,6 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="home-stats-wrap home-stats-soft" aria-label="사이트 통계">
-        <HomeStats stats={displayStats} />
-      </section>
-
       <section className="experience-section" aria-labelledby="experience-title">
         <div className="home-section-heading">
           <h2 id="experience-title">
@@ -181,6 +177,10 @@ export default async function Home() {
           })}
           {!latestArticles.length ? <p className="empty-state">아직 발행된 글이 없습니다.</p> : null}
         </div>
+      </section>
+
+      <section className="home-stats-wrap home-stats-soft" aria-label="사이트 통계">
+        <HomeStats stats={displayStats} />
       </section>
 
       <section className="consulting-section" aria-labelledby="consulting-title">

@@ -5,6 +5,7 @@ export type VisitStats = {
   today: number;
   total: number;
   published: number;
+  generations: number;
 };
 
 export type VisitRecordResult = {
@@ -71,6 +72,31 @@ async function countRows(table: string, filters?: Record<string, string>) {
   return parseCount(response.headers.get("content-range"));
 }
 
+async function getGenerationCount() {
+  const { url, key } = getSupabaseRestConfig();
+  const endpoint = new URL("/rest/v1/generation_stats", url);
+  endpoint.searchParams.set("select", "generation_count");
+  endpoint.searchParams.set("id", "eq.detail_page_generator");
+  endpoint.searchParams.set("limit", "1");
+
+  const response = await fetch(endpoint, {
+    method: "GET",
+    headers: makeHeaders(key),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`generation_stats select failed at ${endpoint.toString()}: ${response.status} ${body}`);
+  }
+
+  const rows = (await response.json().catch(() => [])) as Array<{ generation_count?: number | string | null }>;
+  const value = rows[0]?.generation_count;
+  if (typeof value === "number") return value;
+  if (typeof value === "string") return Number.parseInt(value, 10) || 0;
+  return 0;
+}
+
 export async function recordVisit(path: string): Promise<VisitRecordResult> {
   try {
     const { url, key } = getSupabaseRestConfig();
@@ -108,20 +134,23 @@ export async function getVisitStats(): Promise<VisitStats> {
     today: 0,
     total: 0,
     published: 0,
+    generations: 0,
   };
 
   try {
     const todayStart = startOfTodayKstIso();
-    const [todayVisits, totalVisits, publishedArticles] = await Promise.allSettled([
+    const [todayVisits, totalVisits, publishedArticles, generations] = await Promise.allSettled([
       countRows("site_visits", { visited_at: `gte.${todayStart}` }),
       countRows("site_visits"),
       countRows("articles", { status: "eq.published" }),
+      getGenerationCount(),
     ]);
 
     return {
       today: todayVisits.status === "fulfilled" ? todayVisits.value : 0,
       total: totalVisits.status === "fulfilled" ? totalVisits.value : 0,
       published: publishedArticles.status === "fulfilled" ? publishedArticles.value : 0,
+      generations: generations.status === "fulfilled" ? generations.value : 0,
     };
   } catch {
     return fallback;
