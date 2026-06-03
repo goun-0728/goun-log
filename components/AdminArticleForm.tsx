@@ -47,7 +47,7 @@ export default function AdminArticleForm({ action, article, error }: AdminArticl
     }
 
     if (file.size > MAX_IMAGE_SIZE) {
-      setClientError("대표 이미지는 5MB 이하만 업로드할 수 있습니다.");
+      setClientError("이미지는 5MB 이하만 업로드할 수 있습니다.");
       return false;
     }
 
@@ -120,7 +120,7 @@ export default function AdminArticleForm({ action, article, error }: AdminArticl
 
       <label>
         <span>슬러그 slug</span>
-        <input name="slug" defaultValue={article?.slug || ""} placeholder="비워두면 제목으로 자동 생성됩니다." />
+        <input name="slug" defaultValue={article?.slug || ""} placeholder="비워두면 제목으로 저장됩니다." />
       </label>
 
       <label>

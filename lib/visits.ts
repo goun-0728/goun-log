@@ -118,18 +118,12 @@ export async function getVisitStats(): Promise<VisitStats> {
       countRows("articles", { status: "eq.published" }),
     ]);
 
-    if (todayVisits.status === "rejected") console.error(todayVisits.reason);
-    if (totalVisits.status === "rejected") console.error(totalVisits.reason);
-    if (publishedArticles.status === "rejected") console.error(publishedArticles.reason);
-
     return {
       today: todayVisits.status === "fulfilled" ? todayVisits.value : 0,
       total: totalVisits.status === "fulfilled" ? totalVisits.value : 0,
       published: publishedArticles.status === "fulfilled" ? publishedArticles.value : 0,
     };
-  } catch (error) {
-    const message = describeError(error);
-    console.error("Failed to fetch visit stats:", message);
+  } catch {
     return fallback;
   }
 }

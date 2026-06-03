@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { deleteArticleAction, logoutAction } from "@/app/admin/actions";
-import { requireAdmin } from "@/lib/auth";
 import { formatDate, getAdminArticles } from "@/lib/articles";
+import { getStatusLabel } from "@/lib/article-shared";
+import { requireAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +49,7 @@ export default async function AdminPage({
             <div>
               <strong>{article.title}</strong>
               <span>
-                {article.status} · {formatDate(article.published_at || article.created_at)}
+                {getStatusLabel(article.status)} · {formatDate(article.published_at || article.created_at)}
               </span>
             </div>
             <div className="admin-row-actions">

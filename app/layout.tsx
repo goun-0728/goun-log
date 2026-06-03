@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Noto_Sans_KR } from "next/font/google";
+import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import VisitTracker from "@/components/VisitTracker";
 import "./globals.css";
@@ -43,6 +44,7 @@ export default function RootLayout({
         <SiteHeader />
         <VisitTracker />
         {children}
+        <SiteFooter />
       </body>
     </html>
   );

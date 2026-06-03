@@ -14,6 +14,7 @@ export default function ArticleSidebar({ recentArticles }: { recentArticles: Art
               <time>{formatDate(article.published_at || article.created_at)}</time>
             </Link>
           ))}
+          {!recentArticles.length ? <p className="empty-state">표시할 글이 없습니다.</p> : null}
         </div>
       </section>
     </aside>

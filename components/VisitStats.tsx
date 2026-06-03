@@ -10,7 +10,7 @@ export default function VisitStats({ stats }: { stats: VisitStatsType }) {
   ];
 
   return (
-    <section className="stats-card" aria-label="방문자 통계">
+    <section className="stats-card" aria-label="방문 통계">
       {items.map((item) => (
         <div key={item.label} className="stat-row">
           <strong>{formatter.format(item.value)}</strong>
