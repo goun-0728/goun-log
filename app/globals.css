@@ -56,13 +56,14 @@ button, input, textarea, select { font: inherit; }
   max-width: 1180px;
   margin: 0 auto;
   padding: 32px 24px 0;
+  overflow-x: hidden;
 }
 
 /* ─── HERO (① AI 생성기) ─── */
 .home-hero {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 56px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 40px;
   align-items: center;
   padding: 48px 0 52px;
   border-bottom: 1px solid var(--line);
@@ -122,8 +123,8 @@ button, input, textarea, select { font: inherit; }
 /* ─── CONSULT (② 교육·컨설팅) ─── */
 .home-consult {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 56px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 40px;
   align-items: start;
   padding: 52px 0;
   border-bottom: 1px solid var(--line);
