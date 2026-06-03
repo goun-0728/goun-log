@@ -2645,3 +2645,79 @@ select {
   }
 }
 
+/* Proportion fix for the single hero */
+.home-page {
+  max-width: 1680px;
+}
+
+.site-header,
+.site-footer {
+  max-width: 1680px;
+}
+
+.single-hero {
+  grid-template-columns: minmax(0, 45fr) minmax(0, 55fr);
+  gap: clamp(34px, 4vw, 64px);
+  min-height: clamp(420px, 38vw, 560px);
+  padding: clamp(34px, 3.5vw, 58px);
+}
+
+.single-hero-copy h1 {
+  max-width: 720px;
+  font-size: clamp(34px, 2.85vw, 52px);
+  line-height: 1.28;
+}
+
+.single-hero-description {
+  max-width: 640px;
+  margin-top: 28px;
+  font-size: clamp(15px, 1.15vw, 19px);
+  line-height: 1.82;
+}
+
+.single-hero-button {
+  width: min(100%, 430px);
+  min-height: 76px;
+  margin-top: 34px;
+  padding: 18px 28px;
+}
+
+.single-hero-button span,
+.single-hero-button em {
+  font-size: 30px;
+}
+
+.single-hero-button strong {
+  font-size: clamp(19px, 1.45vw, 24px);
+}
+
+.single-showcase-image {
+  max-height: clamp(340px, 32vw, 520px);
+}
+
+.single-price-badge {
+  width: clamp(118px, 10vw, 164px);
+  right: clamp(8px, 2.4vw, 40px);
+  bottom: clamp(2px, 2vw, 36px);
+}
+
+.single-price-badge strong {
+  font-size: clamp(23px, 2.3vw, 34px);
+}
+
+@media (max-width: 920px) {
+  .home-page,
+  .site-header,
+  .site-footer {
+    max-width: 1180px;
+  }
+
+  .single-hero {
+    min-height: auto;
+  }
+
+  .single-hero-copy h1 {
+    max-width: none;
+  }
+}
+
