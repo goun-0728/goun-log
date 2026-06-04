@@ -75,13 +75,18 @@ button, input, textarea, select { font: inherit; }
 }
 .home-hero-image {
   min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
 }
 .home-showcase-img {
   width: 100%;
+  max-width: 100%;
   height: auto;
   border-radius: 8px;
   border: 1px solid var(--line);
   background: #eee7dc;
+  display: block;
 }
 .home-hero-copy {
   min-width: 0;
