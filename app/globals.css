@@ -188,14 +188,14 @@ button, input, textarea, select { font: inherit; }
 }
 .home-consult-item h3 {
   margin: 0 0 5px;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 800;
   color: var(--ink);
 }
 .home-consult-item p {
   margin: 0;
-  color: var(--muted);
-  font-size: 14px;
+  color: #3d3a35;
+  font-size: 15px;
   line-height: 1.75;
   word-break: keep-all;
 }

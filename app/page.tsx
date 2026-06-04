@@ -20,10 +20,8 @@ export default async function Home() {
   return (
     <main className="home-page">
 
-      {/* ① AI 상세페이지 생성기 */}
+      {/* ① AI 상세페이지 생성기 - 텍스트 왼쪽, 이미지 오른쪽 */}
       <section className="home-hero" aria-labelledby="home-title">
-        <div className="home-hero-image">
-</div>
         <div className="home-hero-copy">
           <p className="home-eyebrow">AI 상세페이지 생성기</p>
           <h1 id="home-title">
@@ -41,6 +39,13 @@ export default async function Home() {
             상세페이지 생성하기 →
           </a>
           <p className="home-hero-price">다운로드는 1건 2,900원</p>
+        </div>
+        <div className="home-hero-image">
+          <SafeImage
+            src="/images/home-showcase.png"
+            alt="AI 상세페이지 생성기 예시"
+            className="home-showcase-img"
+          />
         </div>
       </section>
 
