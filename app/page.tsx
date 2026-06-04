@@ -23,12 +23,7 @@ export default async function Home() {
       {/* ① AI 상세페이지 생성기 */}
       <section className="home-hero" aria-labelledby="home-title">
         <div className="home-hero-image">
-          <SafeImage
-            src="/images/home-showcase.png"
-            alt="AI 상세페이지 생성기 예시"
-            className="home-showcase-img"
-          />
-        </div>
+</div>
         <div className="home-hero-copy">
           <p className="home-eyebrow">AI 상세페이지 생성기</p>
           <h1 id="home-title">
