@@ -75,18 +75,13 @@ button, input, textarea, select { font: inherit; }
 }
 .home-hero-image {
   min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-}
 }
 .home-showcase-img {
   width: 100%;
-  max-width: 100%;
   height: auto;
   border-radius: 8px;
   border: 1px solid var(--line);
   background: #eee7dc;
-  display: block;
 }
 .home-hero-copy {
   min-width: 0;
@@ -127,15 +122,16 @@ button, input, textarea, select { font: inherit; }
 .home-hero-btn:hover { background: #9a2222; }
 .home-hero-price {
   margin: 12px 0 0;
-  color: var(--faint);
-  font-size: 12px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
 }
 
 /* ─── CONSULT ─── */
 .home-consult {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 48px;
+  gap: 24px;
   align-items: start;
   padding: 52px 0;
   border-bottom: 1px solid var(--line);
@@ -145,7 +141,7 @@ button, input, textarea, select { font: inherit; }
 }
 .home-consult-copy h2 {
   margin: 0 0 16px;
-  font-size: clamp(20px, 2vw, 28px);
+  font-size: clamp(22px, 2.2vw, 30px);
   font-weight: 800;
   line-height: 1.35;
   word-break: keep-all;
@@ -153,7 +149,7 @@ button, input, textarea, select { font: inherit; }
 .home-consult-copy > p {
   margin: 0;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.9;
   word-break: keep-all;
 }
@@ -177,7 +173,7 @@ button, input, textarea, select { font: inherit; }
   display: flex;
   align-items: flex-start;
   gap: 14px;
-  padding: 20px 0;
+  padding: 16px 0;
   border-bottom: 1px solid var(--line);
 }
 .home-consult-item:first-child { padding-top: 0; }
@@ -192,14 +188,14 @@ button, input, textarea, select { font: inherit; }
 }
 .home-consult-item h3 {
   margin: 0 0 5px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 800;
   color: var(--ink);
 }
 .home-consult-item p {
   margin: 0;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.75;
   word-break: keep-all;
 }
