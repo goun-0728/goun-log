@@ -20,8 +20,15 @@ export default async function Home() {
   return (
     <main className="home-page">
 
-      {/* ① AI 상세페이지 생성기 섹션 */}
+      {/* ① AI 상세페이지 생성기 */}
       <section className="home-hero" aria-labelledby="home-title">
+        <div className="home-hero-image">
+          <SafeImage
+            src="/images/home-showcase.png"
+            alt="AI 상세페이지 생성기 예시"
+            className="home-showcase-img"
+          />
+        </div>
         <div className="home-hero-copy">
           <p className="home-eyebrow">AI 상세페이지 생성기</p>
           <h1 id="home-title">
@@ -31,25 +38,18 @@ export default async function Home() {
           </h1>
           <p className="home-hero-desc">
             상세페이지 제작을 업체에 맡기면 적게는 몇 만원,<br />
-            많게는 몇십 몇백만원 이상 비용이 발생하기도 합니다.<br />
+            많게는 몇십 몇백만원 이상 비용이 발생합니다.<br />
             먼저 원하는 대로 만들어보세요.<br />
-            마음에 들면 다운로드, 아니면 비용 없이 생성만 해보셔도 됩니다.
+            마음에 들면 다운로드, 아니면 비용 없이 생성만 해도 됩니다.
           </p>
           <a href={generatorUrl} target="_blank" rel="noopener noreferrer" className="home-hero-btn">
             상세페이지 생성하기 →
           </a>
           <p className="home-hero-price">다운로드는 1건 2,900원</p>
         </div>
-        <div className="home-hero-image">
-          <SafeImage
-            src="/images/home-showcase.png"
-            alt="AI 상세페이지 생성기 예시"
-            className="home-showcase-img"
-          />
-        </div>
       </section>
 
-      {/* ② 교육·컨설팅 섹션 */}
+      {/* ② 교육·컨설팅 */}
       <section className="home-consult" aria-labelledby="consult-title">
         <div className="home-consult-copy">
           <p className="home-eyebrow">교육·컨설팅</p>
