@@ -35,7 +35,7 @@ function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect,
   const taRef    = useRef(null)
   const blockRef = useRef(null)
 
-  const { x = 60, y = 300, w = 740, h = null } = pos
+  const { x = 40, y = 40, w = 780, h = null } = pos
 
   const handleMouseDown = e => {
     if (!editing) return
@@ -194,16 +194,18 @@ function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect,
   )
 }
 
-/* ── 하단 그라데이션 오버레이 ── 항상 섹션 하단에 앵커, 상단 핸들로 높이 조절 */
+/* ── 하단 그라데이션 오버레이 ── top = CARD_H - overlayH 로 정확히 사진 하단에 고정 */
 function BottomOverlay({ bottomBox, editing, scale, onUpdate, onSectionSelect }) {
   const { bgColor = '#000000', intensity = 80, overlayH = 200 } = bottomBox || {}
+  /* overlayY는 항상 CARD_H - overlayH → 오버레이 하단이 사진 하단과 정확히 일치 */
+  const overlayY = CARD_H - overlayH
   const [resizeTop, setResizeTop] = useState(null)
 
   const alpha = Math.round((intensity / 100) * 255).toString(16).padStart(2, '0')
   const hexBase = bgColor.startsWith('#') ? bgColor : '#000000'
   const gradBg = `linear-gradient(to bottom, ${hexBase}00 0%, ${hexBase}${alpha} 100%)`
 
-  /* 상단 핸들 드래그 → 높이 변경 (위로 드래그 = 더 넓게) */
+  /* 상단 핸들 드래그 → overlayH 증가(위로 드래그), 하단은 CARD_H에 고정 */
   useEffect(() => {
     if (!resizeTop) return
     const sc = scale || 1
@@ -222,13 +224,13 @@ function BottomOverlay({ bottomBox, editing, scale, onUpdate, onSectionSelect })
     <div
       onClick={e => { if (editing) { onSectionSelect?.(); e.stopPropagation() } }}
       style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0, height: overlayH,
+        position: 'absolute', top: overlayY, left: 0, right: 0, height: overlayH,
         background: gradBg, zIndex: 8,
         pointerEvents: editing ? 'auto' : 'none',
         cursor: 'default',
       }}
     >
-      {/* 상단 핸들: 위로 드래그해서 사진을 덮음 */}
+      {/* 상단 핸들: 위로 드래그해서 사진을 더 많이 덮음 */}
       {editing && (
         <div
           data-overlay-handle
@@ -328,7 +330,7 @@ export default function SectionEditor({
   }
   const getNamedPos = key => {
     const def = NAMED_BLOCKS.find(b => b.key === key) || {}
-    return { x: def.x || 60, y: def.y || 300, w: def.w || 740, ...(dr.blockPositions?.[key] || {}) }
+    return { x: def.x ?? 40, y: def.y ?? 40, w: def.w ?? 780, ...(dr.blockPositions?.[key] || {}) }
   }
 
   const freeBlocks  = dr.freeBlocks || []
@@ -462,7 +464,7 @@ export default function SectionEditor({
                 bKey={b.id}
                 label="텍스트"
                 text={b.content || ''}
-                pos={{ x: b.x ?? 80, y: b.y ?? (CARD_H + 40), w: b.w ?? 340, h: b.h }}
+                pos={{ x: b.x ?? 80, y: b.y ?? (CARD_H - 160), w: b.w ?? 340, h: b.h }}
                 style={{ fontSize: b.fontSize||28, color: b.color||'#ffffff', fontFamily: b.fontFamily||'', fontWeight: b.fontWeight||700, textAlign: b.align||'left' }}
                 editing={editing}
                 selected={activeBlockId === b.id}
