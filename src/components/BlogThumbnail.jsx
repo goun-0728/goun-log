@@ -289,19 +289,11 @@ export default function BlogThumbnail() {
                   style={{ width: '100%', accentColor: '#3b82f6' }} />
               </div>
 
-              {/* 굵게 + 정렬 */}
-              <div style={{ display: 'flex', gap: 4, marginBottom: 10 }}>
-                <button onClick={() => applyStyle('fontWeight', selBox.fontWeight >= 700 ? 400 : 700)}
-                  style={{ padding: '6px 10px', fontSize: 12, borderRadius: 6, border: `1.5px solid ${selBox.fontWeight >= 700 ? '#3b82f6' : C.bd}`, background: selBox.fontWeight >= 700 ? '#EFF6FF' : C.sur, color: selBox.fontWeight >= 700 ? '#1d4ed8' : C.mu, cursor: 'pointer', fontWeight: 700 }}>
-                  B
-                </button>
-                {[['left','좌'],['center','중'],['right','우']].map(([a,l]) => (
-                  <button key={a} onClick={() => applyStyle('textAlign', a)}
-                    style={{ flex: 1, padding: '6px 0', fontSize: 11, borderRadius: 6, border: `1.5px solid ${selBox.textAlign === a ? '#3b82f6' : C.bd}`, background: selBox.textAlign === a ? '#EFF6FF' : C.sur, color: selBox.textAlign === a ? '#1d4ed8' : C.mu, cursor: 'pointer', fontWeight: selBox.textAlign === a ? 700 : 400 }}>
-                    {l}
-                  </button>
-                ))}
-              </div>
+              {/* 굵게 */}
+              <button onClick={() => applyStyle('fontWeight', selBox.fontWeight >= 700 ? 400 : 700)}
+                style={{ width: '100%', padding: '6px 0', fontSize: 13, borderRadius: 6, border: `1.5px solid ${selBox.fontWeight >= 700 ? '#3b82f6' : C.bd}`, background: selBox.fontWeight >= 700 ? '#EFF6FF' : C.sur, color: selBox.fontWeight >= 700 ? '#1d4ed8' : C.mu, cursor: 'pointer', fontWeight: 700, marginBottom: 10 }}>
+                <strong>B</strong> 굵게
+              </button>
 
               {/* 글자색 */}
               <div style={{ fontSize: 10, color: C.mu, marginBottom: 5 }}>글자색</div>

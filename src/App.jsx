@@ -141,7 +141,7 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeBlockId, onAddSection,
 
   const change  = (key, val) => onUpdate(idx, { ...sec, [key]: val })
   const setGrad = (key, val) => change('gradient', { ...grad, [key]: val })
-  const setBB   = patch => change('bottomBox', patch === null ? null : { ...(bb || { bgColor:'#000000', intensity:80, overlayY:440, overlayH:200, textBlocks:[] }), ...patch })
+  const setBB   = patch => change('bottomBox', patch === null ? null : { ...(bb || { bgColor:'#000000', intensity:80, overlayH:200, textBlocks:[] }), ...patch })
 
   /* 메인 블록 선택 */
   const isNamed    = activeBlockId && NAMED_KEYS.has(activeBlockId)
@@ -171,10 +171,6 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeBlockId, onAddSection,
                   : freeBlock ? ((freeBlock.fontWeight || 400) >= 700)
                   : overlayTxt ? ((overlayTxt.fontWeight || 400) >= 700)
                   : defStyle.fontWeight >= 700
-  const dispAlign = isNamed ? (namedStyle.textAlign || 'left')
-                  : freeBlock ? (freeBlock.textAlign || 'left')
-                  : overlayTxt ? (overlayTxt.align || 'left')
-                  : defStyle.align
 
   const panelLabel = isNamed ? `텍스트 — ${namedDef.label || activeBlockId}`
                    : freeBlock ? '추가 텍스트'
@@ -284,18 +280,6 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeBlockId, onAddSection,
           </span>
         </div>
 
-        {/* 정렬 */}
-        <div style={{ display:'flex', gap:4, marginBottom:10 }}>
-          {[['left','좌'],['center','중'],['right','우']].map(([a,l]) => (
-            <button key={a}
-              onMouseDown={e => e.preventDefault()}
-              onClick={() => applyStyle('align', a)}
-              style={{ flex:1, padding:'6px 0', fontSize:14, borderRadius:6, border:`1.5px solid ${dispAlign===a?'#3b82f6':C.bd}`, background:dispAlign===a?'#EFF6FF':C.sur, color:dispAlign===a?'#1d4ed8':C.mu, cursor:'pointer', fontWeight:dispAlign===a?700:400 }}>
-              {l}
-            </button>
-          ))}
-        </div>
-
         {/* 폰트 크기 */}
         <div style={{ marginBottom:10 }}>
           <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
@@ -385,7 +369,8 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeBlockId, onAddSection,
             <button
               onClick={() => {
                 const d = defStyle
-                const newTxt = { id:`txt_${Date.now()}`, x:80, y:660, w:340, h:null, content:'텍스트', fontSize:d.fontSize, fontFamily:d.fontFamily, color:d.color, fontWeight:d.fontWeight, align:d.align }
+                const oH = bb.overlayH ?? 200
+                const newTxt = { id:`txt_${Date.now()}`, x:80, y:640 - oH + 20, w:340, h:null, content:'텍스트', fontSize:d.fontSize, fontFamily:d.fontFamily, color:d.color, fontWeight:d.fontWeight, align:d.align }
                 setBB({ textBlocks: [...(bb.textBlocks||[]), newTxt] })
               }}
               style={{ width:'100%', padding:'8px 0', fontSize:14, fontWeight:700, borderRadius:7, border:'1.5px dashed #3b82f6', background:'#eff6ff', color:'#1d4ed8', cursor:'pointer', marginBottom:8 }}>
@@ -399,7 +384,7 @@ function CanvaPanel({ sec, idx, onUpdate, onDelete, activeBlockId, onAddSection,
           </>
         ) : (
           <button
-            onClick={() => change('bottomBox', { bgColor:'#000000', intensity:80, overlayY:440, overlayH:200, textBlocks:[] })}
+            onClick={() => change('bottomBox', { bgColor:'#000000', intensity:80, overlayH:200, textBlocks:[] })}
             style={{ width:'100%', padding:'8px 0', fontSize:14, fontWeight:700, borderRadius:7, border:'1.5px dashed #3b82f6', background:'#eff6ff', color:'#1d4ed8', cursor:'pointer', marginBottom:8 }}>
             + 하단 오버레이 추가
           </button>
