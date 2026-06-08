@@ -197,8 +197,8 @@ function DragBlock({ bKey, label, text, pos, style, editing, selected, onSelect,
 /* ── 하단 그라데이션 오버레이 ── top = CARD_H - overlayH 로 정확히 사진 하단에 고정 */
 function BottomOverlay({ bottomBox, editing, scale, onUpdate, onSectionSelect }) {
   const { bgColor = '#000000', intensity = 80, overlayH = 200 } = bottomBox || {}
-  /* overlayY는 항상 CARD_H - overlayH → 오버레이 하단이 사진 하단과 정확히 일치 */
-  const overlayY = CARD_H - overlayH
+  /* overlayY는 항상 640 - overlayH → 오버레이 하단이 사진 하단과 정확히 일치 */
+  const overlayY = 640 - overlayH
   const [resizeTop, setResizeTop] = useState(null)
 
   const alpha = Math.round((intensity / 100) * 255).toString(16).padStart(2, '0')
@@ -330,7 +330,7 @@ export default function SectionEditor({
   }
   const getNamedPos = key => {
     const def = NAMED_BLOCKS.find(b => b.key === key) || {}
-    return { x: def.x ?? 40, y: def.y ?? 40, w: def.w ?? 780, ...(dr.blockPositions?.[key] || {}) }
+    return { x: def.x, y: def.y, w: def.w, ...(dr.blockPositions?.[key] || {}) }
   }
 
   const freeBlocks  = dr.freeBlocks || []
