@@ -1,400 +1,337 @@
 // src/components/BlogThumbnail.jsx
-import React, { useState, useRef, useEffect, useCallback } from 'react'
+import React, { useState, useRef } from 'react'
 import { C } from '../constants'
 import { capturePNG, readFileAsDataURL } from '../utils'
 
-const THUMB_W = 800
-const THUMB_H = 800
-const PAD     = 72
+const THUMB_W = 1000
+const THUMB_H = 1000
+const DISPLAY_SIZE = 540
+const DISP_SCALE = DISPLAY_SIZE / THUMB_W  // 0.54
 
-const LAYOUTS = [
-  { k: 'gradient', l: '그라데이션형' },
-  { k: 'overlay',  l: '오버레이형'  },
-  { k: 'simple',   l: '심플형'      },
-  { k: 'split',    l: '좌우분할형'  },
+const THUMBNAIL_FONTS = [
+  { v: 'Noto Sans KR',   l: '기본체'    },
+  { v: 'Black Han Sans', l: '뻑뻑한산스' },
+  { v: 'Nanum Myeongjo', l: '나눔명조'  },
+  { v: 'Nanum Gothic',   l: '나눔고딕'  },
+  { v: 'Gaegu',          l: '가애구'    },
+  { v: 'Jua',            l: '주아체'    },
 ]
 
-const FONT_SIZES = {
-  sm: { title: 52, sub: 26 },
-  md: { title: 68, sub: 32 },
-  lg: { title: 88, sub: 40 },
-}
+const PRESET_COLORS = ['#ffffff','#111111','#ef4444','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899']
 
-function getTextY(textPosition) {
-  if (textPosition === 'top')    return 72
-  if (textPosition === 'center') return 310
-  return 560  // bottom
-}
-
-/* ── 공통 이미지 스타일 (drag + zoom 반영) ──────────────── */
-function imgStyle(t) {
+function mkBox() {
   return {
-    position: 'absolute', inset: 0,
-    width: '100%', height: '100%',
-    objectFit: 'cover', display: 'block',
-    objectPosition: `${t.imgX ?? 50}% ${t.imgY ?? 50}%`,
-    transform: `scale(${t.imgScale ?? 1})`,
-    transformOrigin: `${t.imgX ?? 50}% ${t.imgY ?? 50}%`,
+    id: `tb_${Date.now()}`,
+    content: '텍스트',
+    x: 100, y: 100, w: 800,
+    fontSize: 80,
+    fontFamily: 'Noto Sans KR',
+    color: '#ffffff',
+    fontWeight: 700,
+    textAlign: 'left',
   }
 }
 
-/* ── 배경 레이어 ─────────────────────────────────────────── */
-function ThumbBg({ t }) {
-  const { layout, image, bgColor, accentColor } = t
+/* ─── 드래그 가능 텍스트 박스 (1000×1000 캔버스 내부) ─── */
+function TBBox({ box, selected, capturing, onSelect, onMove, onChange }) {
+  const [localEdit, setLocalEdit] = useState(false)
+  const taRef = useRef(null)
 
-  if (layout === 'gradient') return (
-    <>
-      <div style={{ position: 'absolute', inset: 0, background: bgColor }} />
-      {image && <img src={image} alt="" style={imgStyle(t)} />}
-      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.7) 30%, rgba(0,0,0,0.3) 60%, transparent 100%)' }} />
-    </>
-  )
+  const handleMouseDown = e => {
+    if (capturing || e.target.tagName === 'TEXTAREA') return
+    e.stopPropagation(); e.preventDefault()
+    onSelect()
+    const startX = e.clientX, startY = e.clientY
+    const baseX = box.x, baseY = box.y, baseW = box.w
+    const move = ev => {
+      const nx = Math.max(0, Math.min(THUMB_W - baseW, baseX + (ev.clientX - startX) / DISP_SCALE))
+      const ny = Math.max(0, Math.min(THUMB_H - 20, baseY + (ev.clientY - startY) / DISP_SCALE))
+      onMove({ x: nx, y: ny })
+    }
+    const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up) }
+    document.addEventListener('mousemove', move)
+    document.addEventListener('mouseup', up)
+  }
 
-  if (layout === 'overlay') return (
-    <>
-      <div style={{ position: 'absolute', inset: 0, background: bgColor }} />
-      {image && <img src={image} alt="" style={imgStyle(t)} />}
-      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)' }} />
-    </>
-  )
-
-  if (layout === 'simple') return (
-    <div style={{ position: 'absolute', inset: 0, background: bgColor }} />
-  )
-
-  if (layout === 'split') return (
-    <>
-      <div style={{ position: 'absolute', top: 0, left: 0, width: '45%', height: '100%', background: bgColor }} />
-      <div style={{ position: 'absolute', top: 0, left: '45%', width: 8, height: '100%', background: accentColor, zIndex: 2 }} />
-      <div style={{ position: 'absolute', top: 0, right: 0, width: '55%', height: '100%', overflow: 'hidden' }}>
-        {image
-          ? <img src={image} alt="" style={imgStyle(t)} />
-          : <div style={{ width: '100%', height: '100%', background: '#ccc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontSize: 48, opacity: 0.2 }}>📷</span>
-            </div>
-        }
-      </div>
-    </>
-  )
-
-  return <div style={{ position: 'absolute', inset: 0, background: bgColor }} />
-}
-
-/* ── 텍스트 레이어 ───────────────────────────────────────── */
-function ThumbText({ t }) {
-  const fs = FONT_SIZES[t.fontSize] || FONT_SIZES.md
-  const tc = t.textColor || '#ffffff'
-  const ts = (t.layout === 'gradient' || t.layout === 'overlay')
-    ? '0 2px 18px rgba(0,0,0,0.85)'
-    : 'none'
-  const ty = getTextY(t.textPosition)
-  const maxW = t.layout === 'split' ? THUMB_W * 0.45 - PAD * 2 : THUMB_W - PAD * 2
+  const txStyle = {
+    fontSize: box.fontSize,
+    fontFamily: box.fontFamily || 'Noto Sans KR',
+    color: box.color || '#ffffff',
+    fontWeight: box.fontWeight || 700,
+    textAlign: box.textAlign || 'left',
+    lineHeight: 1.4,
+    whiteSpace: 'pre-wrap',
+    wordBreak: 'keep-all',
+  }
 
   return (
-    <div style={{ position: 'absolute', left: PAD, top: ty, maxWidth: maxW, zIndex: 5, pointerEvents: 'none' }}>
-      {t.accentLine && (
-        <div style={{ width: 40, height: 4, background: t.accentColor, marginBottom: 28, borderRadius: 2 }} />
+    <div
+      onMouseDown={handleMouseDown}
+      onClick={e => { e.stopPropagation(); if (!capturing) onSelect() }}
+      onDoubleClick={e => {
+        e.stopPropagation()
+        if (!capturing) { setLocalEdit(true); setTimeout(() => taRef.current?.focus(), 0) }
+      }}
+      style={{
+        position: 'absolute', left: box.x, top: box.y, width: box.w,
+        cursor: capturing ? 'default' : 'grab', zIndex: 10, boxSizing: 'border-box',
+      }}
+    >
+      {!capturing && selected && (
+        <div style={{ position: 'absolute', inset: -2, border: '2px solid #3b82f6', borderRadius: 4, pointerEvents: 'none', zIndex: 5 }} />
       )}
-      <h1 style={{ fontSize: fs.title, fontWeight: 900, color: tc, lineHeight: 1.2, margin: '0 0 20px', whiteSpace: 'pre-wrap', textShadow: ts, wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
-        {t.mainTitle || '블로그 썸네일 제목'}
-      </h1>
-      {t.subTitle && (
-        <p style={{ fontSize: fs.sub, color: tc, opacity: 0.85, lineHeight: 1.65, margin: 0, textShadow: ts, wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
-          {t.subTitle}
-        </p>
-      )}
+      {localEdit
+        ? <textarea
+            ref={taRef}
+            value={box.content}
+            onChange={e => onChange({ content: e.target.value })}
+            onBlur={() => setLocalEdit(false)}
+            onClick={e => e.stopPropagation()}
+            onMouseDown={e => e.stopPropagation()}
+            rows={Math.max(2, (box.content || '').split('\n').length + 1)}
+            style={{ ...txStyle, width: '100%', background: 'rgba(0,0,0,0.6)', border: '2px solid #3b82f6', borderRadius: 6, padding: '10px 14px', outline: 'none', resize: 'none', boxSizing: 'border-box' }}
+          />
+        : <p style={{ ...txStyle, margin: 0, padding: '8px 12px', textShadow: '0 2px 8px rgba(0,0,0,0.6)' }}>
+            {box.content || '텍스트'}
+          </p>
+      }
     </div>
   )
 }
 
-/* ── 패널 레이블 ─────────────────────────────────────────── */
-function PL({ children }) {
-  return <p style={{ fontSize: 10, fontWeight: 700, color: C.fa, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 7 }}>{children}</p>
-}
-
-/* ── 기본 썸네일 상태 ────────────────────────────────────── */
-const DEFAULTS = {
-  layout: 'gradient', bgColor: '#1A3FA3', accentColor: '#60A5FA',
-  textColor: '#ffffff', textPosition: 'bottom', fontSize: 'md',
-  mainTitle: '', subTitle: '', image: null, accentLine: true,
-  imgX: 50, imgY: 50, imgScale: 1,
-}
-
-/* ══════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════
    메인 컴포넌트
 ══════════════════════════════════════════════════════════ */
-export default function BlogThumbnail({ blogTitle }) {
-  const [thumb, setThumb] = useState({ ...DEFAULTS, mainTitle: blogTitle || '' })
-  const [editing, setEditing] = useState(false)
-  const [dl, setDl] = useState(false)
-  const [scale, setScale] = useState(0.5)
-  const [isDraggingImg, setIsDraggingImg] = useState(false)
+export default function BlogThumbnail() {
+  const [bgColor,    setBgColor]    = useState('#1A3FA3')
+  const [image,      setImage]      = useState(null)
+  const [boxes,      setBoxes]      = useState([])
+  const [selId,      setSelId]      = useState(null)
+  const [capturing,  setCapturing]  = useState(false)
+  const [dl,         setDl]         = useState(false)
 
-  const ref        = useRef(null)
-  const wrapRef    = useRef(null)
-  const fileRef    = useRef(null)
-  const imgDragRef = useRef(null)
+  const fileRef   = useRef(null)
+  const canvasRef = useRef(null)
 
-  // 캔버스 스케일 자동 계산
-  useEffect(() => {
-    const el = wrapRef.current; if (!el) return
-    const obs = new ResizeObserver(() => setScale(el.offsetWidth / THUMB_W))
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [])
+  const selBox = boxes.find(b => b.id === selId) || null
 
-  // 마우스 휠로 이미지 크기 조절 (non-passive)
-  useEffect(() => {
-    const el = wrapRef.current; if (!el) return
-    const onWheel = (e) => {
-      e.preventDefault()
-      setThumb(t => {
-        if (!t.image) return t
-        const delta = e.deltaY > 0 ? -0.08 : 0.08
-        return { ...t, imgScale: Math.max(0.5, Math.min(4, (t.imgScale ?? 1) + delta)) }
-      })
-    }
-    el.addEventListener('wheel', onWheel, { passive: false })
-    return () => el.removeEventListener('wheel', onWheel)
-  }, [])
-
-  // 블로그 결과에서 추출된 제목 반영
-  useEffect(() => {
-    if (blogTitle) setThumb(t => ({ ...t, mainTitle: t.mainTitle || blogTitle }))
-  }, [blogTitle])
-
-  const ch = (key, val) => setThumb(t => ({ ...t, [key]: val }))
+  const updBox = (id, patch) => setBoxes(bs => bs.map(b => b.id === id ? { ...b, ...patch } : b))
+  const delBox = id => { setBoxes(bs => bs.filter(b => b.id !== id)); if (selId === id) setSelId(null) }
 
   const handleImg = async e => {
     const f = e.target.files[0]; if (!f) return
-    ch('image', await readFileAsDataURL(f))
+    setImage(await readFileAsDataURL(f))
     e.target.value = ''
   }
 
-  /* ── 이미지 드래그로 위치 조절 ── */
-  const handleImgMouseDown = useCallback((e) => {
-    setThumb(cur => {
-      if (!cur.image) return cur
-      imgDragRef.current = {
-        startX: e.clientX,
-        startY: e.clientY,
-        startImgX: cur.imgX ?? 50,
-        startImgY: cur.imgY ?? 50,
-      }
-      return cur
-    })
-
-    const onMove = (ev) => {
-      if (!imgDragRef.current) return
-      const { startX, startY, startImgX, startImgY } = imgDragRef.current
-      const dispW = wrapRef.current?.offsetWidth || THUMB_W
-      const dispScale = dispW / THUMB_W
-      const dx = (ev.clientX - startX) / dispScale / THUMB_W * 100
-      const dy = (ev.clientY - startY) / dispScale / THUMB_H * 100
-      setThumb(t => ({
-        ...t,
-        imgX: Math.max(0, Math.min(100, startImgX - dx)),
-        imgY: Math.max(0, Math.min(100, startImgY - dy)),
-      }))
-    }
-
-    const onUp = () => {
-      imgDragRef.current = null
-      setIsDraggingImg(false)
-      document.removeEventListener('mousemove', onMove)
-      document.removeEventListener('mouseup',   onUp)
-    }
-
-    setThumb(t => { if (!t.image) return t; setIsDraggingImg(true); return t })
-    document.addEventListener('mousemove', onMove)
-    document.addEventListener('mouseup',   onUp)
-    e.preventDefault()
-  }, [])
-
-  const dlPNG = async () => {
-    if (!ref.current) return
-    setDl(true)
-    const scaledEl = ref.current.parentElement
-    const origTransform = scaledEl?.style.transform ?? ''
-    try {
-      if (scaledEl) scaledEl.style.transform = 'none'
-      await capturePNG(ref.current, 'blog_thumbnail.png')
-    } catch (e) { alert('저장 오류: ' + e.message) }
-    finally {
-      if (scaledEl) scaledEl.style.transform = origTransform
-      setDl(false)
-    }
+  const addBox = () => {
+    const b = mkBox()
+    setBoxes(bs => [...bs, b])
+    setSelId(b.id)
   }
 
-  const hasMovedImg = thumb.image && (thumb.imgX !== 50 || thumb.imgY !== 50 || thumb.imgScale !== 1)
+  const applyStyle = (key, val) => { if (selId) updBox(selId, { [key]: val }) }
+
+  const dlPNG = async () => {
+    if (!canvasRef.current) return
+    setDl(true); setCapturing(true)
+    await new Promise(r => setTimeout(r, 80))
+    try {
+      await capturePNG(canvasRef.current, 'blog_thumbnail.png', { windowWidth: THUMB_W })
+    } catch (e) { alert('저장 오류: ' + e.message) }
+    finally { setDl(false); setCapturing(false) }
+  }
 
   return (
-    <div style={{ marginTop: 24, marginBottom: 4, borderRadius: 12, overflow: 'hidden', border: `2px solid ${editing ? '#1A3FA3' : C.bd}`, transition: 'border-color .2s' }}>
+    <div style={{ marginTop: 24, marginBottom: 40, borderRadius: 12, overflow: 'hidden', border: `2px solid ${C.bd}` }}>
 
-      {/* ── 툴바 ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 14px', background: editing ? '#EBF1FF' : C.alt, borderBottom: `1px solid ${editing ? '#BFDBFE' : C.bd}`, flexWrap: 'wrap', gap: 6 }}>
+      {/* 헤더 */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 14px', background: C.alt, borderBottom: `1px solid ${C.bd}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: thumb.accentColor }} />
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#1A3FA3' }} />
           <span style={{ fontSize: 12, fontWeight: 700, color: C.tx }}>블로그 썸네일</span>
-          <span style={{ fontSize: 10, color: C.mu }}>800 × 800px</span>
-          {thumb.image && <span style={{ fontSize: 10, color: '#3b82f6' }}>🖱 드래그: 위치 · 휠: 크기</span>}
+          <span style={{ fontSize: 10, color: C.mu }}>1000 × 1000px</span>
         </div>
-        <div style={{ display: 'flex', gap: 6 }}>
-          <button
-            onClick={() => setEditing(v => !v)}
-            style={{ padding: '5px 12px', fontSize: 11, borderRadius: 7, border: `1px solid ${editing ? 'none' : C.bd}`, background: editing ? '#1A3FA3' : C.sur, color: editing ? '#fff' : C.mu, cursor: 'pointer', fontWeight: 600 }}>
-            {editing ? '✓ 완료' : '✎ 수정'}
-          </button>
-          <button onClick={dlPNG} disabled={dl}
-            style={{ padding: '5px 10px', fontSize: 11, borderRadius: 7, border: `1px solid ${dl ? C.bd : '#1d6b45'}`, background: dl ? C.alt : '#f0fdf4', color: dl ? C.fa : '#1d6b45', cursor: dl ? 'not-allowed' : 'pointer', fontWeight: dl ? 400 : 600 }}>
-            {dl ? '변환 중…' : '↓ PNG'}
-          </button>
-        </div>
+        <button onClick={dlPNG} disabled={dl}
+          style={{ padding: '5px 10px', fontSize: 11, borderRadius: 7, border: `1px solid ${dl ? C.bd : '#1d6b45'}`, background: dl ? C.alt : '#f0fdf4', color: dl ? C.fa : '#1d6b45', cursor: dl ? 'not-allowed' : 'pointer', fontWeight: dl ? 400 : 600 }}>
+          {dl ? '변환 중…' : '↓ PNG'}
+        </button>
       </div>
 
-      {/* ── 2단: 캔버스 + 사이드패널 ── */}
-      <div style={{ display: 'flex', alignItems: 'stretch' }}>
+      {/* 2단 레이아웃 */}
+      <div style={{ display: 'flex', alignItems: 'stretch', background: C.sur }}>
 
-        {/* 캔버스 */}
-        <div ref={wrapRef}
-          onMouseDown={handleImgMouseDown}
-          style={{ flex: 1, minWidth: 0, position: 'relative', background: '#e0ddd8', overflow: 'hidden', cursor: thumb.image ? (isDraggingImg ? 'grabbing' : 'grab') : 'default' }}>
-          <div style={{ paddingTop: '100%', position: 'relative' }}>
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden' }}>
-              <div style={{ width: THUMB_W, transformOrigin: 'top left', transform: `scale(${scale})` }}>
-                <div ref={ref} style={{ width: THUMB_W, height: THUMB_H, position: 'relative', overflow: 'hidden', fontFamily: "'Noto Sans KR','Apple SD Gothic Neo',sans-serif" }}>
-                  <ThumbBg t={thumb} />
-                  <ThumbText t={thumb} />
-                  <div style={{ position: 'absolute', bottom: 14, right: 22, fontSize: 13, color: thumb.textColor || '#fff', opacity: 0.08, zIndex: 3, pointerEvents: 'none' }}>ContentOS</div>
-                </div>
+        {/* ── 왼쪽: 썸네일 캔버스 (540×540 표시) ── */}
+        <div style={{ position: 'relative', flexShrink: 0, width: DISPLAY_SIZE, height: DISPLAY_SIZE }}>
+          <input ref={fileRef} type="file" accept="image/*" onChange={handleImg} style={{ display: 'none' }} />
+
+          {/* 표시 영역 */}
+          <div
+            style={{ width: DISPLAY_SIZE, height: DISPLAY_SIZE, position: 'relative', overflow: 'hidden', background: '#e0ddd8', cursor: !image ? 'pointer' : 'default' }}
+            onClick={e => { if (!image) fileRef.current?.click(); else setSelId(null) }}
+          >
+            {/* 실제 1000×1000 캔버스 (스케일 다운) */}
+            <div style={{ position: 'absolute', top: 0, left: 0, width: THUMB_W, height: THUMB_H, transform: `scale(${DISP_SCALE})`, transformOrigin: 'top left' }}>
+              <div ref={canvasRef}
+                style={{ width: THUMB_W, height: THUMB_H, position: 'relative', overflow: 'hidden', background: bgColor, fontFamily: "'Noto Sans KR','Apple SD Gothic Neo',sans-serif" }}
+              >
+                {/* 배경 사진 */}
+                {image && (
+                  <img src={image} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                )}
+
+                {/* 사진 없을 때 플레이스홀더 */}
+                {!image && !capturing && (
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                    <div style={{ fontSize: 120, marginBottom: 24, opacity: 0.4 }}>📷</div>
+                    <div style={{ fontSize: 40, fontWeight: 600, color: 'rgba(255,255,255,0.55)' }}>사진 업로드</div>
+                  </div>
+                )}
+
+                {/* 텍스트 박스들 */}
+                {boxes.map(box => (
+                  <TBBox
+                    key={box.id}
+                    box={box}
+                    selected={selId === box.id && !capturing}
+                    capturing={capturing}
+                    onSelect={() => setSelId(box.id)}
+                    onMove={pos => updBox(box.id, pos)}
+                    onChange={patch => updBox(box.id, patch)}
+                  />
+                ))}
               </div>
             </div>
           </div>
+
+          {/* 사진 X 버튼 (스크린 좌표, 우측 상단) */}
+          {image && !capturing && (
+            <button
+              onClick={() => setImage(null)}
+              style={{ position: 'absolute', top: 8, right: 8, zIndex: 30, width: 26, height: 26, borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.65)', color: '#fff', fontSize: 16, cursor: 'pointer', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >×</button>
+          )}
+
+          {/* 텍스트 박스 X 버튼들 (스크린 좌표, 각 박스 우측 상단) */}
+          {!capturing && boxes.map(box => (
+            <button
+              key={`del-${box.id}`}
+              onMouseDown={e => e.stopPropagation()}
+              onClick={e => { e.stopPropagation(); delBox(box.id) }}
+              style={{
+                position: 'absolute',
+                left: Math.min(DISPLAY_SIZE - 10, (box.x + box.w) * DISP_SCALE) - 10,
+                top:  Math.max(0, box.y * DISP_SCALE) - 9,
+                zIndex: 30, width: 20, height: 20, borderRadius: '50%',
+                border: 'none', background: '#ef4444', color: '#fff',
+                fontSize: 13, cursor: 'pointer', fontWeight: 800,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >×</button>
+          ))}
         </div>
 
-        {/* 사이드패널 */}
-        {editing && (
-          <div style={{ width: 268, minWidth: 268, borderLeft: `1px solid ${C.bd}`, background: '#F8FAFF', overflowY: 'auto', animation: 'slideInRight .22s ease' }}>
-            <div style={{ padding: '14px 13px 28px' }}>
-              <input ref={fileRef} type="file" accept="image/*" onChange={handleImg} style={{ display: 'none' }} />
+        {/* ── 오른쪽: 편집 패널 ── */}
+        <div style={{ flex: 1, minWidth: 0, borderLeft: `1px solid ${C.bd}`, padding: '14px 16px', overflowY: 'auto', maxHeight: DISPLAY_SIZE, background: '#F8FAFF' }}>
 
-              {/* 사진 */}
-              <PL>사진</PL>
-              <div style={{ marginBottom: 6 }}>
-                {thumb.image
-                  ? <div style={{ display: 'flex', gap: 6 }}>
-                      <button onClick={() => fileRef.current?.click()} style={{ flex: 1, padding: '7px', fontSize: 11, borderRadius: 7, border: `1px solid ${C.bd}`, background: C.sur, cursor: 'pointer', fontWeight: 600 }}>📷 교체</button>
-                      <button onClick={() => ch('image', null)} style={{ padding: '7px 11px', fontSize: 11, borderRadius: 7, border: '1px solid #fca5a5', background: '#fef2f2', cursor: 'pointer', color: '#ef4444' }}>✕</button>
-                    </div>
-                  : <button onClick={() => fileRef.current?.click()} style={{ width: '100%', padding: '10px', fontSize: 11, borderRadius: 7, border: `2px dashed ${C.bd}`, background: C.sur, cursor: 'pointer', color: C.mu }}>📷 사진 업로드</button>
-                }
-              </div>
-              {hasMovedImg && (
-                <button
-                  onClick={() => setThumb(t => ({ ...t, imgX: 50, imgY: 50, imgScale: 1 }))}
-                  style={{ width: '100%', padding: '5px', fontSize: 10, borderRadius: 6, border: `1px solid ${C.bd}`, background: C.sur, color: '#3b82f6', cursor: 'pointer', marginBottom: 8, fontWeight: 600 }}>
-                  ↺ 이미지 위치/크기 초기화
-                </button>
-              )}
-              <div style={{ marginBottom: 8 }} />
+          {/* 배경색 */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.fa, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 7 }}>배경색</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input type="color" value={bgColor} onChange={e => setBgColor(e.target.value)}
+                style={{ width: 36, height: 30, padding: 2, border: `1px solid ${C.bd}`, borderRadius: 6, cursor: 'pointer' }} />
+              <span style={{ fontSize: 11, color: C.fa, fontFamily: 'monospace' }}>{bgColor}</span>
+            </div>
+          </div>
 
-              {/* 레이아웃 */}
-              <PL>레이아웃</PL>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5, marginBottom: 14 }}>
-                {LAYOUTS.map(({ k, l }) => {
-                  const on = thumb.layout === k
-                  return (
-                    <button key={k} onClick={() => ch('layout', k)}
-                      style={{ padding: '7px 4px', fontSize: 10, borderRadius: 7, border: `1.5px solid ${on ? '#1A3FA3' : C.bd}`, background: on ? '#EBF1FF' : C.sur, color: on ? '#1A3FA3' : C.mu, cursor: 'pointer', fontWeight: on ? 700 : 400, textAlign: 'center' }}>
-                      {l}
-                    </button>
-                  )
-                })}
-              </div>
+          {/* 사진 업로드 */}
+          <button onClick={() => fileRef.current?.click()}
+            style={{ width: '100%', padding: '7px', fontSize: 11, borderRadius: 7, border: `1px solid ${C.bd}`, background: C.sur, cursor: 'pointer', fontWeight: 600, marginBottom: 10, color: C.mu }}>
+            📷 {image ? '사진 교체' : '사진 업로드'}
+          </button>
 
-              {/* 텍스트 위치 */}
-              <PL>텍스트 위치</PL>
-              <div style={{ display: 'flex', gap: 5, marginBottom: 14 }}>
-                {[['top', '위'], ['center', '중앙'], ['bottom', '아래']].map(([v, l]) => {
-                  const on = thumb.textPosition === v
-                  return (
-                    <button key={v} onClick={() => ch('textPosition', v)}
-                      style={{ flex: 1, padding: '6px', fontSize: 11, borderRadius: 7, border: `1.5px solid ${on ? '#1A3FA3' : C.bd}`, background: on ? '#EBF1FF' : C.sur, color: on ? '#1A3FA3' : C.mu, cursor: 'pointer', fontWeight: on ? 700 : 400 }}>
-                      {l}
-                    </button>
-                  )
-                })}
+          {/* 텍스트 추가 */}
+          <button onClick={addBox}
+            style={{ width: '100%', padding: '8px 0', fontSize: 13, fontWeight: 700, borderRadius: 7, border: '1.5px dashed #3b82f6', background: '#eff6ff', color: '#1d4ed8', cursor: 'pointer', marginBottom: 14 }}>
+            + 텍스트 추가
+          </button>
+
+          {/* 텍스트 편집 (선택된 박스가 있을 때) */}
+          {selBox && (
+            <>
+              <div style={{ borderTop: `1px solid ${C.bd}`, marginBottom: 12 }} />
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.fa, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 10 }}>텍스트 편집</div>
+
+              {/* 폰트 선택 */}
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 10, color: C.mu, marginBottom: 5 }}>폰트</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+                  {THUMBNAIL_FONTS.map(f => {
+                    const on = selBox.fontFamily === f.v
+                    return (
+                      <button key={f.v} onClick={() => applyStyle('fontFamily', f.v)}
+                        style={{ padding: '6px 5px', fontSize: 12, borderRadius: 6, border: `1.5px solid ${on ? '#3b82f6' : C.bd}`, background: on ? '#EFF6FF' : C.sur, color: on ? '#1d4ed8' : C.mu, cursor: 'pointer', fontWeight: on ? 700 : 400, textAlign: 'left', fontFamily: f.v, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {f.l}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
 
               {/* 글자 크기 */}
-              <PL>글자 크기</PL>
-              <div style={{ display: 'flex', gap: 4, marginBottom: 14 }}>
-                {[['sm', '작게'], ['md', '보통'], ['lg', '크게']].map(([v, l]) => {
-                  const on = thumb.fontSize === v
-                  return (
-                    <button key={v} onClick={() => ch('fontSize', v)}
-                      style={{ flex: 1, padding: '6px 2px', fontSize: 10, borderRadius: 6, border: `1.5px solid ${on ? '#1A3FA3' : C.bd}`, background: on ? '#EBF1FF' : C.sur, color: on ? '#1A3FA3' : C.mu, cursor: 'pointer', fontWeight: on ? 700 : 400 }}>
-                      {l}
-                    </button>
-                  )
-                })}
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontSize: 10, color: C.mu }}>글자 크기</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: C.tx }}>{selBox.fontSize}px</span>
+                </div>
+                <input type="range" min={20} max={300} value={selBox.fontSize}
+                  onChange={e => applyStyle('fontSize', +e.target.value)}
+                  style={{ width: '100%', accentColor: '#3b82f6' }} />
               </div>
 
-              {/* 글자색 */}
-              <PL>글자색</PL>
-              <div style={{ display: 'flex', gap: 5, marginBottom: 14, alignItems: 'center', flexWrap: 'wrap' }}>
-                {[['#ffffff', '흰색', '#ccc'], ['#1a1a1a', '검정', '#1a1a1a']].map(([v, l, border]) => {
-                  const on = thumb.textColor === v
-                  return (
-                    <button key={v} onClick={() => ch('textColor', v)}
-                      style={{ padding: '5px 10px', fontSize: 11, borderRadius: 6, border: `2px solid ${on ? '#1A3FA3' : border}`, background: v, color: v === '#ffffff' ? '#333' : '#fff', cursor: 'pointer', fontWeight: on ? 700 : 400 }}>
-                      {l}
-                    </button>
-                  )
-                })}
-                <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-                  <input type="color" value={thumb.textColor || '#ffffff'} onChange={e => ch('textColor', e.target.value)}
-                    style={{ width: 28, height: 28, padding: 2, border: `1px solid ${C.bd}`, borderRadius: 5, cursor: 'pointer' }} />
-                  <span style={{ fontSize: 10, color: C.fa }}>커스텀</span>
-                </label>
-              </div>
-
-              {/* 배경 / 포인트색 */}
-              <PL>배경 / 포인트색</PL>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
-                {[['bgColor', '배경색'], ['accentColor', '포인트색']].map(([key, label]) => (
-                  <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <input type="color" value={thumb[key]} onChange={e => ch(key, e.target.value)}
-                      style={{ width: 32, height: 32, padding: 2, border: `1px solid ${C.bd}`, borderRadius: 6, cursor: 'pointer', flexShrink: 0 }} />
-                    <span style={{ fontSize: 11, color: C.mu }}>{label}</span>
-                    <span style={{ fontSize: 10, color: C.fa, fontFamily: 'monospace', marginLeft: 'auto' }}>{thumb[key]}</span>
-                  </div>
+              {/* 굵게 + 정렬 */}
+              <div style={{ display: 'flex', gap: 4, marginBottom: 10 }}>
+                <button onClick={() => applyStyle('fontWeight', selBox.fontWeight >= 700 ? 400 : 700)}
+                  style={{ padding: '6px 10px', fontSize: 12, borderRadius: 6, border: `1.5px solid ${selBox.fontWeight >= 700 ? '#3b82f6' : C.bd}`, background: selBox.fontWeight >= 700 ? '#EFF6FF' : C.sur, color: selBox.fontWeight >= 700 ? '#1d4ed8' : C.mu, cursor: 'pointer', fontWeight: 700 }}>
+                  B
+                </button>
+                {[['left','좌'],['center','중'],['right','우']].map(([a,l]) => (
+                  <button key={a} onClick={() => applyStyle('textAlign', a)}
+                    style={{ flex: 1, padding: '6px 0', fontSize: 11, borderRadius: 6, border: `1.5px solid ${selBox.textAlign === a ? '#3b82f6' : C.bd}`, background: selBox.textAlign === a ? '#EFF6FF' : C.sur, color: selBox.textAlign === a ? '#1d4ed8' : C.mu, cursor: 'pointer', fontWeight: selBox.textAlign === a ? 700 : 400 }}>
+                    {l}
+                  </button>
                 ))}
               </div>
 
-              {/* 포인트 라인 */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
-                <input type="checkbox" id="accentLine" checked={thumb.accentLine} onChange={e => ch('accentLine', e.target.checked)} style={{ cursor: 'pointer', accentColor: '#1A3FA3' }} />
-                <label htmlFor="accentLine" style={{ fontSize: 11, color: C.mu, cursor: 'pointer' }}>포인트 라인 표시</label>
+              {/* 글자색 */}
+              <div style={{ fontSize: 10, color: C.mu, marginBottom: 5 }}>글자색</div>
+              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center', marginBottom: 4 }}>
+                {PRESET_COLORS.map(c => (
+                  <button key={c} onClick={() => applyStyle('color', c)}
+                    style={{ width: 22, height: 22, borderRadius: 4, background: c, border: selBox.color === c ? '2px solid #3b82f6' : '1px solid #ccc', cursor: 'pointer', flexShrink: 0 }} />
+                ))}
+                <input type="color" value={selBox.color}
+                  onChange={e => applyStyle('color', e.target.value)}
+                  style={{ width: 26, height: 22, border: '1px solid #ccc', padding: 0, cursor: 'pointer', borderRadius: 4, flexShrink: 0 }} />
               </div>
+            </>
+          )}
 
-              {/* 텍스트 편집 */}
-              <PL>텍스트</PL>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <div>
-                  <label style={{ fontSize: 10, color: C.mu, display: 'block', marginBottom: 3 }}>메인 제목</label>
-                  <textarea value={thumb.mainTitle} onChange={e => ch('mainTitle', e.target.value)} rows={2}
-                    style={{ width: '100%', padding: '6px 8px', fontSize: 12, border: `1px solid ${C.bd}`, borderRadius: 6, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box', outline: 'none' }} />
+          {/* 텍스트 박스 목록 */}
+          {boxes.length > 0 && (
+            <div style={{ borderTop: `1px solid ${C.bd}`, paddingTop: 10, marginTop: 12 }}>
+              <div style={{ fontSize: 10, color: C.fa, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>텍스트 박스</div>
+              {boxes.map(b => (
+                <div key={b.id} onClick={() => setSelId(b.id)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px', borderRadius: 6, marginBottom: 4, cursor: 'pointer', background: selId === b.id ? '#EFF6FF' : C.alt, border: `1px solid ${selId === b.id ? '#3b82f6' : C.bd}` }}>
+                  <span style={{ flex: 1, fontSize: 11, color: C.tx, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.content || '텍스트'}</span>
+                  <button onClick={e => { e.stopPropagation(); delBox(b.id) }}
+                    style={{ width: 18, height: 18, borderRadius: '50%', border: 'none', background: '#fef2f2', color: '#ef4444', cursor: 'pointer', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>×</button>
                 </div>
-                <div>
-                  <label style={{ fontSize: 10, color: C.mu, display: 'block', marginBottom: 3 }}>서브 타이틀</label>
-                  <input value={thumb.subTitle} onChange={e => ch('subTitle', e.target.value)}
-                    style={{ width: '100%', padding: '6px 8px', fontSize: 12, border: `1px solid ${C.bd}`, borderRadius: 6, fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none' }} />
-                </div>
-              </div>
+              ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   )
