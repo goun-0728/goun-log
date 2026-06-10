@@ -177,9 +177,9 @@ export async function getPublishedArticles(limit?: number) {
     if (limit) query = query.limit(limit);
 
     const { data, error } = await query;
-    if (error) return sampleArticles.slice(0, limit || sampleArticles.length);
-    const articles = (data || []) as Article[];
-    return articles.length ? articles : sampleArticles.slice(0, limit || sampleArticles.length);
+if (error) throw new Error(JSON.stringify(error));
+const articles = (data || []) as Article[];
+return articles;
   } catch {
     return sampleArticles.slice(0, limit || sampleArticles.length);
   }
