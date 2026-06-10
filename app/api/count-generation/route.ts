@@ -16,8 +16,24 @@ export async function POST() {
       .from("generation_stats")
       .upsert({ id: "detail_page_generator", generation_count: current + 1 });
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true }, {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      }
+    });
   } catch {
     return NextResponse.json({ ok: false });
   }
+}
+
+export async function OPTIONS() {
+  return NextResponse.json({}, {
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    }
+  });
 }
