@@ -7,7 +7,7 @@ import { getVisitStats } from "@/lib/visits";
 
 export const dynamic = "force-dynamic";
 
-const generatorUrl = "https://food-detail-generator.vercel.app/";
+const generatorUrl = "https://contentos-one-theta.vercel.app/";
 
 export default async function Home() {
   const [articles, stats] = await Promise.all([getPublishedArticles(), getVisitStats()]);

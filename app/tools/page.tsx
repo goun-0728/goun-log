@@ -21,6 +21,17 @@ export default function ToolsPage() {
             생성기 열기
           </a>
         </div>
+        <div className="tool-item">
+          <h2>택배 공지 이미지 생성기</h2>
+          <p>
+            설·추석 등 택배 휴무 공지 이미지를 빠르게 만들 수 있는 도구입니다.
+            <br />
+            달력으로 날짜 선택, 분위기 설정, PNG 다운로드까지 무료입니다.
+          </p>
+          <a href="/tools/delivery-notice" className="tool-link">
+            생성기 열기
+          </a>
+        </div>
       </section>
     </main>
   );
