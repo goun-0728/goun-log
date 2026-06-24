@@ -58,12 +58,16 @@ export default function DeliveryNoticeGenerator() {
   const [lastDate, setLastDate] = useState<Date | null>(null)
   const [resumeDate, setResumeDate] = useState<Date | null>(null)
 
+  // 미리보기 달력 클릭 좌표 계산용
+  const scaleRef = useRef(1)
+  const calRectRef = useRef<{x:number,y:number,w:number,h:number,year:number,month:number}|null>(null)
+
   const draw = useCallback(() => {
     const cv = canvasRef.current
     if (!cv) return
     const c = moodCfg[mood]
     const font = "'Noto Sans KR', sans-serif"
-    const tx = 56, tw = W - 112, PAD = 48
+    const tx = 48, tw = W - 96, PAD = 32
 
     function rrect(ctx: CanvasRenderingContext2D, x:number,y:number,w:number,h:number,r:number) {
       ctx.beginPath()
@@ -86,27 +90,26 @@ export default function DeliveryNoticeGenerator() {
       return lines
     }
 
-    // 높이 계산
     cv.width = W; cv.height = 10
     const ctx0 = cv.getContext('2d')!
-    ctx0.font = `400 28px ${font}`
+    ctx0.font = `400 20px ${font}`
     const greetLines = greeting ? measureLines(ctx0, greeting, tw) : []
-    ctx0.font = `400 24px ${font}`
-    const noteLines = noteText ? measureLines(ctx0, noteText, tw - 48) : []
+    ctx0.font = `400 18px ${font}`
+    const noteLines = noteText ? measureLines(ctx0, noteText, tw - 40) : []
 
     const imgH = imgRef.current ? Math.round(W / imgRatioRef.current) : 0
-    const deadlineBoxH = 160
-    const resumeBoxH = 120
-    const calH = 520
+    const deadlineBoxH = 110
+    const resumeBoxH = 84
+    const calH = 380
 
-    let H = 8 + PAD + 80 + PAD
+    let H = 6 + PAD + 52 + PAD
     H += imgH + (imgH ? PAD : 0)
-    if (greetLines.length > 0) H += greetLines.length * 48 + PAD * 2
-    H += PAD * 0.5 + deadlineBoxH + 20 + resumeBoxH + PAD
+    if (greetLines.length > 0) H += greetLines.length * 36 + PAD * 1.5
+    H += PAD * 0.5 + deadlineBoxH + 14 + resumeBoxH + PAD
     H += calH + PAD
-    if (noteLines.length > 0) H += noteLines.length * 40 + 60 + PAD
-    H += PAD + 36 + PAD + 8
-    H = Math.max(800, Math.round(H))
+    if (noteLines.length > 0) H += noteLines.length * 32 + 48 + PAD
+    H += PAD + 28 + PAD + 6
+    H = Math.max(700, Math.round(H))
 
     cv.width = W; cv.height = H
     const ctx = cv.getContext('2d')!
@@ -115,18 +118,18 @@ export default function DeliveryNoticeGenerator() {
     let curY = 0
 
     // 상단 바
-    ctx.fillStyle = c.accent; ctx.fillRect(0,0,W,10); curY = 10
+    ctx.fillStyle = c.accent; ctx.fillRect(0,0,W,6); curY = 6
 
     // 제목
     curY += PAD
     ctx.fillStyle = c.accent
-    ctx.font = `900 72px ${font}`
+    ctx.font = `900 48px ${font}`
     ctx.textAlign = 'center'
-    ctx.fillText(c.title, W/2, curY+60)
-    curY += 60 + PAD * 0.8
+    ctx.fillText(c.title, W/2, curY+40)
+    curY += 40 + PAD
 
     // 구분선
-    ctx.strokeStyle = c.border; ctx.lineWidth = 1.5
+    ctx.strokeStyle = c.border; ctx.lineWidth = 1
     ctx.beginPath(); ctx.moveTo(tx, curY); ctx.lineTo(W-tx, curY); ctx.stroke()
     curY += PAD * 0.8
 
@@ -139,9 +142,9 @@ export default function DeliveryNoticeGenerator() {
     // 인사말
     if (greetLines.length > 0) {
       ctx.fillStyle = c.textBody
-      ctx.font = `400 28px ${font}`
+      ctx.font = `400 20px ${font}`
       ctx.textAlign = 'center'
-      greetLines.forEach(line => { ctx.fillText(line, W/2, curY+32); curY += 48 })
+      greetLines.forEach(line => { ctx.fillText(line, W/2, curY+24); curY += 36 })
       curY += PAD * 0.5
       ctx.strokeStyle = c.border; ctx.lineWidth = 1
       ctx.beginPath(); ctx.moveTo(tx, curY); ctx.lineTo(W-tx, curY); ctx.stroke()
@@ -154,78 +157,69 @@ export default function DeliveryNoticeGenerator() {
     const hasTime = !!hour
     const timeStr = hasTime ? `${ampm} ${hour}:${minute}` : ''
 
-    rrect(ctx, tx, curY, tw, deadlineBoxH, 16)
+    rrect(ctx, tx, curY, tw, deadlineBoxH, 12)
     ctx.fillStyle = c.rowA; ctx.fill()
-    ctx.strokeStyle = c.border; ctx.lineWidth = 1.5; ctx.stroke()
-
-    // 마감 점
+    ctx.strokeStyle = c.border; ctx.lineWidth = 1; ctx.stroke()
     ctx.fillStyle = '#EF9F27'
-    ctx.beginPath(); ctx.arc(tx+32, curY+deadlineBoxH/2, 10, 0, Math.PI*2); ctx.fill()
-
-    // 마감 라벨
+    ctx.beginPath(); ctx.arc(tx+24, curY+deadlineBoxH/2, 8,0,Math.PI*2); ctx.fill()
     ctx.fillStyle = c.textSub
-    ctx.font = `500 22px ${font}`
+    ctx.font = `500 16px ${font}`
     ctx.textAlign = 'left'
-    ctx.fillText('📦 택배 마감일', tx+58, curY+44)
-
-    // 마감 날짜
+    ctx.fillText('📦 택배 마감일', tx+44, curY+30)
     ctx.fillStyle = c.accent
-    ctx.font = `700 44px ${font}`
-    ctx.textAlign = 'left'
-    ctx.fillText(deadlineDateStr, tx+58, curY+110)
-
+    ctx.font = `700 32px ${font}`
+    ctx.fillText(deadlineDateStr, tx+44, curY+76)
     if (hasTime) {
       const dw = ctx.measureText(deadlineDateStr).width
-      ctx.font = `500 28px ${font}`
-      ctx.fillText(timeStr, tx+58+dw+16, curY+110)
+      ctx.font = `500 22px ${font}`
+      ctx.fillText(timeStr, tx+44+dw+12, curY+76)
     }
-    curY += deadlineBoxH + 20
+    curY += deadlineBoxH + 14
 
     // 택배 발송일 박스
-    rrect(ctx, tx, curY, tw, resumeBoxH, 16)
-    ctx.fillStyle = 'rgba(127,119,221,0.08)'; ctx.fill()
-    ctx.strokeStyle = c.border; ctx.lineWidth = 1.5; ctx.stroke()
-
+    rrect(ctx, tx, curY, tw, resumeBoxH, 12)
+    ctx.fillStyle = 'rgba(127,119,221,0.07)'; ctx.fill()
+    ctx.strokeStyle = c.border; ctx.lineWidth = 1; ctx.stroke()
     ctx.fillStyle = '#7F77DD'
-    ctx.beginPath(); ctx.arc(tx+32, curY+resumeBoxH/2, 10, 0, Math.PI*2); ctx.fill()
-
+    ctx.beginPath(); ctx.arc(tx+24, curY+resumeBoxH/2, 8,0,Math.PI*2); ctx.fill()
     ctx.fillStyle = c.textSub
-    ctx.font = `500 22px ${font}`
+    ctx.font = `500 16px ${font}`
     ctx.textAlign = 'left'
-    ctx.fillText('🚚 택배 발송일', tx+58, curY+36)
-
+    ctx.fillText('🚚 택배 발송일', tx+44, curY+28)
     ctx.fillStyle = c.accent
-    ctx.font = `700 38px ${font}`
-    ctx.textAlign = 'left'
-    ctx.fillText(fmtDate(resumeDate), tx+58, curY+90)
+    ctx.font = `700 28px ${font}`
+    ctx.fillText(fmtDate(resumeDate), tx+44, curY+64)
     curY += resumeBoxH + PAD
 
-    // 달력
-    drawCal(ctx, tx, curY, tw, calH, lastDate ? lastDate.getFullYear() : calYear, lastDate ? lastDate.getMonth() : calMonth, c, rrect)
+    // 달력 - 위치 저장
+    const calYear2 = lastDate ? lastDate.getFullYear() : calYear
+    const calMonth2 = lastDate ? lastDate.getMonth() : calMonth
+    calRectRef.current = {x:tx, y:curY, w:tw, h:calH, year:calYear2, month:calMonth2}
+    drawCal(ctx, tx, curY, tw, calH, calYear2, calMonth2, c, rrect)
     curY += calH + PAD
 
     // 하단 메시지
     if (noteLines.length > 0) {
-      const boxH = noteLines.length * 40 + 60
-      rrect(ctx, tx, curY, tw, boxH, 16)
+      const boxH = noteLines.length * 32 + 48
+      rrect(ctx, tx, curY, tw, boxH, 12)
       ctx.fillStyle = c.badge; ctx.fill()
-      ctx.strokeStyle = c.border; ctx.lineWidth = 1.5; ctx.stroke()
+      ctx.strokeStyle = c.border; ctx.lineWidth = 1; ctx.stroke()
       ctx.fillStyle = c.badgeText
-      ctx.font = `400 24px ${font}`
+      ctx.font = `400 18px ${font}`
       ctx.textAlign = 'center'
-      noteLines.forEach((line, i) => ctx.fillText(line, W/2, curY+40+i*40))
+      noteLines.forEach((line, i) => ctx.fillText(line, W/2, curY+32+i*32))
       curY += boxH + PAD
     }
 
     // 감사인사
     ctx.fillStyle = c.textSub
-    ctx.font = `400 24px ${font}`
+    ctx.font = `400 18px ${font}`
     ctx.textAlign = 'center'
-    ctx.fillText('이용해 주셔서 감사합니다', W/2, curY+28)
-    curY += 28 + PAD
+    ctx.fillText('이용해 주셔서 감사합니다', W/2, curY+22)
+    curY += 22 + PAD
 
     // 하단 바
-    ctx.fillStyle = c.accent; ctx.fillRect(0, H-10, W, 10)
+    ctx.fillStyle = c.accent; ctx.fillRect(0, H-6, W, 6)
 
     scaleCanvas()
   }, [mood, greeting, noteText, ampm, hour, minute, lastDate, resumeDate, calYear, calMonth])
@@ -238,33 +232,37 @@ export default function DeliveryNoticeGenerator() {
     rrect: (ctx:CanvasRenderingContext2D,x:number,y:number,w:number,h:number,r:number)=>void
   ) {
     const font = "'Noto Sans KR', sans-serif"
-    const pad = 24
+    const pad = 20
     const cellW = Math.floor((cw - pad*2) / 7)
-    const headerH = 56
-    const dowH = 36
+    const headerH = 44
+    const dowH = 28
     const cellH = Math.floor((ch - pad*2 - headerH - dowH) / 6)
 
-    rrect(ctx, cx, cy, cw, ch, 16)
+    rrect(ctx, cx, cy, cw, ch, 12)
     ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fill()
-    ctx.strokeStyle = c.border; ctx.lineWidth = 1.5; ctx.stroke()
+    ctx.strokeStyle = c.border; ctx.lineWidth = 1; ctx.stroke()
 
-    // 월 헤더
     ctx.fillStyle = c.accent
-    ctx.font = `700 26px ${font}`
+    ctx.font = `700 20px ${font}`
     ctx.textAlign = 'center'
-    ctx.fillText(`${year}년 ${month+1}월`, cx+cw/2, cy+pad+26)
+    ctx.fillText(`${year}년 ${month+1}월`, cx+cw/2, cy+pad+20)
 
-    // 요일 헤더
+    // 좌우 화살표
+    ctx.fillStyle = c.textSub
+    ctx.font = `400 18px ${font}`
+    ctx.fillText('‹', cx+pad+8, cy+pad+20)
+    ctx.fillText('›', cx+cw-pad-8, cy+pad+20)
+
     const dowColors = ['#E24B4A','#666','#666','#666','#666','#666','#378ADD']
     DOWS.forEach((d,i) => {
       ctx.fillStyle = dowColors[i]
-      ctx.font = `600 16px ${font}`
+      ctx.font = `600 13px ${font}`
       ctx.textAlign = 'center'
       ctx.fillText(d, cx+pad+i*cellW+cellW/2, cy+pad+headerH+dowH*0.75)
     })
 
     const divY = cy+pad+headerH+dowH
-    ctx.strokeStyle = c.border; ctx.lineWidth = 1
+    ctx.strokeStyle = c.border; ctx.lineWidth = 0.5
     ctx.beginPath(); ctx.moveTo(cx+pad, divY); ctx.lineTo(cx+cw-pad, divY); ctx.stroke()
 
     const first = new Date(year, month, 1)
@@ -286,13 +284,13 @@ export default function DeliveryNoticeGenerator() {
       const inRange = lastDate && resumeDate && thisD.getTime() > lastDate.getTime() && thisD.getTime() < resumeDate.getTime()
 
       if (isLast) {
-        rrect(ctx, dx+2, dy+2, cellW-4, cellH-4, 8)
+        rrect(ctx, dx+2, dy+2, cellW-4, cellH-4, 6)
         ctx.fillStyle = '#FFF3CD'; ctx.fill()
-        ctx.strokeStyle = '#EF9F27'; ctx.lineWidth = 2.5; ctx.stroke()
+        ctx.strokeStyle = '#EF9F27'; ctx.lineWidth = 2; ctx.stroke()
       } else if (isResume) {
-        rrect(ctx, dx+2, dy+2, cellW-4, cellH-4, 8)
+        rrect(ctx, dx+2, dy+2, cellW-4, cellH-4, 6)
         ctx.fillStyle = '#E8DEF8'; ctx.fill()
-        ctx.strokeStyle = '#7F77DD'; ctx.lineWidth = 2.5; ctx.stroke()
+        ctx.strokeStyle = '#7F77DD'; ctx.lineWidth = 2; ctx.stroke()
       } else if (inRange) {
         ctx.fillStyle = 'rgba(93,202,165,0.15)'
         ctx.fillRect(dx, dy, cellW, cellH)
@@ -308,21 +306,19 @@ export default function DeliveryNoticeGenerator() {
       if (isResume) nc = '#26215C'
 
       ctx.fillStyle = nc
-      ctx.font = `${isLast||isResume?'700':'400'} 18px ${font}`
+      ctx.font = `${isLast||isResume?'700':'400'} 15px ${font}`
       ctx.textAlign = 'center'
       ctx.fillText(String(thisD.getDate()), dx+cellW/2, dy+cellH*0.46)
 
       if (hname) {
         ctx.fillStyle = '#E24B4A'
-        ctx.font = `400 9px ${font}`
-        ctx.textAlign = 'center'
-        ctx.fillText(hname.length>4?hname.slice(0,4):hname, dx+cellW/2, dy+cellH*0.72)
+        ctx.font = `400 8px ${font}`
+        ctx.fillText(hname.length>4?hname.slice(0,4):hname, dx+cellW/2, dy+cellH*0.74)
       }
       if (isLast||isResume) {
         ctx.fillStyle = isLast ? '#854F0B' : '#534AB7'
-        ctx.font = `700 10px ${font}`
-        ctx.textAlign = 'center'
-        ctx.fillText(isLast?'마감':'발송', dx+cellW/2, dy+cellH*0.85)
+        ctx.font = `700 9px ${font}`
+        ctx.fillText(isLast?'마감':'발송', dx+cellW/2, dy+cellH*0.87)
       }
       ctx.restore()
     })
@@ -333,8 +329,61 @@ export default function DeliveryNoticeGenerator() {
     if (!cv || !wrap || !cv.height) return
     const avail = wrap.clientWidth - 24
     const scale = Math.min(1, avail / W)
+    scaleRef.current = scale
     cv.style.width  = Math.round(W * scale) + 'px'
     cv.style.height = Math.round(cv.height * scale) + 'px'
+  }
+
+  // 캔버스 클릭 → 달력 날짜 선택 + 월 이동
+  function handleCanvasClick(e: React.MouseEvent<HTMLCanvasElement>) {
+    const cv = canvasRef.current
+    if (!cv || !calRectRef.current) return
+    const rect = cv.getBoundingClientRect()
+    const scale = scaleRef.current
+    const x = (e.clientX - rect.left) / scale
+    const y = (e.clientY - rect.top) / scale
+
+    const cal = calRectRef.current
+    const pad = 20
+    const cellW = Math.floor((cal.w - pad*2) / 7)
+    const headerH = 44
+    const dowH = 28
+    const cellH = Math.floor((cal.h - pad*2 - headerH - dowH) / 6)
+    const gridStartY = cal.y + pad + headerH + dowH
+
+    // 좌우 화살표 클릭
+    const headerY = cal.y + pad + 20
+    if (y >= cal.y + pad && y <= cal.y + pad + headerH) {
+      if (x >= cal.x + pad && x <= cal.x + pad + 24) {
+        // 이전 달
+        if (calMonth === 0) { setCalMonth(11); setCalYear(yr => yr-1) }
+        else setCalMonth(m => m-1)
+        return
+      }
+      if (x >= cal.x + cal.w - pad - 24 && x <= cal.x + cal.w - pad) {
+        // 다음 달
+        if (calMonth === 11) { setCalMonth(0); setCalYear(yr => yr+1) }
+        else setCalMonth(m => m+1)
+        return
+      }
+    }
+
+    // 날짜 클릭
+    if (y < gridStartY) return
+    const col = Math.floor((x - cal.x - pad) / cellW)
+    const row = Math.floor((y - gridStartY) / cellH)
+    if (col < 0 || col > 6 || row < 0 || row > 5) return
+
+    const first = new Date(cal.year, cal.month, 1)
+    const startDow = first.getDay()
+    const idx = row * 7 + col
+    const dayNum = idx - startDow + 1
+    const lastD = new Date(cal.year, cal.month+1, 0).getDate()
+    if (dayNum < 1 || dayNum > lastD) return
+
+    const clicked = new Date(cal.year, cal.month, dayNum)
+    if (dateStep === 0) { setLastDate(clicked); setDateStep(1) }
+    else if (dateStep === 1) { setResumeDate(clicked); setDateStep(2) }
   }
 
   useEffect(() => { draw() }, [draw])
@@ -343,13 +392,7 @@ export default function DeliveryNoticeGenerator() {
     return () => window.removeEventListener('resize', scaleCanvas)
   }, [])
 
-  function pickDate(d: Date) {
-    if (dateStep===0) { setLastDate(d); setDateStep(1) }
-    else if (dateStep===1) { setResumeDate(d); setDateStep(2) }
-  }
   function resetDates() { setLastDate(null); setResumeDate(null); setDateStep(0) }
-  function prevMonth() { if (calMonth===0) { setCalMonth(11); setCalYear(y=>y-1) } else setCalMonth(m=>m-1) }
-  function nextMonth() { if (calMonth===11) { setCalMonth(0); setCalYear(y=>y+1) } else setCalMonth(m=>m+1) }
 
   function handleImg(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]; if (!f) return
@@ -376,41 +419,10 @@ export default function DeliveryNoticeGenerator() {
     a.click()
   }
 
-  function renderCalCells() {
-    const first = new Date(calYear, calMonth, 1)
-    const lastD = new Date(calYear, calMonth+1, 0).getDate()
-    const cells = []
-    for (let i=0;i<first.getDay();i++) {
-      const pd = new Date(calYear, calMonth, 1-(first.getDay()-i))
-      cells.push(<div key={`p${i}`} className="cal-day other"><span>{pd.getDate()}</span></div>)
-    }
-    for (let d=1;d<=lastD;d++) {
-      const thisD = new Date(calYear, calMonth, d)
-      const dow = thisD.getDay()
-      const hname = HOLIDAYS[toKey(thisD)]
-      const isLast = sameDay(thisD, lastDate)
-      const isResume = sameDay(thisD, resumeDate)
-      const inRange = lastDate && resumeDate && thisD.getTime() > lastDate.getTime() && thisD.getTime() < resumeDate.getTime()
-      let cls = 'cal-day'
-      if (dow===0||hname) cls+=' sun'
-      else if (dow===6) cls+=' sat'
-      if (isLast) cls+=' sel-last'
-      else if (isResume) cls+=' sel-resume'
-      else if (inRange) cls+=' in-range'
-      cells.push(
-        <div key={d} className={cls} onClick={()=>pickDate(new Date(calYear,calMonth,d))}>
-          <span className="dnum">{d}</span>
-          {hname && <span className="hname">{hname.length>4?hname.slice(0,4):hname}</span>}
-        </div>
-      )
-    }
-    return cells
-  }
-
   return (
     <>
       <style>{`
-        .generator-wrap{display:grid;grid-template-columns:260px 1fr;gap:20px;align-items:start;}
+        .generator-wrap{display:grid;grid-template-columns:240px 1fr;gap:20px;align-items:start;}
         .panel{display:flex;flex-direction:column;gap:12px;}
         .card{background:white;border:1px solid #e8e8e8;border-radius:14px;padding:16px;}
         .lbl{font-size:11px;color:#999;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px;}
@@ -421,39 +433,22 @@ export default function DeliveryNoticeGenerator() {
         .mood-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
         .mbtn{padding:8px 4px;font-size:12px;border:1.5px solid #e8e8e8;border-radius:8px;background:white;color:#555;cursor:pointer;text-align:center;font-family:inherit;}
         .mbtn.active{border-color:#534AB7;color:#534AB7;background:#EEEDFE;font-weight:600;}
-        .upload-zone{border:1.5px dashed #d0d0d0;border-radius:10px;padding:14px;text-align:center;cursor:pointer;font-size:12px;color:#aaa;transition:background 0.2s;}
+        .upload-zone{border:1.5px dashed #d0d0d0;border-radius:10px;padding:14px;text-align:center;cursor:pointer;font-size:12px;color:#aaa;}
         .upload-zone:hover{background:#f8f8f8;}
-        .cal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
-        .cal-hdr span{font-size:13px;font-weight:700;color:#222;}
-        .cal-nav{background:none;border:none;cursor:pointer;color:#888;font-size:18px;padding:2px 8px;border-radius:6px;line-height:1;}
-        .cal-nav:hover{background:#f0f0f0;}
-        .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;}
-        .cal-dow{font-size:10px;text-align:center;padding:3px 0;font-weight:600;}
-        .cal-dow.sun{color:#E24B4A;}.cal-dow.sat{color:#378ADD;}.cal-dow.wd{color:#888;}
-        .cal-day{font-size:11px;text-align:center;padding:3px 1px;border-radius:5px;cursor:pointer;border:1px solid transparent;min-height:32px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;}
-        .cal-day:hover:not(.other){background:#f5f5f5;}
-        .cal-day.other{opacity:.25;cursor:default;pointer-events:none;}
-        .dnum{font-size:12px;font-weight:500;}
-        .hname{font-size:7px;line-height:1;white-space:nowrap;overflow:hidden;max-width:32px;text-overflow:ellipsis;color:#E24B4A;}
-        .cal-day.sun .dnum{color:#E24B4A;}
-        .cal-day.sat .dnum{color:#378ADD;}
-        .cal-day.sel-last{background:#FFF3CD!important;border:2px solid #EF9F27!important;}
-        .cal-day.sel-last .dnum{color:#633806!important;font-weight:700!important;}
-        .cal-day.sel-resume{background:#E8DEF8!important;border:2px solid #7F77DD!important;}
-        .cal-day.sel-resume .dnum{color:#26215C!important;font-weight:700!important;}
-        .cal-day.in-range{background:rgba(93,202,165,.12);}
         .chips{display:flex;flex-direction:column;gap:5px;margin-top:8px;}
-        .chip{display:flex;align-items:center;gap:6px;font-size:11px;padding:4px 8px;border-radius:6px;background:#f8f8f8;}
+        .chip{display:flex;align-items:center;gap:6px;font-size:11px;padding:5px 8px;border-radius:8px;background:#f8f8f8;}
         .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
         .chip-lbl{color:#999;}
         .chip-val{color:#222;font-weight:600;margin-left:auto;}
-        .hint{font-size:10px;color:#bbb;margin-top:4px;}
+        .hint{font-size:10px;color:#bbb;margin-top:5px;}
         .reset-btn{width:100%;margin-top:6px;font-size:11px;padding:6px;border:1.5px solid #e8e8e8;border-radius:8px;background:none;color:#999;cursor:pointer;font-family:inherit;}
         .reset-btn:hover{background:#f5f5f5;}
         .preview-col{display:flex;flex-direction:column;gap:12px;}
         .canvas-wrap{width:100%;overflow:hidden;border:1.5px solid #e8e8e8;border-radius:14px;background:#f0f0ee;display:flex;align-items:flex-start;justify-content:center;padding:12px;}
-        .dl-btn{width:100%;padding:14px;font-size:14px;font-weight:700;border:none;border-radius:12px;background:#1a1a1a;color:white;cursor:pointer;text-align:center;font-family:inherit;letter-spacing:0.02em;}
+        .canvas-wrap canvas{cursor:pointer;}
+        .dl-btn{width:100%;padding:14px;font-size:14px;font-weight:700;border:none;border-radius:12px;background:#1a1a1a;color:white;cursor:pointer;font-family:inherit;}
         .dl-btn:hover{background:#333;}
+        .step-hint{font-size:12px;color:#534AB7;font-weight:600;padding:8px 12px;background:#EEEDFE;border-radius:8px;text-align:center;}
         @media(max-width:640px){.generator-wrap{grid-template-columns:1fr;}}
       `}</style>
 
@@ -488,36 +483,20 @@ export default function DeliveryNoticeGenerator() {
           </div>
 
           <div className="card">
-            <div className="lbl">날짜 선택</div>
-            <div className="cal-hdr">
-              <button className="cal-nav" onClick={prevMonth}>‹</button>
-              <span>{calYear}년 {calMonth+1}월</span>
-              <button className="cal-nav" onClick={nextMonth}>›</button>
+            <div className="lbl">📦 택배 마감 시간</div>
+            <div className="time-row">
+              <select className="fi" value={ampm} onChange={e=>setAmpm(e.target.value)}>
+                <option value="오전">오전</option><option value="오후">오후</option>
+              </select>
+              <select className="fi" value={hour} onChange={e=>setHour(e.target.value)}>
+                <option value="">시간</option>
+                {[12,1,2,3,4,5,6,7,8,9,10,11].map(h=><option key={h} value={String(h)}>{h}시</option>)}
+              </select>
+              <select className="fi" value={minute} onChange={e=>setMinute(e.target.value)}>
+                <option value="00">00분</option><option value="30">30분</option>
+              </select>
             </div>
-            <div className="cal-grid">
-              {['일','월','화','수','목','금','토'].map((d,i)=>(
-                <div key={d} className={`cal-dow ${i===0?'sun':i===6?'sat':'wd'}`}>{d}</div>
-              ))}
-              {renderCalCells()}
-            </div>
-
-            <div style={{marginTop:12}}>
-              <div className="lbl">📦 택배 마감 시간</div>
-              <div className="time-row">
-                <select className="fi" value={ampm} onChange={e=>setAmpm(e.target.value)}>
-                  <option value="오전">오전</option><option value="오후">오후</option>
-                </select>
-                <select className="fi" value={hour} onChange={e=>setHour(e.target.value)}>
-                  <option value="">시간</option>
-                  {[12,1,2,3,4,5,6,7,8,9,10,11].map(h=><option key={h} value={String(h)}>{h}시</option>)}
-                </select>
-                <select className="fi" value={minute} onChange={e=>setMinute(e.target.value)}>
-                  <option value="00">00분</option><option value="30">30분</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="chips">
+            <div className="chips" style={{marginTop:10}}>
               <div className="chip">
                 <div className="dot" style={{background:'#EF9F27'}}/>
                 <span className="chip-lbl">택배 마감</span>
@@ -529,7 +508,6 @@ export default function DeliveryNoticeGenerator() {
                 <span className="chip-val">{fmtDate(resumeDate)}</span>
               </div>
             </div>
-            <div className="hint">클릭 순서: 택배마감 → 택배발송</div>
             <button className="reset-btn" onClick={resetDates}>날짜 초기화</button>
           </div>
 
@@ -541,9 +519,16 @@ export default function DeliveryNoticeGenerator() {
 
         {/* 오른쪽 미리보기 */}
         <div className="preview-col">
-          <div style={{fontSize:12,color:'#aaa'}}>미리보기 — 실시간 반영 / 다운로드 860px 고정</div>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+            <div style={{fontSize:12,color:'#aaa'}}>미리보기 — 달력 클릭으로 날짜 선택</div>
+          </div>
+          {dateStep < 2 && (
+            <div className="step-hint">
+              {dateStep===0 ? '📦 달력에서 택배 마감일을 클릭하세요' : '🚚 택배 발송일을 클릭하세요'}
+            </div>
+          )}
           <div className="canvas-wrap" ref={wrapRef}>
-            <canvas ref={canvasRef}/>
+            <canvas ref={canvasRef} onClick={handleCanvasClick}/>
           </div>
           <button className="dl-btn" onClick={downloadPNG}>⬇ PNG 다운로드 (860px)</button>
         </div>
