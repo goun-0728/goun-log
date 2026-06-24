@@ -27,7 +27,7 @@ const HOLIDAYS: Record<string, string> = {
   // 2029
   '2029-01-01':'새해','2029-01-26':'설연휴','2029-01-27':'설날','2029-01-28':'설연휴',
   '2029-03-01':'삼일절','2029-05-05':'어린이날','2029-06-06':'현충일','2029-08-15':'광복절',
-  '2029-10-01':'추석연휴','2029-10-02':'추석','2029-10-03':'개천절/추석연휴',
+  '2029-10-01':'추석연휴','2029-10-02':'추석','2029-10-03':'개천절/추석',
   '2029-10-09':'한글날','2029-12-25':'크리스마스',
   // 2030
   '2030-01-01':'새해','2030-02-12':'설연휴','2030-02-13':'설날','2030-02-14':'설연휴',
@@ -52,15 +52,15 @@ const HOLIDAYS: Record<string, string> = {
   // 2034
   '2034-01-01':'새해','2034-01-30':'설연휴','2034-01-31':'설날','2034-02-01':'설연휴',
   '2034-03-01':'삼일절','2034-05-05':'어린이날','2034-06-06':'현충일','2034-08-15':'광복절',
-  '2034-10-05':'추석연휴','2034-10-06':'추석','2034-10-07':'추석연휴',
-  '2034-10-03':'개천절','2034-10-09':'한글날','2034-12-25':'크리스마스',
+  '2034-10-03':'개천절','2034-10-05':'추석연휴','2034-10-06':'추석','2034-10-07':'추석연휴',
+  '2034-10-09':'한글날','2034-12-25':'크리스마스',
   // 2035
   '2035-01-01':'새해','2035-02-19':'설연휴','2035-02-20':'설날','2035-02-21':'설연휴',
   '2035-03-01':'삼일절','2035-05-05':'어린이날','2035-06-06':'현충일','2035-08-15':'광복절',
   '2035-09-24':'추석연휴','2035-09-25':'추석','2035-09-26':'추석연휴',
   '2035-10-03':'개천절','2035-10-09':'한글날','2035-12-25':'크리스마스',
 }
-}
+
 const DOWS = ['일','월','화','수','목','금','토']
 const W = 860
 
@@ -83,6 +83,8 @@ const moodCfg = {
   food:    { bg:'#F4FAF0', accent:'#3B6D11', textSub:'#3B6D11', textBody:'#2A4A0A', badge:'#EAF3DE', badgeText:'#27500A', rowA:'#E4F2D8', border:'#C0DD97', title:'🌿 택배 공지' },
 }
 
+type SelectStep = 'last' | 'resume' | 'done'
+
 export default function DeliveryNoticeGenerator() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const wrapRef   = useRef<HTMLDivElement>(null)
@@ -91,7 +93,6 @@ export default function DeliveryNoticeGenerator() {
 
   const [mood, setMood]         = useState<Mood>('clean')
   const [greeting, setGreeting] = useState('')
-  const [noteText, setNoteText] = useState('빠른 배송을 원하시면 마감 시간 전에 주문해 주세요 😊')
   const [imgName, setImgName]   = useState('')
   const [ampm, setAmpm]         = useState('오후')
   const [hour, setHour]         = useState('')
@@ -99,14 +100,18 @@ export default function DeliveryNoticeGenerator() {
 
   const [calYear, setCalYear]   = useState(new Date().getFullYear())
   const [calMonth, setCalMonth] = useState(new Date().getMonth())
-  const [dateStep, setDateStep] = useState(0)
+  const [step, setStep]         = useState<SelectStep>('last')
   const [lastDate, setLastDate] = useState<Date | null>(null)
   const [resumeDate, setResumeDate] = useState<Date | null>(null)
 
+  // 커스텀 날짜 텍스트 (key: 'YYYY-MM-DD', value: 텍스트)
+  const [customDates, setCustomDates] = useState<Record<string,string>>({})
+  const [customInput, setCustomInput] = useState('')
+  const [customDate, setCustomDate]   = useState('')
+
   const scaleRef = useRef(1)
   const calRectRef = useRef<{x:number,y:number,w:number,h:number,year:number,month:number}|null>(null)
-
-  const BOXH = 100 // 마감/발송 박스 동일 높이
+  const BOXH = 100
 
   const draw = useCallback(() => {
     const cv = canvasRef.current
@@ -140,8 +145,6 @@ export default function DeliveryNoticeGenerator() {
     const ctx0 = cv.getContext('2d')!
     ctx0.font = `400 20px ${font}`
     const greetLines = greeting ? measureLines(ctx0, greeting, tw) : []
-    ctx0.font = `400 18px ${font}`
-    const noteLines = noteText ? measureLines(ctx0, noteText, tw - 40) : []
 
     const imgH = imgRef.current ? Math.round(W / imgRatioRef.current) : 0
     const calH = 380
@@ -151,13 +154,11 @@ export default function DeliveryNoticeGenerator() {
     if (greetLines.length > 0) H += greetLines.length * 36 + PAD * 1.5
     H += PAD * 0.5 + BOXH + 14 + BOXH + PAD
     H += calH + PAD
-    if (noteLines.length > 0) H += noteLines.length * 32 + 48 + PAD
     H += PAD + 28 + PAD + 6
-    H = Math.max(700, Math.round(H))
+    H = Math.max(600, Math.round(H))
 
     cv.width = W; cv.height = H
     const ctx = cv.getContext('2d')!
-
     ctx.fillStyle = c.bg; ctx.fillRect(0,0,W,H)
     let curY = 0
 
@@ -196,23 +197,19 @@ export default function DeliveryNoticeGenerator() {
     }
     curY += PAD * 0.5
 
-    // ── 택배 마감일 박스 ──
+    // 택배 마감일 박스
     const deadlineDateStr = fmtDate(lastDate)
     const hasTime = !!hour
     const timeStr = hasTime ? `${ampm} ${hour}:${minute}` : ''
-
     rrect(ctx, tx, curY, tw, BOXH, 12)
     ctx.fillStyle = c.rowA; ctx.fill()
     ctx.strokeStyle = c.border; ctx.lineWidth = 1; ctx.stroke()
-    // 점
     ctx.fillStyle = '#EF9F27'
-    ctx.beginPath(); ctx.arc(tx+24, curY+BOXH/2, 8, 0, Math.PI*2); ctx.fill()
-    // 라벨
+    ctx.beginPath(); ctx.arc(tx+24, curY+BOXH/2, 8,0,Math.PI*2); ctx.fill()
     ctx.fillStyle = c.textSub
     ctx.font = `500 15px ${font}`
     ctx.textAlign = 'left'
     ctx.fillText('📦 택배 마감일', tx+44, curY+28)
-    // 날짜
     ctx.fillStyle = c.accent
     ctx.font = `700 30px ${font}`
     ctx.fillText(deadlineDateStr, tx+44, curY+72)
@@ -223,19 +220,16 @@ export default function DeliveryNoticeGenerator() {
     }
     curY += BOXH + 14
 
-    // ── 택배 발송일 박스 (동일 크기) ──
+    // 택배 발송일 박스
     rrect(ctx, tx, curY, tw, BOXH, 12)
     ctx.fillStyle = 'rgba(127,119,221,0.07)'; ctx.fill()
     ctx.strokeStyle = c.border; ctx.lineWidth = 1; ctx.stroke()
-    // 점
     ctx.fillStyle = '#7F77DD'
-    ctx.beginPath(); ctx.arc(tx+24, curY+BOXH/2, 8, 0, Math.PI*2); ctx.fill()
-    // 라벨
+    ctx.beginPath(); ctx.arc(tx+24, curY+BOXH/2, 8,0,Math.PI*2); ctx.fill()
     ctx.fillStyle = c.textSub
     ctx.font = `500 15px ${font}`
     ctx.textAlign = 'left'
     ctx.fillText('🚚 택배 발송일', tx+44, curY+28)
-    // 날짜
     ctx.fillStyle = c.accent
     ctx.font = `700 30px ${font}`
     ctx.fillText(fmtDate(resumeDate), tx+44, curY+72)
@@ -248,19 +242,6 @@ export default function DeliveryNoticeGenerator() {
     drawCal(ctx, tx, curY, tw, calH, calYear2, calMonth2, c, rrect)
     curY += calH + PAD
 
-    // 하단 메시지
-    if (noteLines.length > 0) {
-      const boxH = noteLines.length * 32 + 48
-      rrect(ctx, tx, curY, tw, boxH, 12)
-      ctx.fillStyle = c.badge; ctx.fill()
-      ctx.strokeStyle = c.border; ctx.lineWidth = 1; ctx.stroke()
-      ctx.fillStyle = c.badgeText
-      ctx.font = `400 18px ${font}`
-      ctx.textAlign = 'center'
-      noteLines.forEach((line, i) => ctx.fillText(line, W/2, curY+32+i*32))
-      curY += boxH + PAD
-    }
-
     // 감사인사
     ctx.fillStyle = c.textSub
     ctx.font = `400 18px ${font}`
@@ -272,7 +253,7 @@ export default function DeliveryNoticeGenerator() {
     ctx.fillStyle = c.accent; ctx.fillRect(0, H-6, W, 6)
 
     scaleCanvas()
-  }, [mood, greeting, noteText, ampm, hour, minute, lastDate, resumeDate, calYear, calMonth])
+  }, [mood, greeting, ampm, hour, minute, lastDate, resumeDate, calYear, calMonth, customDates])
 
   function drawCal(
     ctx: CanvasRenderingContext2D,
@@ -327,7 +308,8 @@ export default function DeliveryNoticeGenerator() {
       const col = idx%7, row = Math.floor(idx/7)
       const dx = cx+pad+col*cellW, dy = divY+row*cellH
       const dow = thisD.getDay()
-      const hname = HOLIDAYS[toKey(thisD)]
+      const key = toKey(thisD)
+      const hname = customDates[key] || HOLIDAYS[key]
       const isLast = sameDay(thisD, lastDate)
       const isResume = sameDay(thisD, resumeDate)
       const inRange = lastDate && resumeDate && thisD.getTime() > lastDate.getTime() && thisD.getTime() < resumeDate.getTime()
@@ -357,9 +339,9 @@ export default function DeliveryNoticeGenerator() {
       ctx.textAlign = 'center'
       ctx.fillText(String(thisD.getDate()), dx+cellW/2, dy+cellH*0.46)
       if (hname) {
-        ctx.fillStyle = '#E24B4A'
+        ctx.fillStyle = customDates[key] ? '#D4537E' : '#E24B4A'
         ctx.font = `400 8px ${font}`
-        ctx.fillText(hname.length>4?hname.slice(0,4):hname, dx+cellW/2, dy+cellH*0.74)
+        ctx.fillText(hname.length>5?hname.slice(0,5):hname, dx+cellW/2, dy+cellH*0.74)
       }
       if (isLast||isResume) {
         ctx.fillStyle = isLast ? '#854F0B' : '#534AB7'
@@ -410,7 +392,6 @@ export default function DeliveryNoticeGenerator() {
       }
     }
 
-    // 날짜 클릭
     if (y < gridStartY) return
     const col = Math.floor((x - cal.x - pad) / cellW)
     const row = Math.floor((y - gridStartY) / cellH)
@@ -423,8 +404,31 @@ export default function DeliveryNoticeGenerator() {
     if (dayNum < 1 || dayNum > lastD) return
 
     const clicked = new Date(cal.year, cal.month, dayNum)
-    if (dateStep === 0) { setLastDate(clicked); setDateStep(1) }
-    else if (dateStep === 1) { setResumeDate(clicked); setDateStep(2) }
+
+    // 이미 선택된 날 클릭하면 취소
+    if (sameDay(clicked, lastDate)) {
+      setLastDate(null)
+      setStep('last')
+      return
+    }
+    if (sameDay(clicked, resumeDate)) {
+      setResumeDate(null)
+      setStep('resume')
+      return
+    }
+
+    if (step === 'last') {
+      setLastDate(clicked)
+      setStep('resume')
+    } else if (step === 'resume') {
+      setResumeDate(clicked)
+      setStep('done')
+    } else {
+      // done 상태에서 클릭 → 마감 재선택
+      setLastDate(clicked)
+      setResumeDate(null)
+      setStep('resume')
+    }
   }
 
   useEffect(() => { draw() }, [draw])
@@ -433,7 +437,20 @@ export default function DeliveryNoticeGenerator() {
     return () => window.removeEventListener('resize', scaleCanvas)
   }, [])
 
-  function resetDates() { setLastDate(null); setResumeDate(null); setDateStep(0) }
+  function resetDates() {
+    setLastDate(null); setResumeDate(null); setStep('last')
+  }
+
+  function addCustomDate() {
+    if (!customDate || !customInput.trim()) return
+    setCustomDates(p => ({...p, [customDate]: customInput.trim()}))
+    setCustomInput('')
+    setCustomDate('')
+  }
+
+  function removeCustomDate(key: string) {
+    setCustomDates(p => { const n = {...p}; delete n[key]; return n })
+  }
 
   function handleImg(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]; if (!f) return
@@ -460,12 +477,20 @@ export default function DeliveryNoticeGenerator() {
     a.click()
   }
 
+  const stepMsg = step === 'last' ? '📦 달력에서 택배 마감일을 클릭하세요'
+    : step === 'resume' ? '🚚 택배 발송일을 클릭하세요'
+    : '✅ 날짜 선택 완료 — 다시 클릭하면 재선택'
+
+  const stepColor = step === 'last' ? '#EF9F27'
+    : step === 'resume' ? '#7F77DD'
+    : '#1D9E75'
+
   return (
     <>
       <style>{`
         .generator-wrap {
           display: grid;
-          grid-template-columns: 220px 1fr;
+          grid-template-columns: 230px 1fr;
           gap: 20px;
           align-items: start;
         }
@@ -503,12 +528,15 @@ export default function DeliveryNoticeGenerator() {
         .canvas-wrap canvas { cursor:pointer; display:block; }
         .dl-btn { width:100%; padding:14px; font-size:14px; font-weight:700; border:none; border-radius:12px; background:#1a1a1a; color:white; cursor:pointer; font-family:inherit; }
         .dl-btn:hover { background:#333; }
-        .step-hint { font-size:12px; color:#534AB7; font-weight:600; padding:8px 12px; background:#EEEDFE; border-radius:8px; text-align:center; }
+        .step-hint { font-size:12px; font-weight:600; padding:8px 12px; border-radius:8px; text-align:center; }
+        .custom-row { display:flex; gap:6px; margin-top:6px; }
+        .custom-tag { display:flex; align-items:center; gap:4px; font-size:11px; padding:3px 8px; background:#FFF0F5; border-radius:6px; color:#D4537E; margin-top:4px; }
+        .custom-tag button { background:none; border:none; cursor:pointer; color:#D4537E; font-size:13px; line-height:1; padding:0; }
         @media(max-width:640px) { .generator-wrap { grid-template-columns:1fr; } .panel { position:static; max-height:none; } }
       `}</style>
 
       <div className="generator-wrap">
-        {/* 왼쪽 패널 - sticky */}
+        {/* 왼쪽 패널 */}
         <div className="panel">
           <div className="card">
             <div className="lbl">분위기</div>
@@ -566,22 +594,44 @@ export default function DeliveryNoticeGenerator() {
             <button className="reset-btn" onClick={resetDates}>날짜 초기화</button>
           </div>
 
+          {/* 커스텀 날짜 추가 */}
           <div className="card">
-            <div className="lbl">하단 메시지</div>
-            <textarea className="fi" value={noteText} onChange={e=>setNoteText(e.target.value)} rows={2}/>
+            <div className="lbl">특별 날짜 추가</div>
+            <div style={{fontSize:11,color:'#bbb',marginBottom:8,lineHeight:1.5}}>
+              선거일·대체공휴일 등<br/>달력에 표시할 날짜를 직접 추가
+            </div>
+            <input type="date" className="fi" value={customDate}
+              onChange={e=>setCustomDate(e.target.value)}
+              style={{marginBottom:6}}/>
+            <div className="custom-row">
+              <input className="fi" value={customInput}
+                onChange={e=>setCustomInput(e.target.value)}
+                placeholder="예: 선거일, 대체공휴일"
+                onKeyDown={e=>e.key==='Enter'&&addCustomDate()}
+                style={{flex:1}}/>
+              <button onClick={addCustomDate}
+                style={{padding:'8px 12px',background:'#534AB7',color:'white',border:'none',borderRadius:8,fontSize:12,cursor:'pointer',fontFamily:'inherit',fontWeight:600,whiteSpace:'nowrap'}}>
+                추가
+              </button>
+            </div>
+            {Object.entries(customDates).length > 0 && (
+              <div style={{marginTop:8,display:'flex',flexDirection:'column',gap:4}}>
+                {Object.entries(customDates).map(([k,v])=>(
+                  <div key={k} className="custom-tag">
+                    <span style={{flex:1}}>{k.slice(5).replace('-','/')} {v}</span>
+                    <button onClick={()=>removeCustomDate(k)}>×</button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
         {/* 오른쪽 미리보기 */}
         <div className="preview-col">
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-            <div style={{fontSize:12,color:'#aaa'}}>미리보기 — 달력 클릭으로 날짜 선택</div>
+          <div className="step-hint" style={{background:stepColor+'18',color:stepColor}}>
+            {stepMsg}
           </div>
-          {dateStep < 2 && (
-            <div className="step-hint">
-              {dateStep===0 ? '📦 달력에서 택배 마감일을 클릭하세요' : '🚚 택배 발송일을 클릭하세요'}
-            </div>
-          )}
           <div className="canvas-wrap" ref={wrapRef}>
             <canvas ref={canvasRef} onClick={handleCanvasClick}/>
           </div>
