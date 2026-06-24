@@ -58,9 +58,10 @@ export default function DeliveryNoticeGenerator() {
   const [lastDate, setLastDate] = useState<Date | null>(null)
   const [resumeDate, setResumeDate] = useState<Date | null>(null)
 
-  // 미리보기 달력 클릭 좌표 계산용
   const scaleRef = useRef(1)
   const calRectRef = useRef<{x:number,y:number,w:number,h:number,year:number,month:number}|null>(null)
+
+  const BOXH = 100 // 마감/발송 박스 동일 높이
 
   const draw = useCallback(() => {
     const cv = canvasRef.current
@@ -98,14 +99,12 @@ export default function DeliveryNoticeGenerator() {
     const noteLines = noteText ? measureLines(ctx0, noteText, tw - 40) : []
 
     const imgH = imgRef.current ? Math.round(W / imgRatioRef.current) : 0
-    const deadlineBoxH = 110
-    const resumeBoxH = 84
     const calH = 380
 
     let H = 6 + PAD + 52 + PAD
     H += imgH + (imgH ? PAD : 0)
     if (greetLines.length > 0) H += greetLines.length * 36 + PAD * 1.5
-    H += PAD * 0.5 + deadlineBoxH + 14 + resumeBoxH + PAD
+    H += PAD * 0.5 + BOXH + 14 + BOXH + PAD
     H += calH + PAD
     if (noteLines.length > 0) H += noteLines.length * 32 + 48 + PAD
     H += PAD + 28 + PAD + 6
@@ -152,46 +151,52 @@ export default function DeliveryNoticeGenerator() {
     }
     curY += PAD * 0.5
 
-    // 택배 마감일 박스
+    // ── 택배 마감일 박스 ──
     const deadlineDateStr = fmtDate(lastDate)
     const hasTime = !!hour
     const timeStr = hasTime ? `${ampm} ${hour}:${minute}` : ''
 
-    rrect(ctx, tx, curY, tw, deadlineBoxH, 12)
+    rrect(ctx, tx, curY, tw, BOXH, 12)
     ctx.fillStyle = c.rowA; ctx.fill()
     ctx.strokeStyle = c.border; ctx.lineWidth = 1; ctx.stroke()
+    // 점
     ctx.fillStyle = '#EF9F27'
-    ctx.beginPath(); ctx.arc(tx+24, curY+deadlineBoxH/2, 8,0,Math.PI*2); ctx.fill()
+    ctx.beginPath(); ctx.arc(tx+24, curY+BOXH/2, 8, 0, Math.PI*2); ctx.fill()
+    // 라벨
     ctx.fillStyle = c.textSub
-    ctx.font = `500 16px ${font}`
+    ctx.font = `500 15px ${font}`
     ctx.textAlign = 'left'
-    ctx.fillText('📦 택배 마감일', tx+44, curY+30)
+    ctx.fillText('📦 택배 마감일', tx+44, curY+28)
+    // 날짜
     ctx.fillStyle = c.accent
-    ctx.font = `700 32px ${font}`
-    ctx.fillText(deadlineDateStr, tx+44, curY+76)
+    ctx.font = `700 30px ${font}`
+    ctx.fillText(deadlineDateStr, tx+44, curY+72)
     if (hasTime) {
       const dw = ctx.measureText(deadlineDateStr).width
-      ctx.font = `500 22px ${font}`
-      ctx.fillText(timeStr, tx+44+dw+12, curY+76)
+      ctx.font = `500 20px ${font}`
+      ctx.fillText(timeStr, tx+44+dw+12, curY+72)
     }
-    curY += deadlineBoxH + 14
+    curY += BOXH + 14
 
-    // 택배 발송일 박스
-    rrect(ctx, tx, curY, tw, resumeBoxH, 12)
+    // ── 택배 발송일 박스 (동일 크기) ──
+    rrect(ctx, tx, curY, tw, BOXH, 12)
     ctx.fillStyle = 'rgba(127,119,221,0.07)'; ctx.fill()
     ctx.strokeStyle = c.border; ctx.lineWidth = 1; ctx.stroke()
+    // 점
     ctx.fillStyle = '#7F77DD'
-    ctx.beginPath(); ctx.arc(tx+24, curY+resumeBoxH/2, 8,0,Math.PI*2); ctx.fill()
+    ctx.beginPath(); ctx.arc(tx+24, curY+BOXH/2, 8, 0, Math.PI*2); ctx.fill()
+    // 라벨
     ctx.fillStyle = c.textSub
-    ctx.font = `500 16px ${font}`
+    ctx.font = `500 15px ${font}`
     ctx.textAlign = 'left'
     ctx.fillText('🚚 택배 발송일', tx+44, curY+28)
+    // 날짜
     ctx.fillStyle = c.accent
-    ctx.font = `700 28px ${font}`
-    ctx.fillText(fmtDate(resumeDate), tx+44, curY+64)
-    curY += resumeBoxH + PAD
+    ctx.font = `700 30px ${font}`
+    ctx.fillText(fmtDate(resumeDate), tx+44, curY+72)
+    curY += BOXH + PAD
 
-    // 달력 - 위치 저장
+    // 달력
     const calYear2 = lastDate ? lastDate.getFullYear() : calYear
     const calMonth2 = lastDate ? lastDate.getMonth() : calMonth
     calRectRef.current = {x:tx, y:curY, w:tw, h:calH, year:calYear2, month:calMonth2}
@@ -247,11 +252,10 @@ export default function DeliveryNoticeGenerator() {
     ctx.textAlign = 'center'
     ctx.fillText(`${year}년 ${month+1}월`, cx+cw/2, cy+pad+20)
 
-    // 좌우 화살표
     ctx.fillStyle = c.textSub
-    ctx.font = `400 18px ${font}`
-    ctx.fillText('‹', cx+pad+8, cy+pad+20)
-    ctx.fillText('›', cx+cw-pad-8, cy+pad+20)
+    ctx.font = `500 18px ${font}`
+    ctx.fillText('‹', cx+pad+10, cy+pad+20)
+    ctx.fillText('›', cx+cw-pad-10, cy+pad+20)
 
     const dowColors = ['#E24B4A','#666','#666','#666','#666','#666','#378ADD']
     DOWS.forEach((d,i) => {
@@ -298,18 +302,15 @@ export default function DeliveryNoticeGenerator() {
 
       ctx.save()
       ctx.globalAlpha = cur ? 1 : 0.25
-
       let nc = '#333'
       if (dow===0||hname) nc = '#E24B4A'
       else if (dow===6) nc = '#378ADD'
       if (isLast) nc = '#633806'
       if (isResume) nc = '#26215C'
-
       ctx.fillStyle = nc
       ctx.font = `${isLast||isResume?'700':'400'} 15px ${font}`
       ctx.textAlign = 'center'
       ctx.fillText(String(thisD.getDate()), dx+cellW/2, dy+cellH*0.46)
-
       if (hname) {
         ctx.fillStyle = '#E24B4A'
         ctx.font = `400 8px ${font}`
@@ -334,7 +335,6 @@ export default function DeliveryNoticeGenerator() {
     cv.style.height = Math.round(cv.height * scale) + 'px'
   }
 
-  // 캔버스 클릭 → 달력 날짜 선택 + 월 이동
   function handleCanvasClick(e: React.MouseEvent<HTMLCanvasElement>) {
     const cv = canvasRef.current
     if (!cv || !calRectRef.current) return
@@ -351,17 +351,14 @@ export default function DeliveryNoticeGenerator() {
     const cellH = Math.floor((cal.h - pad*2 - headerH - dowH) / 6)
     const gridStartY = cal.y + pad + headerH + dowH
 
-    // 좌우 화살표 클릭
-    const headerY = cal.y + pad + 20
-    if (y >= cal.y + pad && y <= cal.y + pad + headerH) {
-      if (x >= cal.x + pad && x <= cal.x + pad + 24) {
-        // 이전 달
+    // 화살표 클릭
+    if (y >= cal.y + pad - 10 && y <= cal.y + pad + headerH - 10) {
+      if (x >= cal.x + pad && x <= cal.x + pad + 32) {
         if (calMonth === 0) { setCalMonth(11); setCalYear(yr => yr-1) }
         else setCalMonth(m => m-1)
         return
       }
-      if (x >= cal.x + cal.w - pad - 24 && x <= cal.x + cal.w - pad) {
-        // 다음 달
+      if (x >= cal.x + cal.w - pad - 32 && x <= cal.x + cal.w - pad) {
         if (calMonth === 11) { setCalMonth(0); setCalYear(yr => yr+1) }
         else setCalMonth(m => m+1)
         return
@@ -376,9 +373,8 @@ export default function DeliveryNoticeGenerator() {
 
     const first = new Date(cal.year, cal.month, 1)
     const startDow = first.getDay()
-    const idx = row * 7 + col
-    const dayNum = idx - startDow + 1
     const lastD = new Date(cal.year, cal.month+1, 0).getDate()
+    const dayNum = row * 7 + col - startDow + 1
     if (dayNum < 1 || dayNum > lastD) return
 
     const clicked = new Date(cal.year, cal.month, dayNum)
@@ -422,38 +418,52 @@ export default function DeliveryNoticeGenerator() {
   return (
     <>
       <style>{`
-        .generator-wrap{display:grid;grid-template-columns:240px 1fr;gap:20px;align-items:start;}
-        .panel{display:flex;flex-direction:column;gap:12px;}
-        .card{background:white;border:1px solid #e8e8e8;border-radius:14px;padding:16px;}
-        .lbl{font-size:11px;color:#999;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px;}
-        .fi{width:100%;font-size:13px;padding:8px 10px;border:1.5px solid #e8e8e8;border-radius:8px;background:white;color:#222;line-height:1.5;font-family:inherit;box-sizing:border-box;}
-        textarea.fi{resize:vertical;min-height:70px;}
-        select.fi{cursor:pointer;}
-        .time-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-top:6px;}
-        .mood-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
-        .mbtn{padding:8px 4px;font-size:12px;border:1.5px solid #e8e8e8;border-radius:8px;background:white;color:#555;cursor:pointer;text-align:center;font-family:inherit;}
-        .mbtn.active{border-color:#534AB7;color:#534AB7;background:#EEEDFE;font-weight:600;}
-        .upload-zone{border:1.5px dashed #d0d0d0;border-radius:10px;padding:14px;text-align:center;cursor:pointer;font-size:12px;color:#aaa;}
-        .upload-zone:hover{background:#f8f8f8;}
-        .chips{display:flex;flex-direction:column;gap:5px;margin-top:8px;}
-        .chip{display:flex;align-items:center;gap:6px;font-size:11px;padding:5px 8px;border-radius:8px;background:#f8f8f8;}
-        .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-        .chip-lbl{color:#999;}
-        .chip-val{color:#222;font-weight:600;margin-left:auto;}
-        .hint{font-size:10px;color:#bbb;margin-top:5px;}
-        .reset-btn{width:100%;margin-top:6px;font-size:11px;padding:6px;border:1.5px solid #e8e8e8;border-radius:8px;background:none;color:#999;cursor:pointer;font-family:inherit;}
-        .reset-btn:hover{background:#f5f5f5;}
-        .preview-col{display:flex;flex-direction:column;gap:12px;}
-        .canvas-wrap{width:100%;overflow:hidden;border:1.5px solid #e8e8e8;border-radius:14px;background:#f0f0ee;display:flex;align-items:flex-start;justify-content:center;padding:12px;}
-        .canvas-wrap canvas{cursor:pointer;}
-        .dl-btn{width:100%;padding:14px;font-size:14px;font-weight:700;border:none;border-radius:12px;background:#1a1a1a;color:white;cursor:pointer;font-family:inherit;}
-        .dl-btn:hover{background:#333;}
-        .step-hint{font-size:12px;color:#534AB7;font-weight:600;padding:8px 12px;background:#EEEDFE;border-radius:8px;text-align:center;}
-        @media(max-width:640px){.generator-wrap{grid-template-columns:1fr;}}
+        .generator-wrap {
+          display: grid;
+          grid-template-columns: 220px 1fr;
+          gap: 20px;
+          align-items: start;
+        }
+        .panel {
+          position: sticky;
+          top: 80px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          max-height: calc(100vh - 120px);
+          overflow-y: auto;
+        }
+        .panel::-webkit-scrollbar { width: 4px; }
+        .panel::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 4px; }
+        .card { background:white; border:1px solid #e8e8e8; border-radius:14px; padding:14px; }
+        .lbl { font-size:11px; color:#999; font-weight:600; letter-spacing:.08em; text-transform:uppercase; margin-bottom:7px; }
+        .fi { width:100%; font-size:13px; padding:8px 10px; border:1.5px solid #e8e8e8; border-radius:8px; background:white; color:#222; line-height:1.5; font-family:inherit; box-sizing:border-box; }
+        textarea.fi { resize:vertical; min-height:64px; }
+        select.fi { cursor:pointer; }
+        .time-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px; margin-top:6px; }
+        .mood-row { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+        .mbtn { padding:7px 4px; font-size:12px; border:1.5px solid #e8e8e8; border-radius:8px; background:white; color:#555; cursor:pointer; text-align:center; font-family:inherit; }
+        .mbtn.active { border-color:#534AB7; color:#534AB7; background:#EEEDFE; font-weight:600; }
+        .upload-zone { border:1.5px dashed #d0d0d0; border-radius:10px; padding:12px; text-align:center; cursor:pointer; font-size:12px; color:#aaa; }
+        .upload-zone:hover { background:#f8f8f8; }
+        .chips { display:flex; flex-direction:column; gap:5px; margin-top:8px; }
+        .chip { display:flex; align-items:center; gap:6px; font-size:11px; padding:5px 8px; border-radius:8px; background:#f8f8f8; }
+        .dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+        .chip-lbl { color:#999; }
+        .chip-val { color:#222; font-weight:600; margin-left:auto; font-size:11px; }
+        .reset-btn { width:100%; margin-top:6px; font-size:11px; padding:6px; border:1.5px solid #e8e8e8; border-radius:8px; background:none; color:#999; cursor:pointer; font-family:inherit; }
+        .reset-btn:hover { background:#f5f5f5; }
+        .preview-col { display:flex; flex-direction:column; gap:12px; }
+        .canvas-wrap { width:100%; overflow:hidden; border:1.5px solid #e8e8e8; border-radius:14px; background:#f0f0ee; display:flex; align-items:flex-start; justify-content:center; padding:12px; }
+        .canvas-wrap canvas { cursor:pointer; display:block; }
+        .dl-btn { width:100%; padding:14px; font-size:14px; font-weight:700; border:none; border-radius:12px; background:#1a1a1a; color:white; cursor:pointer; font-family:inherit; }
+        .dl-btn:hover { background:#333; }
+        .step-hint { font-size:12px; color:#534AB7; font-weight:600; padding:8px 12px; background:#EEEDFE; border-radius:8px; text-align:center; }
+        @media(max-width:640px) { .generator-wrap { grid-template-columns:1fr; } .panel { position:static; max-height:none; } }
       `}</style>
 
       <div className="generator-wrap">
-        {/* 왼쪽 패널 */}
+        {/* 왼쪽 패널 - sticky */}
         <div className="panel">
           <div className="card">
             <div className="lbl">분위기</div>
