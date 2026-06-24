@@ -5,7 +5,7 @@ import { formatDate, getArticleThumbnailUrl } from "@/lib/article-shared";
 import { getPublishedArticles } from "@/lib/articles";
 import { getVisitStats } from "@/lib/visits";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 const generatorUrl = "https://food-detail-generator.vercel.app/";
 
