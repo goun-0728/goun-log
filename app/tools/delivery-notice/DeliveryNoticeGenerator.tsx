@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 
-// ── 공휴일 ──
 const HOLIDAYS: Record<string, string> = {
   '2025-01-01':'새해','2025-01-28':'설연휴','2025-01-29':'설날','2025-01-30':'설연휴',
   '2025-03-01':'삼일절','2025-05-05':'어린이날','2025-05-06':'어린이날대체',
@@ -59,13 +58,12 @@ export default function DeliveryNoticeGenerator() {
   const [lastDate, setLastDate] = useState<Date | null>(null)
   const [resumeDate, setResumeDate] = useState<Date | null>(null)
 
-  // ── Canvas draw ──
   const draw = useCallback(() => {
     const cv = canvasRef.current
     if (!cv) return
     const c = moodCfg[mood]
     const font = "'Noto Sans KR', sans-serif"
-    const tx = 56, tw = W - 112, PAD = 36
+    const tx = 56, tw = W - 112, PAD = 48
 
     function rrect(ctx: CanvasRenderingContext2D, x:number,y:number,w:number,h:number,r:number) {
       ctx.beginPath()
@@ -91,22 +89,24 @@ export default function DeliveryNoticeGenerator() {
     // 높이 계산
     cv.width = W; cv.height = 10
     const ctx0 = cv.getContext('2d')!
-    ctx0.font = `400 22px ${font}`
+    ctx0.font = `400 28px ${font}`
     const greetLines = greeting ? measureLines(ctx0, greeting, tw) : []
-    ctx0.font = `400 19px ${font}`
-    const noteLines = noteText ? measureLines(ctx0, noteText, tw - 40) : []
+    ctx0.font = `400 24px ${font}`
+    const noteLines = noteText ? measureLines(ctx0, noteText, tw - 48) : []
 
     const imgH = imgRef.current ? Math.round(W / imgRatioRef.current) : 0
-    const deadlineBoxH = 110, resumeBoxH = 82, calH = 370
+    const deadlineBoxH = 160
+    const resumeBoxH = 120
+    const calH = 520
 
-    let H = 8 + PAD + 60 + PAD*0.6 + PAD*0.6
-    H += imgH + (imgH ? PAD*0.6 : 0)
-    if (greetLines.length > 0) H += greetLines.length*34 + PAD*0.6*3
-    H += PAD*0.5 + deadlineBoxH + 16 + resumeBoxH + PAD
+    let H = 8 + PAD + 80 + PAD
+    H += imgH + (imgH ? PAD : 0)
+    if (greetLines.length > 0) H += greetLines.length * 48 + PAD * 2
+    H += PAD * 0.5 + deadlineBoxH + 20 + resumeBoxH + PAD
     H += calH + PAD
-    if (noteLines.length > 0) H += noteLines.length*30 + 44 + PAD
-    H += PAD + 28 + PAD + 8
-    H = Math.max(600, Math.round(H))
+    if (noteLines.length > 0) H += noteLines.length * 40 + 60 + PAD
+    H += PAD + 36 + PAD + 8
+    H = Math.max(800, Math.round(H))
 
     cv.width = W; cv.height = H
     const ctx = cv.getContext('2d')!
@@ -115,83 +115,117 @@ export default function DeliveryNoticeGenerator() {
     let curY = 0
 
     // 상단 바
-    ctx.fillStyle = c.accent; ctx.fillRect(0,0,W,8); curY = 8
+    ctx.fillStyle = c.accent; ctx.fillRect(0,0,W,10); curY = 10
 
     // 제목
     curY += PAD
-    ctx.fillStyle = c.accent; ctx.font = `bold 50px ${font}`; ctx.textAlign = 'center'
-    ctx.fillText(c.title, W/2, curY+42); curY += 42 + PAD*0.6
+    ctx.fillStyle = c.accent
+    ctx.font = `900 72px ${font}`
+    ctx.textAlign = 'center'
+    ctx.fillText(c.title, W/2, curY+60)
+    curY += 60 + PAD * 0.8
 
     // 구분선
     ctx.strokeStyle = c.border; ctx.lineWidth = 1.5
-    ctx.beginPath(); ctx.moveTo(tx,curY); ctx.lineTo(W-tx,curY); ctx.stroke()
-    curY += PAD*0.6
+    ctx.beginPath(); ctx.moveTo(tx, curY); ctx.lineTo(W-tx, curY); ctx.stroke()
+    curY += PAD * 0.8
 
     // 사진
     if (imgRef.current && imgH > 0) {
       ctx.drawImage(imgRef.current, 0, curY, W, imgH)
-      curY += imgH + PAD*0.6
+      curY += imgH + PAD
     }
 
     // 인사말
     if (greetLines.length > 0) {
-      ctx.fillStyle = c.textBody; ctx.font = `400 22px ${font}`; ctx.textAlign = 'center'
-      greetLines.forEach(line => { ctx.fillText(line, W/2, curY+24); curY += 34 })
-      curY += PAD*0.6
+      ctx.fillStyle = c.textBody
+      ctx.font = `400 28px ${font}`
+      ctx.textAlign = 'center'
+      greetLines.forEach(line => { ctx.fillText(line, W/2, curY+32); curY += 48 })
+      curY += PAD * 0.5
       ctx.strokeStyle = c.border; ctx.lineWidth = 1
-      ctx.beginPath(); ctx.moveTo(tx,curY); ctx.lineTo(W-tx,curY); ctx.stroke()
-      curY += PAD*0.6
+      ctx.beginPath(); ctx.moveTo(tx, curY); ctx.lineTo(W-tx, curY); ctx.stroke()
+      curY += PAD * 0.8
     }
-    curY += PAD*0.5
+    curY += PAD * 0.5
 
-    // 택배 마감일
+    // 택배 마감일 박스
     const deadlineDateStr = fmtDate(lastDate)
     const hasTime = !!hour
     const timeStr = hasTime ? `${ampm} ${hour}:${minute}` : ''
-    rrect(ctx, tx, curY, tw, deadlineBoxH, 10); ctx.fillStyle = c.rowA; ctx.fill()
-    ctx.fillStyle = '#EF9F27'; ctx.beginPath(); ctx.arc(tx+24, curY+deadlineBoxH/2, 8,0,Math.PI*2); ctx.fill()
-    ctx.fillStyle = c.textSub; ctx.font = `400 17px ${font}`; ctx.textAlign = 'left'
-    ctx.fillText('📦 택배 마감일', tx+46, curY+28)
-    ctx.fillStyle = c.accent; ctx.font = `600 28px ${font}`; ctx.textAlign = 'left'
-    ctx.fillText(deadlineDateStr, tx+46, curY+66)
+
+    rrect(ctx, tx, curY, tw, deadlineBoxH, 16)
+    ctx.fillStyle = c.rowA; ctx.fill()
+    ctx.strokeStyle = c.border; ctx.lineWidth = 1.5; ctx.stroke()
+
+    // 마감 점
+    ctx.fillStyle = '#EF9F27'
+    ctx.beginPath(); ctx.arc(tx+32, curY+deadlineBoxH/2, 10, 0, Math.PI*2); ctx.fill()
+
+    // 마감 라벨
+    ctx.fillStyle = c.textSub
+    ctx.font = `500 22px ${font}`
+    ctx.textAlign = 'left'
+    ctx.fillText('📦 택배 마감일', tx+58, curY+44)
+
+    // 마감 날짜
+    ctx.fillStyle = c.accent
+    ctx.font = `700 44px ${font}`
+    ctx.textAlign = 'left'
+    ctx.fillText(deadlineDateStr, tx+58, curY+110)
+
     if (hasTime) {
       const dw = ctx.measureText(deadlineDateStr).width
-      ctx.font = `500 20px ${font}`; ctx.textAlign = 'left'
-      ctx.fillText(timeStr, tx+46+dw+12, curY+66)
+      ctx.font = `500 28px ${font}`
+      ctx.fillText(timeStr, tx+58+dw+16, curY+110)
     }
-    curY += deadlineBoxH + 16
+    curY += deadlineBoxH + 20
 
-    // 택배 발송일
-    rrect(ctx, tx, curY, tw, resumeBoxH, 10); ctx.fillStyle = 'rgba(127,119,221,0.07)'; ctx.fill()
-    ctx.fillStyle = '#7F77DD'; ctx.beginPath(); ctx.arc(tx+24, curY+resumeBoxH/2, 8,0,Math.PI*2); ctx.fill()
-    ctx.fillStyle = c.textSub; ctx.font = `400 17px ${font}`; ctx.textAlign = 'left'
-    ctx.fillText('🚚 택배 발송일', tx+46, curY+26)
-    ctx.fillStyle = c.accent; ctx.font = `600 28px ${font}`; ctx.textAlign = 'left'
-    ctx.fillText(fmtDate(resumeDate), tx+46, curY+58)
+    // 택배 발송일 박스
+    rrect(ctx, tx, curY, tw, resumeBoxH, 16)
+    ctx.fillStyle = 'rgba(127,119,221,0.08)'; ctx.fill()
+    ctx.strokeStyle = c.border; ctx.lineWidth = 1.5; ctx.stroke()
+
+    ctx.fillStyle = '#7F77DD'
+    ctx.beginPath(); ctx.arc(tx+32, curY+resumeBoxH/2, 10, 0, Math.PI*2); ctx.fill()
+
+    ctx.fillStyle = c.textSub
+    ctx.font = `500 22px ${font}`
+    ctx.textAlign = 'left'
+    ctx.fillText('🚚 택배 발송일', tx+58, curY+36)
+
+    ctx.fillStyle = c.accent
+    ctx.font = `700 38px ${font}`
+    ctx.textAlign = 'left'
+    ctx.fillText(fmtDate(resumeDate), tx+58, curY+90)
     curY += resumeBoxH + PAD
 
     // 달력
-    const year  = lastDate ? lastDate.getFullYear() : calYear
-    const month = lastDate ? lastDate.getMonth()    : calMonth
-    drawCal(ctx, tx, curY, tw, calH, year, month, c, rrect)
+    drawCal(ctx, tx, curY, tw, calH, lastDate ? lastDate.getFullYear() : calYear, lastDate ? lastDate.getMonth() : calMonth, c, rrect)
     curY += calH + PAD
 
     // 하단 메시지
     if (noteLines.length > 0) {
-      const boxH = noteLines.length*30 + 44
-      rrect(ctx, tx, curY, tw, boxH, 10); ctx.fillStyle = c.badge; ctx.fill()
-      ctx.strokeStyle = c.border; ctx.lineWidth = 1; ctx.stroke()
-      ctx.fillStyle = c.badgeText; ctx.font = `400 19px ${font}`; ctx.textAlign = 'center'
-      noteLines.forEach((line, i) => ctx.fillText(line, W/2, curY+32+i*30))
+      const boxH = noteLines.length * 40 + 60
+      rrect(ctx, tx, curY, tw, boxH, 16)
+      ctx.fillStyle = c.badge; ctx.fill()
+      ctx.strokeStyle = c.border; ctx.lineWidth = 1.5; ctx.stroke()
+      ctx.fillStyle = c.badgeText
+      ctx.font = `400 24px ${font}`
+      ctx.textAlign = 'center'
+      noteLines.forEach((line, i) => ctx.fillText(line, W/2, curY+40+i*40))
       curY += boxH + PAD
     }
 
     // 감사인사
-    ctx.fillStyle = c.textSub; ctx.font = `400 18px ${font}`; ctx.textAlign = 'center'
-    ctx.fillText('이용해 주셔서 감사합니다', W/2, curY+22); curY += 22 + PAD
+    ctx.fillStyle = c.textSub
+    ctx.font = `400 24px ${font}`
+    ctx.textAlign = 'center'
+    ctx.fillText('이용해 주셔서 감사합니다', W/2, curY+28)
+    curY += 28 + PAD
 
     // 하단 바
-    ctx.fillStyle = c.accent; ctx.fillRect(0, H-8, W, 8)
+    ctx.fillStyle = c.accent; ctx.fillRect(0, H-10, W, 10)
 
     scaleCanvas()
   }, [mood, greeting, noteText, ampm, hour, minute, lastDate, resumeDate, calYear, calMonth])
@@ -203,38 +237,93 @@ export default function DeliveryNoticeGenerator() {
     c: typeof moodCfg.clean,
     rrect: (ctx:CanvasRenderingContext2D,x:number,y:number,w:number,h:number,r:number)=>void
   ) {
-    const pad=16, cellW=Math.floor((cw-pad*2)/7), headerH=36, dowH=24
-    const cellH = Math.floor((ch-pad*2-headerH-dowH)/6)
     const font = "'Noto Sans KR', sans-serif"
-    rrect(ctx,cx,cy,cw,ch,12); ctx.fillStyle='rgba(255,255,255,0.88)'; ctx.fill()
-    ctx.strokeStyle=c.border; ctx.lineWidth=1.5; ctx.stroke()
-    ctx.fillStyle=c.accent; ctx.font=`500 17px ${font}`; ctx.textAlign='center'
-    ctx.fillText(`${year}년 ${month+1}월`, cx+cw/2, cy+pad+17)
-    const dowColors=['#E24B4A','#666','#666','#666','#666','#666','#378ADD']
-    DOWS.forEach((d,i)=>{ ctx.fillStyle=dowColors[i]; ctx.font=`500 12px ${font}`; ctx.textAlign='center'; ctx.fillText(d, cx+pad+i*cellW+cellW/2, cy+pad+headerH+dowH*0.78) })
-    const divY=cy+pad+headerH+dowH
-    ctx.strokeStyle=c.border; ctx.lineWidth=0.5; ctx.beginPath(); ctx.moveTo(cx+pad,divY); ctx.lineTo(cx+cw-pad,divY); ctx.stroke()
-    const first=new Date(year,month,1), lastD=new Date(year,month+1,0).getDate(), startDow=first.getDay()
+    const pad = 24
+    const cellW = Math.floor((cw - pad*2) / 7)
+    const headerH = 56
+    const dowH = 36
+    const cellH = Math.floor((ch - pad*2 - headerH - dowH) / 6)
+
+    rrect(ctx, cx, cy, cw, ch, 16)
+    ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fill()
+    ctx.strokeStyle = c.border; ctx.lineWidth = 1.5; ctx.stroke()
+
+    // 월 헤더
+    ctx.fillStyle = c.accent
+    ctx.font = `700 26px ${font}`
+    ctx.textAlign = 'center'
+    ctx.fillText(`${year}년 ${month+1}월`, cx+cw/2, cy+pad+26)
+
+    // 요일 헤더
+    const dowColors = ['#E24B4A','#666','#666','#666','#666','#666','#378ADD']
+    DOWS.forEach((d,i) => {
+      ctx.fillStyle = dowColors[i]
+      ctx.font = `600 16px ${font}`
+      ctx.textAlign = 'center'
+      ctx.fillText(d, cx+pad+i*cellW+cellW/2, cy+pad+headerH+dowH*0.75)
+    })
+
+    const divY = cy+pad+headerH+dowH
+    ctx.strokeStyle = c.border; ctx.lineWidth = 1
+    ctx.beginPath(); ctx.moveTo(cx+pad, divY); ctx.lineTo(cx+cw-pad, divY); ctx.stroke()
+
+    const first = new Date(year, month, 1)
+    const lastD = new Date(year, month+1, 0).getDate()
+    const startDow = first.getDay()
+
     const allDays: {d:Date,cur:boolean}[] = []
-    for(let i=0;i<startDow;i++) allDays.push({d:new Date(year,month,1-(startDow-i)),cur:false})
-    for(let d=1;d<=lastD;d++) allDays.push({d:new Date(year,month,d),cur:true})
-    while(allDays.length<42) allDays.push({d:new Date(year,month+1,allDays.length-startDow-lastD+1),cur:false})
-    allDays.forEach(({d:thisD,cur},idx)=>{
-      const col=idx%7, row=Math.floor(idx/7), dx=cx+pad+col*cellW, dy=divY+row*cellH
-      const dow=thisD.getDay(), hname=HOLIDAYS[toKey(thisD)]
-      const isLast=sameDay(thisD,lastDate), isResume=sameDay(thisD,resumeDate)
-      const inRange=lastDate&&resumeDate&&thisD.getTime()>lastDate.getTime()&&thisD.getTime()<resumeDate.getTime()
-      if(isLast){rrect(ctx,dx+1,dy+1,cellW-2,cellH-2,5);ctx.fillStyle='#FFF3CD';ctx.fill();ctx.strokeStyle='#EF9F27';ctx.lineWidth=2;ctx.stroke()}
-      else if(isResume){rrect(ctx,dx+1,dy+1,cellW-2,cellH-2,5);ctx.fillStyle='#E8DEF8';ctx.fill();ctx.strokeStyle='#7F77DD';ctx.lineWidth=2;ctx.stroke()}
-      else if(inRange){ctx.fillStyle='rgba(93,202,165,0.18)';ctx.fillRect(dx,dy,cellW,cellH)}
-      ctx.save(); ctx.globalAlpha=cur?1:0.28
-      let nc='#333'
-      if(dow===0||hname)nc='#E24B4A'; else if(dow===6)nc='#378ADD'
-      if(isLast)nc='#633806'; if(isResume)nc='#26215C'
-      ctx.fillStyle=nc; ctx.font=`${isLast||isResume?'600':'400'} 14px ${font}`; ctx.textAlign='center'
+    for (let i=0;i<startDow;i++) allDays.push({d:new Date(year,month,1-(startDow-i)),cur:false})
+    for (let d=1;d<=lastD;d++) allDays.push({d:new Date(year,month,d),cur:true})
+    while (allDays.length<42) allDays.push({d:new Date(year,month+1,allDays.length-startDow-lastD+1),cur:false})
+
+    allDays.forEach(({d:thisD,cur},idx) => {
+      const col = idx%7, row = Math.floor(idx/7)
+      const dx = cx+pad+col*cellW, dy = divY+row*cellH
+      const dow = thisD.getDay()
+      const hname = HOLIDAYS[toKey(thisD)]
+      const isLast = sameDay(thisD, lastDate)
+      const isResume = sameDay(thisD, resumeDate)
+      const inRange = lastDate && resumeDate && thisD.getTime() > lastDate.getTime() && thisD.getTime() < resumeDate.getTime()
+
+      if (isLast) {
+        rrect(ctx, dx+2, dy+2, cellW-4, cellH-4, 8)
+        ctx.fillStyle = '#FFF3CD'; ctx.fill()
+        ctx.strokeStyle = '#EF9F27'; ctx.lineWidth = 2.5; ctx.stroke()
+      } else if (isResume) {
+        rrect(ctx, dx+2, dy+2, cellW-4, cellH-4, 8)
+        ctx.fillStyle = '#E8DEF8'; ctx.fill()
+        ctx.strokeStyle = '#7F77DD'; ctx.lineWidth = 2.5; ctx.stroke()
+      } else if (inRange) {
+        ctx.fillStyle = 'rgba(93,202,165,0.15)'
+        ctx.fillRect(dx, dy, cellW, cellH)
+      }
+
+      ctx.save()
+      ctx.globalAlpha = cur ? 1 : 0.25
+
+      let nc = '#333'
+      if (dow===0||hname) nc = '#E24B4A'
+      else if (dow===6) nc = '#378ADD'
+      if (isLast) nc = '#633806'
+      if (isResume) nc = '#26215C'
+
+      ctx.fillStyle = nc
+      ctx.font = `${isLast||isResume?'700':'400'} 18px ${font}`
+      ctx.textAlign = 'center'
       ctx.fillText(String(thisD.getDate()), dx+cellW/2, dy+cellH*0.46)
-      if(hname){ctx.fillStyle='#E24B4A';ctx.font=`400 7.5px ${font}`;ctx.textAlign='center';ctx.fillText(hname.length>4?hname.slice(0,4):hname,dx+cellW/2,dy+cellH*0.76)}
-      if(isLast||isResume){ctx.fillStyle=isLast?'#854F0B':'#534AB7';ctx.font=`600 8px ${font}`;ctx.textAlign='center';ctx.fillText(isLast?'마감':'발송',dx+cellW/2,dy+cellH*0.78)}
+
+      if (hname) {
+        ctx.fillStyle = '#E24B4A'
+        ctx.font = `400 9px ${font}`
+        ctx.textAlign = 'center'
+        ctx.fillText(hname.length>4?hname.slice(0,4):hname, dx+cellW/2, dy+cellH*0.72)
+      }
+      if (isLast||isResume) {
+        ctx.fillStyle = isLast ? '#854F0B' : '#534AB7'
+        ctx.font = `700 10px ${font}`
+        ctx.textAlign = 'center'
+        ctx.fillText(isLast?'마감':'발송', dx+cellW/2, dy+cellH*0.85)
+      }
       ctx.restore()
     })
   }
@@ -249,22 +338,30 @@ export default function DeliveryNoticeGenerator() {
   }
 
   useEffect(() => { draw() }, [draw])
-  useEffect(() => { window.addEventListener('resize', scaleCanvas); return () => window.removeEventListener('resize', scaleCanvas) }, [])
+  useEffect(() => {
+    window.addEventListener('resize', scaleCanvas)
+    return () => window.removeEventListener('resize', scaleCanvas)
+  }, [])
 
   function pickDate(d: Date) {
-    if (dateStep === 0) { setLastDate(d); setDateStep(1) }
-    else if (dateStep === 1) { setResumeDate(d); setDateStep(2) }
+    if (dateStep===0) { setLastDate(d); setDateStep(1) }
+    else if (dateStep===1) { setResumeDate(d); setDateStep(2) }
   }
   function resetDates() { setLastDate(null); setResumeDate(null); setDateStep(0) }
-  function prevMonth() { if (calMonth === 0) { setCalMonth(11); setCalYear(y=>y-1) } else setCalMonth(m=>m-1) }
-  function nextMonth() { if (calMonth === 11) { setCalMonth(0); setCalYear(y=>y+1) } else setCalMonth(m=>m+1) }
+  function prevMonth() { if (calMonth===0) { setCalMonth(11); setCalYear(y=>y-1) } else setCalMonth(m=>m-1) }
+  function nextMonth() { if (calMonth===11) { setCalMonth(0); setCalYear(y=>y+1) } else setCalMonth(m=>m+1) }
 
   function handleImg(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]; if (!f) return
     const reader = new FileReader()
     reader.onload = ev => {
       const img = new Image()
-      img.onload = () => { imgRef.current = img; imgRatioRef.current = img.naturalWidth/img.naturalHeight; setImgName(f.name); draw() }
+      img.onload = () => {
+        imgRef.current = img
+        imgRatioRef.current = img.naturalWidth / img.naturalHeight
+        setImgName(f.name)
+        draw()
+      }
       img.src = ev.target?.result as string
     }
     reader.readAsDataURL(f)
@@ -279,7 +376,6 @@ export default function DeliveryNoticeGenerator() {
     a.click()
   }
 
-  // ── 달력 UI 렌더 ──
   function renderCalCells() {
     const first = new Date(calYear, calMonth, 1)
     const lastD = new Date(calYear, calMonth+1, 0).getDate()
@@ -292,12 +388,11 @@ export default function DeliveryNoticeGenerator() {
       const thisD = new Date(calYear, calMonth, d)
       const dow = thisD.getDay()
       const hname = HOLIDAYS[toKey(thisD)]
-      const isHoliday = !!hname
       const isLast = sameDay(thisD, lastDate)
       const isResume = sameDay(thisD, resumeDate)
       const inRange = lastDate && resumeDate && thisD.getTime() > lastDate.getTime() && thisD.getTime() < resumeDate.getTime()
       let cls = 'cal-day'
-      if (dow===0||isHoliday) cls+=' sun'
+      if (dow===0||hname) cls+=' sun'
       else if (dow===6) cls+=' sat'
       if (isLast) cls+=' sel-last'
       else if (isResume) cls+=' sel-resume'
@@ -315,55 +410,55 @@ export default function DeliveryNoticeGenerator() {
   return (
     <>
       <style>{`
-        .generator-wrap{display:grid;grid-template-columns:240px 1fr;gap:16px;align-items:start;}
-        .panel{display:flex;flex-direction:column;gap:10px;}
-        .card{background:white;border:1px solid #e5e5e5;border-radius:10px;padding:12px;}
-        .lbl{font-size:10px;color:#888;font-weight:500;letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px;}
-        .fi{width:100%;font-size:12px;padding:6px 8px;border:1px solid #e0e0e0;border-radius:6px;background:white;color:#222;line-height:1.5;font-family:inherit;}
-        textarea.fi{resize:vertical;min-height:60px;}
+        .generator-wrap{display:grid;grid-template-columns:260px 1fr;gap:20px;align-items:start;}
+        .panel{display:flex;flex-direction:column;gap:12px;}
+        .card{background:white;border:1px solid #e8e8e8;border-radius:14px;padding:16px;}
+        .lbl{font-size:11px;color:#999;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px;}
+        .fi{width:100%;font-size:13px;padding:8px 10px;border:1.5px solid #e8e8e8;border-radius:8px;background:white;color:#222;line-height:1.5;font-family:inherit;box-sizing:border-box;}
+        textarea.fi{resize:vertical;min-height:70px;}
         select.fi{cursor:pointer;}
-        .time-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:5px;}
-        .mood-row{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
-        .mbtn{padding:6px 4px;font-size:11px;border:1px solid #e0e0e0;border-radius:6px;background:white;color:#333;cursor:pointer;text-align:center;}
-        .mbtn.active{border-color:#534AB7;color:#534AB7;background:#EEEDFE;font-weight:500;}
-        .upload-zone{border:1px dashed #ccc;border-radius:6px;padding:10px;text-align:center;cursor:pointer;font-size:11px;color:#888;}
+        .time-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-top:6px;}
+        .mood-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+        .mbtn{padding:8px 4px;font-size:12px;border:1.5px solid #e8e8e8;border-radius:8px;background:white;color:#555;cursor:pointer;text-align:center;font-family:inherit;}
+        .mbtn.active{border-color:#534AB7;color:#534AB7;background:#EEEDFE;font-weight:600;}
+        .upload-zone{border:1.5px dashed #d0d0d0;border-radius:10px;padding:14px;text-align:center;cursor:pointer;font-size:12px;color:#aaa;transition:background 0.2s;}
         .upload-zone:hover{background:#f8f8f8;}
-        .cal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
-        .cal-hdr span{font-size:12px;font-weight:600;color:#222;}
-        .cal-nav{background:none;border:none;cursor:pointer;color:#888;font-size:16px;padding:1px 6px;border-radius:4px;line-height:1;}
+        .cal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+        .cal-hdr span{font-size:13px;font-weight:700;color:#222;}
+        .cal-nav{background:none;border:none;cursor:pointer;color:#888;font-size:18px;padding:2px 8px;border-radius:6px;line-height:1;}
         .cal-nav:hover{background:#f0f0f0;}
         .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;}
-        .cal-dow{font-size:9px;text-align:center;padding:2px 0;font-weight:500;}
+        .cal-dow{font-size:10px;text-align:center;padding:3px 0;font-weight:600;}
         .cal-dow.sun{color:#E24B4A;}.cal-dow.sat{color:#378ADD;}.cal-dow.wd{color:#888;}
-        .cal-day{font-size:10px;text-align:center;padding:2px 1px;border-radius:3px;cursor:pointer;border:0.5px solid transparent;min-height:28px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;}
-        .cal-day:hover{background:#f5f5f5;}
-        .cal-day.other{opacity:.3;cursor:default;}
-        .dnum{font-size:11px;}
-        .hname{font-size:7px;line-height:1;white-space:nowrap;overflow:hidden;max-width:30px;text-overflow:ellipsis;}
-        .cal-day.sun .dnum,.cal-day.sun .hname{color:#E24B4A;}
+        .cal-day{font-size:11px;text-align:center;padding:3px 1px;border-radius:5px;cursor:pointer;border:1px solid transparent;min-height:32px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;}
+        .cal-day:hover:not(.other){background:#f5f5f5;}
+        .cal-day.other{opacity:.25;cursor:default;pointer-events:none;}
+        .dnum{font-size:12px;font-weight:500;}
+        .hname{font-size:7px;line-height:1;white-space:nowrap;overflow:hidden;max-width:32px;text-overflow:ellipsis;color:#E24B4A;}
+        .cal-day.sun .dnum{color:#E24B4A;}
         .cal-day.sat .dnum{color:#378ADD;}
-        .cal-day.sel-last{background:#FFF3CD!important;border:1.5px solid #EF9F27!important;}
-        .cal-day.sel-last .dnum{color:#633806!important;}
-        .cal-day.sel-resume{background:#E8DEF8!important;border:1.5px solid #7F77DD!important;}
-        .cal-day.sel-resume .dnum{color:#26215C!important;}
-        .cal-day.in-range{background:rgba(93,202,165,.15);}
-        .chips{display:flex;flex-direction:column;gap:3px;margin-top:6px;}
-        .chip{display:flex;align-items:center;gap:5px;font-size:10px;padding:3px 6px;border-radius:5px;}
-        .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
-        .chip-lbl{color:#888;}
-        .chip-val{color:#222;font-weight:500;margin-left:auto;}
-        .hint{font-size:9px;color:#bbb;margin-top:3px;}
-        .reset-btn{width:100%;margin-top:5px;font-size:10px;padding:4px;border:1px solid #e0e0e0;border-radius:5px;background:none;color:#888;cursor:pointer;}
+        .cal-day.sel-last{background:#FFF3CD!important;border:2px solid #EF9F27!important;}
+        .cal-day.sel-last .dnum{color:#633806!important;font-weight:700!important;}
+        .cal-day.sel-resume{background:#E8DEF8!important;border:2px solid #7F77DD!important;}
+        .cal-day.sel-resume .dnum{color:#26215C!important;font-weight:700!important;}
+        .cal-day.in-range{background:rgba(93,202,165,.12);}
+        .chips{display:flex;flex-direction:column;gap:5px;margin-top:8px;}
+        .chip{display:flex;align-items:center;gap:6px;font-size:11px;padding:4px 8px;border-radius:6px;background:#f8f8f8;}
+        .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+        .chip-lbl{color:#999;}
+        .chip-val{color:#222;font-weight:600;margin-left:auto;}
+        .hint{font-size:10px;color:#bbb;margin-top:4px;}
+        .reset-btn{width:100%;margin-top:6px;font-size:11px;padding:6px;border:1.5px solid #e8e8e8;border-radius:8px;background:none;color:#999;cursor:pointer;font-family:inherit;}
         .reset-btn:hover{background:#f5f5f5;}
-        .preview-col{display:flex;flex-direction:column;gap:10px;}
-        .canvas-wrap{width:100%;overflow:hidden;border:1px solid #e5e5e5;border-radius:10px;background:#ddd;display:flex;align-items:flex-start;justify-content:center;padding:10px;}
-        .dl-btn{width:100%;padding:10px;font-size:13px;font-weight:500;border:none;border-radius:8px;background:#1a1a1a;color:white;cursor:pointer;text-align:center;}
+        .preview-col{display:flex;flex-direction:column;gap:12px;}
+        .canvas-wrap{width:100%;overflow:hidden;border:1.5px solid #e8e8e8;border-radius:14px;background:#f0f0ee;display:flex;align-items:flex-start;justify-content:center;padding:12px;}
+        .dl-btn{width:100%;padding:14px;font-size:14px;font-weight:700;border:none;border-radius:12px;background:#1a1a1a;color:white;cursor:pointer;text-align:center;font-family:inherit;letter-spacing:0.02em;}
         .dl-btn:hover{background:#333;}
         @media(max-width:640px){.generator-wrap{grid-template-columns:1fr;}}
       `}</style>
 
       <div className="generator-wrap">
-        {/* ── 왼쪽 패널 ── */}
+        {/* 왼쪽 패널 */}
         <div className="panel">
           <div className="card">
             <div className="lbl">분위기</div>
@@ -382,10 +477,8 @@ export default function DeliveryNoticeGenerator() {
               🖼 클릭하여 이미지 선택
               <input type="file" id="file-in" accept="image/*" style={{display:'none'}} onChange={handleImg}/>
             </div>
-            {imgName && (
-              <div style={{fontSize:10,color:'#888',marginTop:3,textAlign:'center'}}>{imgName}</div>
-            )}
-            {imgName && <button className="reset-btn" onClick={clearImg}>이미지 제거</button>}
+            {imgName&&<div style={{fontSize:11,color:'#aaa',marginTop:4,textAlign:'center'}}>{imgName}</div>}
+            {imgName&&<button className="reset-btn" onClick={clearImg}>이미지 제거</button>}
           </div>
 
           <div className="card">
@@ -408,7 +501,7 @@ export default function DeliveryNoticeGenerator() {
               {renderCalCells()}
             </div>
 
-            <div style={{marginTop:10}}>
+            <div style={{marginTop:12}}>
               <div className="lbl">📦 택배 마감 시간</div>
               <div className="time-row">
                 <select className="fi" value={ampm} onChange={e=>setAmpm(e.target.value)}>
@@ -425,8 +518,16 @@ export default function DeliveryNoticeGenerator() {
             </div>
 
             <div className="chips">
-              <div className="chip"><div className="dot" style={{background:'#EF9F27'}}/><span className="chip-lbl">택배 마감</span><span className="chip-val">{fmtDate(lastDate)}</span></div>
-              <div className="chip"><div className="dot" style={{background:'#7F77DD'}}/><span className="chip-lbl">택배 발송</span><span className="chip-val">{fmtDate(resumeDate)}</span></div>
+              <div className="chip">
+                <div className="dot" style={{background:'#EF9F27'}}/>
+                <span className="chip-lbl">택배 마감</span>
+                <span className="chip-val">{fmtDate(lastDate)}</span>
+              </div>
+              <div className="chip">
+                <div className="dot" style={{background:'#7F77DD'}}/>
+                <span className="chip-lbl">택배 발송</span>
+                <span className="chip-val">{fmtDate(resumeDate)}</span>
+              </div>
             </div>
             <div className="hint">클릭 순서: 택배마감 → 택배발송</div>
             <button className="reset-btn" onClick={resetDates}>날짜 초기화</button>
@@ -438,9 +539,9 @@ export default function DeliveryNoticeGenerator() {
           </div>
         </div>
 
-        {/* ── 오른쪽 미리보기 ── */}
+        {/* 오른쪽 미리보기 */}
         <div className="preview-col">
-          <div style={{fontSize:11,color:'#aaa'}}>미리보기 — 실시간 반영 / 다운로드 860px 고정</div>
+          <div style={{fontSize:12,color:'#aaa'}}>미리보기 — 실시간 반영 / 다운로드 860px 고정</div>
           <div className="canvas-wrap" ref={wrapRef}>
             <canvas ref={canvasRef}/>
           </div>
