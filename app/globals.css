@@ -47,6 +47,11 @@ button, input, textarea, select { font: inherit; }
 .brand-lockup { display: flex; flex-direction: column; gap: 4px; }
 .brand-name { font-size: 20px; font-weight: 800; }
 .brand-subtitle { font-size: 12px; color: var(--muted); }
+.site-header-right {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
 .site-nav {
   display: flex;
   align-items: center;
@@ -56,6 +61,77 @@ button, input, textarea, select { font: inherit; }
   color: #282724;
 }
 .site-nav a:hover { color: var(--accent-red); }
+
+/* ─── AUTH ─── */
+.auth-login-btn {
+  padding: 8px 16px;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.auth-menu { position: relative; }
+.auth-profile-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.auth-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--line);
+}
+.auth-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: var(--accent-red);
+  font-size: 13px;
+  font-weight: 800;
+}
+.auth-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.auth-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 120px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-strong);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  overflow: hidden;
+  z-index: 20;
+}
+.auth-dropdown button {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+.auth-dropdown button:hover { background: var(--background); }
 
 /* ─── HOME WRAPPER ─── */
 .home-page {
@@ -593,6 +669,7 @@ button, input, textarea, select { font: inherit; }
 /* ─── RESPONSIVE 860px ─── */
 @media (max-width: 860px) {
   .site-header { flex-direction: column; align-items: flex-start; padding-top: 18px; }
+  .site-header-right { width: 100%; flex-direction: column; align-items: flex-start; gap: 14px; }
   .site-nav { width: 100%; justify-content: space-between; gap: 10px; overflow-x: auto; padding-bottom: 4px; white-space: nowrap; }
   .home-consult, .home-tools { grid-template-columns: 1fr; gap: 28px; }
   .latest-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }

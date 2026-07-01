@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_KR } from "next/font/google";
+import { AuthProvider } from "@/components/auth/AuthProvider";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import VisitTracker from "@/components/VisitTracker";
@@ -46,10 +47,12 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className={notoSansKr.variable}>
-        <SiteHeader />
-        <VisitTracker />
-        {children}
-        <SiteFooter />
+        <AuthProvider>
+          <SiteHeader />
+          <VisitTracker />
+          {children}
+          <SiteFooter />
+        </AuthProvider>
       </body>
     </html>
   );

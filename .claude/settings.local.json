@@ -17,7 +17,9 @@
       "Bash(find src *)",
       "Bash(find . -iname \"DeliveryNoticeGenerator*\" -not -path \"*/node_modules/*\")",
       "Bash(npx next *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(ls eslint*)",
+      "Bash(ls *.mjs)"
     ]
   }
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { useAuth } from '@/components/auth/AuthProvider'
 
 const HOLIDAYS: Record<string, string> = {
   // 2025
@@ -86,11 +87,14 @@ const moodCfg = {
 type SelectStep = 'last' | 'resume' | 'done'
 
 export default function DeliveryNoticeGenerator() {
+  const { user, signInWithGoogle } = useAuth()
+
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const wrapRef   = useRef<HTMLDivElement>(null)
   const imgRef    = useRef<HTMLImageElement | null>(null)
   const imgRatioRef = useRef(1)
 
+  const [loginNotice, setLoginNotice] = useState(false)
   const [mood, setMood]         = useState<Mood>('clean')
   const [greeting, setGreeting] = useState('')
   const [imgName, setImgName]   = useState('')
@@ -471,6 +475,8 @@ export default function DeliveryNoticeGenerator() {
 
   function downloadPNG() {
     const cv = canvasRef.current; if (!cv) return
+    if (!user) { setLoginNotice(true); return }
+    setLoginNotice(false)
     const a = document.createElement('a')
     a.download = `택배공지_${Date.now()}.png`
     a.href = cv.toDataURL('image/png', 1.0)
@@ -528,6 +534,8 @@ export default function DeliveryNoticeGenerator() {
         .canvas-wrap canvas { cursor:pointer; display:block; }
         .dl-btn { width:100%; padding:14px; font-size:14px; font-weight:700; border:none; border-radius:12px; background:#1a1a1a; color:white; cursor:pointer; font-family:inherit; }
         .dl-btn:hover { background:#333; }
+        .login-notice { margin-top:10px; padding:10px 12px; background:#FFF4E5; border-radius:8px; font-size:13px; color:#8a5a00; text-align:center; }
+        .login-notice-btn { background:none; border:none; padding:0; font-size:13px; font-weight:700; color:#b72a2a; text-decoration:underline; cursor:pointer; font-family:inherit; }
         .step-hint { font-size:12px; font-weight:600; padding:8px 12px; border-radius:8px; text-align:center; }
         .custom-row { display:flex; gap:6px; margin-top:6px; }
         .custom-tag { display:flex; align-items:center; gap:4px; font-size:11px; padding:3px 8px; background:#FFF0F5; border-radius:6px; color:#D4537E; margin-top:4px; }
@@ -636,6 +644,12 @@ export default function DeliveryNoticeGenerator() {
             <canvas ref={canvasRef} onClick={handleCanvasClick}/>
           </div>
           <button className="dl-btn" onClick={downloadPNG}>⬇ PNG 다운로드 (860px)</button>
+          {loginNotice && (
+            <p className="login-notice">
+              🔒 로그인이 필요합니다.{' '}
+              <button type="button" className="login-notice-btn" onClick={() => signInWithGoogle()}>구글로 로그인</button>
+            </p>
+          )}
         </div>
       </div>
     </>

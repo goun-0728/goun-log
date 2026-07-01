@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AuthButton from "@/components/auth/AuthButton";
 
 const navItems = [
   { href: "/", label: "홈" },
@@ -14,13 +15,16 @@ export default function SiteHeader() {
         <span className="brand-name">GOUN LOG</span>
         <span className="brand-subtitle">온라인 판매와 마케팅에 대한 기록</span>
       </Link>
-      <nav className="site-nav" aria-label="상단 메뉴">
-        {navItems.map((item) => (
-          <Link key={item.href} href={item.href}>
-            {item.label}
-          </Link>
-        ))}
-      </nav>
+      <div className="site-header-right">
+        <nav className="site-nav" aria-label="상단 메뉴">
+          {navItems.map((item) => (
+            <Link key={item.href} href={item.href}>
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+        <AuthButton />
+      </div>
     </header>
   );
 }
