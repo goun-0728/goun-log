@@ -22,26 +22,24 @@ export default async function Home() {
 
       {/* ① 도구 바로가기 */}
       <section className="home-tools" aria-labelledby="tools-title">
-        <p className="home-eyebrow">Tools</p>
-        <h2 id="tools-title">필요한 도구를 바로 사용해보세요.</h2>
-        <div className="home-tools-grid">
-          <div className="home-tool-card">
-            <h3>AI 상세페이지 생성기</h3>
-            <p>제품사진만 있다면 상세페이지 초안을 쉽게 만들 수 있습니다.</p>
-            <a href={generatorUrl} target="_blank" rel="noopener noreferrer" className="home-tool-btn">
-              바로가기 →
+        <div className="home-tools-list">
+          <p className="home-eyebrow">Tools</p>
+          <h2 id="tools-title">필요한 도구를 바로 사용해보세요.</h2>
+          <div className="home-tools-buttons">
+            <a href={generatorUrl} target="_blank" rel="noopener noreferrer" className="home-tools-btn">
+              AI 상세페이지 생성기 →
             </a>
-          </div>
-          <div className="home-tool-card">
-            <h3>택배 공지 생성기</h3>
-            <p>휴무·배송 지연 공지 이미지를 빠르게 만들어줍니다.</p>
-            <Link href="/tools/delivery-notice" className="home-tool-btn">
-              바로가기 →
+            <Link href="/tools/delivery-notice" className="home-tools-btn">
+              택배 공지 생성기 →
             </Link>
+            <span className="home-tools-btn-soon">새로운 도구 준비 중</span>
           </div>
-          <div className="home-tool-card home-tool-card-empty">
-            <p>새로운 도구를 준비 중입니다.</p>
-          </div>
+        </div>
+        <div className="home-tools-desc">
+          <p>
+            스마트스토어 운영에 필요한 도구들을 무료로 사용해보세요.<br />
+            복잡한 작업을 빠르고 간단하게 처리할 수 있습니다.
+          </p>
         </div>
       </section>
 

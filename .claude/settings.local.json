@@ -12,7 +12,12 @@
       "Bash(npm show *)",
       "Bash(node *)",
       "Bash(git rm *)",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "Bash(find app *)",
+      "Bash(find src *)",
+      "Bash(find . -iname \"DeliveryNoticeGenerator*\" -not -path \"*/node_modules/*\")",
+      "Bash(npx next *)",
+      "Bash(npx tsc *)"
     ]
   }
 }
