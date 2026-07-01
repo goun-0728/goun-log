@@ -127,6 +127,66 @@ button, input, textarea, select { font: inherit; }
   font-weight: 700;
 }
 
+/* ─── TOOLS ─── */
+.home-tools {
+  padding: 44px 0 52px;
+  border-bottom: 1px solid var(--line);
+}
+.home-tools h2 {
+  margin: 0 0 24px;
+  font-size: clamp(20px, 2vw, 26px);
+  font-weight: 800;
+  color: var(--ink);
+  word-break: keep-all;
+}
+.home-tools-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.home-tool-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  transition: border-color 0.15s ease;
+}
+.home-tool-card:hover { border-color: var(--accent-red); }
+.home-tool-card h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.home-tool-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+  word-break: keep-all;
+}
+.home-tool-btn {
+  margin-top: 16px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--accent-red);
+}
+.home-tool-card-empty {
+  align-items: center;
+  justify-content: center;
+  min-height: 128px;
+  border-style: dashed;
+  background: transparent;
+}
+.home-tool-card-empty p {
+  text-align: center;
+  color: var(--faint);
+}
+.home-tool-card-empty:hover { border-color: var(--line); }
+
 /* ─── CONSULT ─── */
 .home-consult {
   display: grid;
@@ -572,6 +632,7 @@ button, input, textarea, select { font: inherit; }
   .site-nav { width: 100%; justify-content: space-between; gap: 10px; overflow-x: auto; padding-bottom: 4px; white-space: nowrap; }
   .home-hero, .home-consult { grid-template-columns: 1fr; gap: 28px; }
   .latest-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .home-tools-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .site-footer-grid { grid-template-columns: 1fr; gap: 28px; }
   .page-grid { grid-template-columns: 1fr; gap: 32px; padding-top: 32px; }
   .article-list-item { grid-template-columns: 1fr; }
@@ -592,6 +653,8 @@ button, input, textarea, select { font: inherit; }
   .home-hero, .home-consult { padding: 32px 0; }
   .home-hero-copy h1 { font-size: clamp(22px, 6.5vw, 30px); }
   .latest-card-grid { grid-template-columns: 1fr; }
+  .home-tools { padding: 32px 0; }
+  .home-tools-grid { grid-template-columns: 1fr; }
   .site-footer-grid { grid-template-columns: 1fr; }
   .home-stat-item { padding: 12px 6px; }
   .home-stat-item strong { font-size: clamp(14px, 5vw, 18px); }

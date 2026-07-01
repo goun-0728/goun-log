@@ -49,7 +49,32 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ② 교육·컨설팅 */}
+      {/* ② 도구 바로가기 */}
+      <section className="home-tools" aria-labelledby="tools-title">
+        <p className="home-eyebrow">Tools</p>
+        <h2 id="tools-title">필요한 도구를 바로 사용해보세요.</h2>
+        <div className="home-tools-grid">
+          <div className="home-tool-card">
+            <h3>AI 상세페이지 생성기</h3>
+            <p>제품사진만 있으면 상세페이지 초안을 만들어줍니다.</p>
+            <a href={generatorUrl} target="_blank" rel="noopener noreferrer" className="home-tool-btn">
+              바로가기 →
+            </a>
+          </div>
+          <div className="home-tool-card">
+            <h3>택배 공지 생성기</h3>
+            <p>휴무·배송 지연 공지 이미지를 빠르게 만들어줍니다.</p>
+            <Link href="/tools/delivery-notice" className="home-tool-btn">
+              바로가기 →
+            </Link>
+          </div>
+          <div className="home-tool-card home-tool-card-empty">
+            <p>새로운 도구를 준비 중입니다.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* ③ 교육·컨설팅 */}
       <section className="home-consult" aria-labelledby="consult-title">
         <div className="home-consult-copy">
           <p className="home-eyebrow">교육·컨설팅</p>
@@ -81,7 +106,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ③ 최근 글 */}
+      {/* ④ 최근 글 */}
       <section className="latest-card-section" aria-labelledby="latest-title">
         <div className="latest-heading">
           <h2 id="latest-title">최근 글</h2>
@@ -110,7 +135,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ④ 통계 */}
+      {/* ⑤ 통계 */}
       <section className="home-stats-wrap home-stats-soft" aria-label="사이트 통계">
         <HomeStats stats={displayStats} />
       </section>
