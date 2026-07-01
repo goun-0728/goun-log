@@ -19,7 +19,9 @@
       "Bash(npx next *)",
       "Bash(npx tsc *)",
       "Bash(ls eslint*)",
-      "Bash(ls *.mjs)"
+      "Bash(ls *.mjs)",
+      "Bash(find . -maxdepth 1 -iname \"vercel.json\")",
+      "Bash(cat next.config.ts)"
     ]
   }
 }
