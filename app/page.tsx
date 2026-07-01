@@ -23,7 +23,7 @@ export default async function Home() {
       {/* ① 도구 바로가기 */}
       <section className="home-tools" aria-labelledby="tools-title">
         <div className="home-tools-list">
-          <p className="home-eyebrow">Tools</p>
+          <p className="home-eyebrow">도구</p>
           <h2 id="tools-title">필요한 도구를 바로 사용해보세요.</h2>
           <div className="home-tools-buttons">
             <a href={generatorUrl} target="_blank" rel="noopener noreferrer" className="home-tools-btn">
