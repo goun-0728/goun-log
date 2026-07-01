@@ -64,28 +64,7 @@ button, input, textarea, select { font: inherit; }
   padding: 0 24px;
 }
 
-/* ─── HERO ─── */
-.home-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 48px;
-  align-items: center;
-  padding: 48px 0 52px;
-  border-bottom: 1px solid var(--line);
-}
-.home-hero-image {
-  min-width: 0;
-}
-.home-showcase-img {
-  width: 100%;
-  height: auto;
-  border-radius: 8px;
-  border: 1px solid var(--line);
-  background: #eee7dc;
-}
-.home-hero-copy {
-  min-width: 0;
-}
+/* ─── TOOLS ─── */
 .home-eyebrow {
   margin: 0 0 16px;
   color: var(--accent-red);
@@ -94,40 +73,6 @@ button, input, textarea, select { font: inherit; }
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
-.home-hero-copy h1 {
-  margin: 0;
-  color: var(--ink);
-  font-size: clamp(24px, 2.4vw, 36px);
-  font-weight: 800;
-  line-height: 1.45;
-  word-break: keep-all;
-}
-.home-hero-desc {
-  margin: 20px 0 0;
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.9;
-  word-break: keep-all;
-}
-.home-hero-btn {
-  display: inline-block;
-  margin-top: 24px;
-  padding: 12px 22px;
-  background: var(--accent-red);
-  color: #fff;
-  font-size: 14px;
-  font-weight: 800;
-  border-radius: 6px;
-}
-.home-hero-btn:hover { background: #9a2222; }
-.home-hero-price {
-  margin: 12px 0 0;
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-/* ─── TOOLS ─── */
 .home-tools {
   padding: 44px 0 52px;
   border-bottom: 1px solid var(--line);
@@ -630,7 +575,7 @@ button, input, textarea, select { font: inherit; }
 @media (max-width: 860px) {
   .site-header { flex-direction: column; align-items: flex-start; padding-top: 18px; }
   .site-nav { width: 100%; justify-content: space-between; gap: 10px; overflow-x: auto; padding-bottom: 4px; white-space: nowrap; }
-  .home-hero, .home-consult { grid-template-columns: 1fr; gap: 28px; }
+  .home-consult { grid-template-columns: 1fr; gap: 28px; }
   .latest-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .home-tools-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .site-footer-grid { grid-template-columns: 1fr; gap: 28px; }
@@ -650,8 +595,7 @@ button, input, textarea, select { font: inherit; }
 /* ─── RESPONSIVE 520px ─── */
 @media (max-width: 520px) {
   .home-page, .page-grid, .simple-page, .admin-page, .admin-auth-page { padding-left: 16px; padding-right: 16px; }
-  .home-hero, .home-consult { padding: 32px 0; }
-  .home-hero-copy h1 { font-size: clamp(22px, 6.5vw, 30px); }
+  .home-consult { padding: 32px 0; }
   .latest-card-grid { grid-template-columns: 1fr; }
   .home-tools { padding: 32px 0; }
   .home-tools-grid { grid-template-columns: 1fr; }

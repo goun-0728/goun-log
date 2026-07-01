@@ -20,43 +20,14 @@ export default async function Home() {
   return (
     <main className="home-page">
 
-      {/* ① AI 상세페이지 생성기 - 텍스트 왼쪽, 이미지 오른쪽 */}
-      <section className="home-hero" aria-labelledby="home-title">
-        <div className="home-hero-copy">
-          <p className="home-eyebrow">AI 상세페이지 생성기</p>
-          <h1 id="home-title">
-            제품사진만 있다면,<br />
-            상세페이지 초안을<br />
-            쉽게 만들 수 있습니다.
-          </h1>
-          <p className="home-hero-desc">
-            상세페이지 제작을 업체에 맡기면 적게는 몇 만원,<br />
-            많게는 몇십 몇백만원 이상 비용이 발생합니다.<br />
-            먼저 원하는 대로 만들어보세요.<br />
-            마음에 들면 다운로드, 아니면 비용 없이 생성만 해도 됩니다.
-          </p>
-          <a href={generatorUrl} target="_blank" rel="noopener noreferrer" className="home-hero-btn">
-            상세페이지 생성하기 →
-          </a>
-          <p className="home-hero-price">다운로드는 1건 2,900원</p>
-        </div>
-        <div className="home-hero-image">
-          <SafeImage
-            src="/images/home-showcase.png"
-            alt="AI 상세페이지 생성기 예시"
-            className="home-showcase-img"
-          />
-        </div>
-      </section>
-
-      {/* ② 도구 바로가기 */}
+      {/* ① 도구 바로가기 */}
       <section className="home-tools" aria-labelledby="tools-title">
         <p className="home-eyebrow">Tools</p>
         <h2 id="tools-title">필요한 도구를 바로 사용해보세요.</h2>
         <div className="home-tools-grid">
           <div className="home-tool-card">
             <h3>AI 상세페이지 생성기</h3>
-            <p>제품사진만 있으면 상세페이지 초안을 만들어줍니다.</p>
+            <p>제품사진만 있다면 상세페이지 초안을 쉽게 만들 수 있습니다.</p>
             <a href={generatorUrl} target="_blank" rel="noopener noreferrer" className="home-tool-btn">
               바로가기 →
             </a>
@@ -74,7 +45,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ③ 교육·컨설팅 */}
+      {/* ② 교육·컨설팅 */}
       <section className="home-consult" aria-labelledby="consult-title">
         <div className="home-consult-copy">
           <p className="home-eyebrow">교육·컨설팅</p>
@@ -106,7 +77,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ④ 최근 글 */}
+      {/* ③ 최근 글 */}
       <section className="latest-card-section" aria-labelledby="latest-title">
         <div className="latest-heading">
           <h2 id="latest-title">최근 글</h2>
@@ -135,7 +106,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ⑤ 통계 */}
+      {/* ④ 통계 */}
       <section className="home-stats-wrap home-stats-soft" aria-label="사이트 통계">
         <HomeStats stats={displayStats} />
       </section>
