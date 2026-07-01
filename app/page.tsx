@@ -32,14 +32,23 @@ export default async function Home() {
             <Link href="/tools/delivery-notice" className="home-tools-btn">
               택배 공지 생성기 →
             </Link>
-            <span className="home-tools-btn-soon">새로운 도구 준비 중</span>
           </div>
         </div>
-        <div className="home-tools-desc">
-          <p>
-            스마트스토어 운영에 필요한 도구들을 무료로 사용해보세요.<br />
-            복잡한 작업을 빠르고 간단하게 처리할 수 있습니다.
-          </p>
+        <div className="home-tools-items">
+          {[
+            { icon: "○", title: "AI로 빠르게 제작", desc: "상품 정보만 입력하면 AI가 상세페이지 초안을 자동 생성합니다." },
+            { icon: "◇", title: "직접 편집 가능", desc: "생성된 내용을 원하는 대로 수정하고 다듬을 수 있습니다." },
+            { icon: "△", title: "간편한 저장", desc: "완성된 상세페이지를 PNG로 저장해 바로 사용하세요." },
+            { icon: "□", title: "계속 업데이트", desc: "택배 공지 등 셀러에게 필요한 도구를 계속 추가하고 있습니다." },
+          ].map((item) => (
+            <div key={item.title} className="home-tools-item">
+              <span className="home-tools-icon">{item.icon}</span>
+              <div>
+                <h3>{item.title}</h3>
+                <p>{item.desc}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 

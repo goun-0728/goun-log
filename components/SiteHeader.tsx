@@ -2,7 +2,7 @@ import Link from "next/link";
 
 const navItems = [
   { href: "/", label: "홈" },
-  { href: "/archive", label: "브레드의 이야기" },
+  { href: "/archive", label: "셀러 이야기" },
   { href: "/tools", label: "도구" },
   { href: "/contact", label: "교육·컨설팅 문의" },
 ];
