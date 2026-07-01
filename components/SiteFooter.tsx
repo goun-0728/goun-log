@@ -15,7 +15,7 @@ export default function SiteFooter() {
         <div>
           <strong>바로가기</strong>
           <nav aria-label="푸터 바로가기">
-            <Link href="/archive">아카이브</Link>
+            <Link href="/archive">셀러 이야기</Link>
             <Link href="/tools">도구</Link>
             <Link href="/contact">교육·컨설팅 문의</Link>
           </nav>

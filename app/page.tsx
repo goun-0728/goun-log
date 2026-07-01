@@ -29,7 +29,7 @@ export default async function Home() {
             <a href={generatorUrl} target="_blank" rel="noopener noreferrer" className="home-tools-btn">
               AI 상세페이지 생성기 →
             </a>
-            <Link href="/tools/delivery-notice" className="home-tools-btn">
+            <Link href="/tools/delivery-notice" target="_blank" rel="noopener noreferrer" className="home-tools-btn">
               택배 공지 생성기 →
             </Link>
           </div>
